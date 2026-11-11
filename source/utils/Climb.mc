@@ -62,11 +62,34 @@ class Geom {
     public var dcx as Float;
     public var ay as Float;
 
-    // Floating panel, default width 0.30 (DESIGN.md §3.2).
-    function initialize(w as Number, h as Number, round as Boolean) {
+    public var full as Boolean;
+
+    // Wall area (DESIGN.md §3.2): the right half of the screen when full, else the
+    // floating panel at the default width 0.30.
+    function initialize(w as Number, h as Number, round as Boolean, full as Boolean) {
         W = w.toFloat();
         H = h.toFloat();
         self.round = round;
+        self.full = full;
+        if (full) {
+            x0 = 0.5 * W;
+            x1 = W;
+            y0 = 0.0;
+            y1 = H;
+            dcx = 0.27 * W;
+            rx0 = 0.56 * W;
+            if (round) {
+                rx1 = 0.80 * W;
+                ry0 = 0.15 * H;
+                ry1 = 0.86 * H;
+            } else {
+                rx1 = 0.93 * W;
+                ry0 = 0.08 * H;
+                ry1 = 0.94 * H;
+            }
+            ay = ry0 - 0.035 * H;
+            return;
+        }
         if (round) {
             x0 = 0.555 * W;
             x1 = x0 + 0.30 * W;
@@ -410,7 +433,7 @@ module Climb {
             var ci = Rand.hashMod(day.toLong() * 5 + r, 9);
             for (var i = 0; i < 11; i++) {
                 var x = lerp(xa, xb, rng.next());
-                var y = lerp(g.ry0, g.ry1, rng.next());
+                var y = lerp(g.full ? g.H * 0.05 : g.ry0, g.ry1, rng.next());
                 if (g.round) {
                     var dx = x - g.W / 2;
                     var dy = y - g.H / 2;

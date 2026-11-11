@@ -16,7 +16,7 @@ simulator, with the settings fixed:
 - Each climb ends with a 3 s lower-off on the rope onto the next route's start.
 - Beginners fall onto the rope and restart; intermediates may fall once or miss a jump;
   experts top out (DESIGN.md §12).
-- Floating slate panel, other routes dim on the wall, seconds scale every 10 s, grade and
+- The wall fills the right half of the screen (slate), other routes dim on the wall, seconds scale every 10 s, grade and
   proficiency tags.
 
 Not in the prototype: settings, an always-on scene (the same face is drawn in every display

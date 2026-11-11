@@ -6,6 +6,7 @@ import Toybox.Lang;
 module Draw {
 
     const WALL = 0x24292D;          // slate
+    const WALL_HALF = true;         // the wall fills the right half, not a floating panel
     const CLIMBER = 0xF5F5F5;       // white
     const HOURS = 0xF6F6F6;
     const ROPE = 0xD6D4C8;
@@ -138,7 +139,11 @@ module Draw {
 
         // Wall and T-nuts (DESIGN.md §5.1).
         dc.setColor(WALL, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(g.x0, g.y0, ww, wh, W * 0.03);
+        if (g.full) {
+            dc.fillRectangle(g.x0, g.y0, ww, wh);
+        } else {
+            dc.fillRoundedRectangle(g.x0, g.y0, ww, wh, W * 0.03);
+        }
         var gs = Climb.maxf(7.0, r.dy0 * 1.15);
         var tr = Climb.maxf(0.8, gs * 0.07);
         dc.setColor(mix(WALL, 0xFFFFFF, 0.14), Graphics.COLOR_TRANSPARENT);
@@ -229,7 +234,7 @@ module Draw {
         var rad = Climb.maxf(1.5, fs * 0.18);
         var tot = 2 * bw + gap;
         var y = g.H / 2;
-        var x = g.x1 - tot / 2;
+        var x = (g.full ? (g.rx1 + g.W) / 2 : g.x1) - tot / 2;
         var letters = ["B", "I", "E"] as Array<String>;
 
         dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
