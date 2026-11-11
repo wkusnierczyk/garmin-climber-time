@@ -32,7 +32,7 @@ class View extends WatchUi.WatchFace {
         var g = new Geom(w, h, shape == System.SCREEN_SHAPE_ROUND, Draw.WALL_HALF);
         _geom = g;
         _digitFont = Draw.digitFont(dc, g);
-        _tagFont = Draw.vectorFont((g.H * 0.055).toNumber(), Graphics.FONT_XTINY);
+        _tagFont = Draw.vectorFont((g.H * Draw.TAG_FS).toNumber(), Graphics.FONT_XTINY);
         if (Graphics has :createBufferedBitmap) {
             _static = Graphics.createBufferedBitmap({ :width => w, :height => h });
         }

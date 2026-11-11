@@ -223,33 +223,38 @@ module Draw {
         time(dc, g, 0.0, 0.0, hh, mm, digitFont, HOURS, rc);
     }
 
-    // [grade][B/I/E] at mid-height, centred on the panel's right edge (DESIGN.md §3.3).
+    // Tag font size, as a fraction of H. The design's 0.055 side by side was hard to
+    // read on the wrist; the prototype stacks them larger.
+    const TAG_FS = 0.085;
+
+    // [grade] above [B/I/E], centred at mid-height in the strip right of the route
+    // (DESIGN.md §3.3, stacked and enlarged for the prototype).
     function tags(dc as Graphics.Dc, g as Geom, r as Route, rc as Number, font as Graphics.FontType) as Void {
-        var fs = g.H * 0.055;
+        var fs = g.H * TAG_FS;
         var asc = fs * 0.72;
-        var bw = fs * 0.95;
+        var bw = fs * 1.05;
         var th = asc + fs * 0.5;
-        var gap = fs * 0.22;
-        var lw = Climb.maxf(1.2, fs * 0.11);
+        var gap = fs * 0.18;
+        var lw = Climb.maxf(1.5, fs * 0.09);
         var rad = Climb.maxf(1.5, fs * 0.18);
-        var tot = 2 * bw + gap;
-        var y = g.H / 2;
-        var x = (g.full ? (g.rx1 + g.W) / 2 : g.x1) - tot / 2;
+        var cx = g.full ? (g.rx1 + g.W) / 2 : g.x1;
+        var x = cx - bw / 2;
+        var y = g.H / 2 - (th + gap / 2);
         var letters = ["B", "I", "E"] as Array<String>;
 
         dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(x, y - th / 2, bw, th, rad);
+        dc.fillRoundedRectangle(x, y, bw, th, rad);
         dc.setColor(mix(rc, 0, 0.82), Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x + bw / 2, y, font, r.grade.toString(), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-        x += bw + gap;
+        dc.drawText(cx, y + th / 2, font, r.grade.toString(), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        y += th + gap;
 
         dc.setColor(WALL, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(x, y - th / 2, bw, th, rad);
+        dc.fillRoundedRectangle(x, y, bw, th, rad);
         dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
-        dc.setPenWidth(lw.toNumber() > 0 ? lw.toNumber() : 1);
-        dc.drawRoundedRectangle(x + lw / 2, y - th / 2 + lw / 2, bw - lw, th - lw, Climb.maxf(1.0, rad - lw / 2));
+        dc.setPenWidth(lw.toNumber());
+        dc.drawRoundedRectangle(x + lw / 2, y + lw / 2, bw - lw, th - lw, Climb.maxf(1.0, rad - lw / 2));
         dc.setPenWidth(1);
-        dc.drawText(x + bw / 2, y, font, letters[r.prof], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(cx, y + th / 2, font, letters[r.prof], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 
     function seg(dc as Graphics.Dc, P as Pose, a as Number, b as Number, dx as Float, dy as Float, w as Float) as Void {
