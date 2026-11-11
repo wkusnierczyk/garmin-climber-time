@@ -35,8 +35,8 @@ class View extends WatchUi.WatchFace {
         var ds = Draw.digitSize(dc, g);
         _digitFont = Draw.vectorFont(ds, Graphics.FONT_NUMBER_THAI_HOT);
         if (g.tagMode == Climb.TAGS_ROWS) {
-            _tagFont = _digitFont;
-            _tagSize = ds.toFloat();
+            _tagSize = ds * Draw.TAG_ROW_SCALE;
+            _tagFont = Draw.vectorFont(_tagSize.toNumber(), Graphics.FONT_NUMBER_MILD);
         } else {
             _tagSize = g.H * Draw.TAG_FS;
             _tagFont = Draw.vectorFont(_tagSize.toNumber(), Graphics.FONT_XTINY);

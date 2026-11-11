@@ -225,6 +225,7 @@ module Draw {
     // Tag font size, as a fraction of H. The design's 0.055 side by side was hard to
     // read on the wrist; the prototype stacks them larger.
     const TAG_FS = 0.085;
+    const TAG_ROW_SCALE = 0.6;      // TAGS_ROWS: the tags' font size as a fraction of the digits'
     const ROW_HOURS = 0.365;        // stacked time rows' centres, as fractions of H
     const ROW_MINUTES = 0.635;
 
@@ -232,7 +233,7 @@ module Draw {
     //   TAGS_INLINE   side by side at mid-height
     //   TAGS_STACKED  grade above proficiency, about mid-height
     //   TAGS_ROWS     grade level with the hours, proficiency level with the minutes,
-    //                 at the digits' size (fs is then the digits' font size)
+    //                 at TAG_ROW_SCALE of the digits' size
     function tags(dc as Graphics.Dc, g as Geom, r as Route, rc as Number, font as Graphics.FontType, fs as Float) as Void {
         var asc = fs * 0.72;
         var bw;
