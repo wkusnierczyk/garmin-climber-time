@@ -8,6 +8,7 @@ module Draw {
     const WALL = 0x24292D;          // slate
     const LAYOUT = Climb.LAYOUT_HALF;     // which wall area the build draws; see Geom
     const TIME_LINEAR = true;             // HHMM in one line (centre panel, right half); see Geom
+    const TIME_CENTRED = true;            // right half: the digits row on H/2, tags below; see groupRows
     const CLIMBER = 0xF5F5F5;       // white
     const HOURS = 0xF6F6F6;
     const ROPE = 0xD6D4C8;
@@ -80,13 +81,14 @@ module Draw {
         return w > 0 ? guess * width / w : guess;
     }
 
-    // The right half's two-line group, centred vertically: [digits row y, tags row y].
+    // The right half's two-line group: [digits row y, tags row y]. The group is centred
+    // vertically, or with TIME_CENTRED moved down so that the digits row is on H/2.
     // A digit is about 0.72 of its font size tall, a tag box 0.96 of the tags' size.
     function groupRows(g as Geom) as Array<Float> {
         var dh = 0.72 * g.digitSize;
         var th = 0.96 * g.tagSize;
         var gap = 0.18 * g.digitSize;
-        var top = g.H / 2 - (dh + gap + th) / 2;
+        var top = TIME_CENTRED ? g.H / 2 - dh / 2 : g.H / 2 - (dh + gap + th) / 2;
         return [top + dh / 2, top + dh + gap + th / 2];
     }
 

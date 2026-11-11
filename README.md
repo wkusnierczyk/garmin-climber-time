@@ -17,8 +17,8 @@ simulator, with the settings fixed:
 - Beginners fall onto the rope and restart; intermediates may fall once or miss a jump;
   experts top out (DESIGN.md §12).
 - The wall fills the right half of the screen. On the left, the time on one line (HHMM) sits
-  above the grade and proficiency tags on one line, the two lines centred vertically and
-  right-aligned close to the middle; the tags together are as wide as the minutes. Other routes
+  above the grade and proficiency tags on one line, the time centred vertically, the tags below
+  it, and both right-aligned close to the middle; the tags together are as wide as the minutes. Other routes
   dim on the wall, seconds scale every 10 s.
 - The other arrangements are in the code too (`Draw.LAYOUT`, `Draw.TIME_LINEAR`): a floating
   panel on the right, and a tall centre panel with the time and tags stacked or in one line on

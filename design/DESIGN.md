@@ -103,11 +103,11 @@ Wall **width** (floating panel only) is a setting from 0.22 to 0.36 of W, defaul
 
 In right-half mode the route region stays where the bezel leaves room on a round screen; the rest of the half is wall and, on a fixed wall, unused holds (§5.4).
 
-**Right half with the time group** (prototype, 2026-11-11; the prototype's default, and the arrangement that read best on the wrist): with the linear time layout, the left half holds a two-line group, the time on one line above the tags on one line, centred vertically and right-aligned to 0.47 W (the middle less 0.03 W):
+**Right half with the time group** (prototype, 2026-11-11; the prototype's default, and the arrangement that read best on the wrist): with the linear time layout, the left half holds a two-line group, the time on one line above the tags on one line, the time centred vertically and the group right-aligned to 0.47 W (the middle less 0.03 W):
 
 - Time: HHMM, no separator, fitted to the width between the bezel's left edge at y = H/2 ± 0.10 H (plus 0.03 W) and 0.47 W, then 1.1 × that size; the four cells end at 0.47 W.
 - Tags: side by side, sized so that the two boxes and their gap span the minutes' two digit cells, right-aligned with them; boxes hug the widest of 8, B, I and E as in the centre panel (§3.3).
-- Rows: digit height 0.72 fs, a gap of 0.18 fs, then the tag box (0.96 of the tags' size); the whole group centred on H/2.
+- Rows: digit height 0.72 fs, a gap of 0.18 fs, then the tag box (0.96 of the tags' size). The digits row is centred on H/2 and the tags hang below it (`Draw.TIME_CENTRED`, the default since 2026-11-11); with it off, the whole group is centred on H/2.
 
 With the linear time layout the centre panel puts the time on one line left of the panel and the tags on one line right of it, both at mid-height.
 
@@ -135,7 +135,7 @@ Setting **Seconds scale**: off, every 10 s (default), every 15 s or every 5 s. T
 Setting **Time layout**:
 
 - **Stacked** (default): HH above MM. Font size 0.30 H × size. Hours centred at y = 0.365 H, minutes at 0.635 H.
-- **Linear**: HHMM on one line, **no separator**. Font size 0.19 H × size, centred at y = 0.5 H (in the right half with the time group, above the tags instead, §3.2).
+- **Linear**: HHMM on one line, **no separator**. Font size 0.19 H × size, centred at y = 0.5 H (in the right half with the time group too, the tags below it, §3.2).
 
 **Size** is a setting from 0.8 to 1.2 (default 1.0). In both layouts the font shrinks if needed so the block fits within 2·min(digits x − 0.03 W, wall x − digits x − 0.03 W), keeping it clear of the bezel and the wall.
 
