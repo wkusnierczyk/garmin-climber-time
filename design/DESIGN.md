@@ -105,7 +105,7 @@ In right-half mode the route region stays where the bezel leaves room on a round
 
 ### 3.3 Tags
 
-Two small tags sit at mid-height (y = H/2), centred on the panel's right edge (floating panel), in the strip right of the route ((route right + W)/2, right half), or right of the wall ((wall right + W)/2, centre panel). They sit side by side. The prototype stacks them, grade above proficiency, in the right half. In the centre panel it puts the grade level with the hours row and the proficiency level with the minutes row, both in the digits' font at 0.6 × the digits' size, centred between the wall right + 0.025 W and the bezel (mirroring the digits), in boxes hugging the widest of 8, B, I and E (padding 0.12 fs, corner radius max(2 px, 0.12 fs), outline max(2 px, 0.05 fs)). Side by side, stacked or level with the time rows is a candidate setting:
+Two small tags sit at mid-height (y = H/2), centred on the panel's right edge (floating panel), in the strip right of the route ((route right + W)/2, right half), or right of the wall ((wall right + W)/2, centre panel). They sit side by side. The prototype stacks them, grade above proficiency, in the right half. In the centre panel it puts the grade level with the hours row and the proficiency level with the minutes row, both in the digits' font at 0.6 × the digits' size, centred between the wall right + 0.025 W and the bezel (mirroring the digits), in boxes hugging the widest of 8, B, I and E (padding 0.12 fs, corner radius max(2 px, 0.12 fs), outline max(2 px, 0.05 fs)). Two user settings to come: **Tag arrangement** (side by side, stacked, or level with the time rows) and **Tag size** relative to the digits (0.6 in the prototype's centre panel):
 
 - **Grade tag** (setting **Show grade tag**, default on): filled in the route colour, the grade number cut out in dark (route colour mixed 82 % toward black).
 - **Proficiency tag** (setting **Show proficiency tag**, default on): filled in the wall colour, outlined in the route colour, letter B, I or E in the route colour.
@@ -533,6 +533,8 @@ These become Connect IQ properties (§15.5). Keys match the simulator's settings
 | gMax | 4 to 8 | 8 | §8.3 |
 | showGrade | on, off | on | §3.3 |
 | showProf | on, off | on | §3.3 |
+| tagLayout | inline, stacked, rows (planned) | per wall area: inline (panel), stacked (half), rows (centre) | §3.3 |
+| tagScale | fraction of the digits' size, rows only (planned) | 0.6 | §3.3 |
 | wallStyle | slate, plywood, none | slate | §5.1 |
 | wallClip | panel, half, centre | panel | §3.2 |
 | wallWidth | 0.22 to 0.36 | 0.30 | §3.2 |
