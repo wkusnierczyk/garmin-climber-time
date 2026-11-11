@@ -20,6 +20,7 @@ class View extends WatchUi.WatchFace {
     private var _staticMin as Number = -1;
     private var _digitFont as Graphics.FontType = Graphics.FONT_NUMBER_THAI_HOT;
     private var _tagFont as Graphics.FontType = Graphics.FONT_XTINY;
+    private var _tagSize as Float = 0.0;
 
     function initialize() {
         WatchFace.initialize();
@@ -31,8 +32,15 @@ class View extends WatchUi.WatchFace {
         var shape = System.getDeviceSettings().screenShape;
         var g = new Geom(w, h, shape == System.SCREEN_SHAPE_ROUND, Draw.LAYOUT);
         _geom = g;
-        _digitFont = Draw.digitFont(dc, g);
-        _tagFont = Draw.vectorFont((g.H * Draw.TAG_FS).toNumber(), Graphics.FONT_XTINY);
+        var ds = Draw.digitSize(dc, g);
+        _digitFont = Draw.vectorFont(ds, Graphics.FONT_NUMBER_THAI_HOT);
+        if (g.tagMode == Climb.TAGS_ROWS) {
+            _tagFont = _digitFont;
+            _tagSize = ds.toFloat();
+        } else {
+            _tagSize = g.H * Draw.TAG_FS;
+            _tagFont = Draw.vectorFont(_tagSize.toNumber(), Graphics.FONT_XTINY);
+        }
         if (Graphics has :createBufferedBitmap) {
             _static = Graphics.createBufferedBitmap({ :width => w, :height => h });
         }
@@ -104,12 +112,12 @@ class View extends WatchUi.WatchFace {
                 var bdc = (bmp as Graphics.BufferedBitmap).getDc();
                 bdc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
                 bdc.clear();
-                Draw.staticLayer(bdc, g, r, rc, others, hh, ct.min, _digitFont, _tagFont);
+                Draw.staticLayer(bdc, g, r, rc, others, hh, ct.min, _digitFont, _tagFont, _tagSize);
                 _staticMin = absMin;
             }
             dc.drawBitmap(0, 0, bmp as Graphics.BufferedBitmap);
         } else {
-            Draw.staticLayer(dc, g, r, rc, others, hh, ct.min, _digitFont, _tagFont);
+            Draw.staticLayer(dc, g, r, rc, others, hh, ct.min, _digitFont, _tagFont, _tagSize);
         }
 
         var rn = nextRoute(absMin, g);

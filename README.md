@@ -17,8 +17,8 @@ simulator, with the settings fixed:
 - Beginners fall onto the rope and restart; intermediates may fall once or miss a jump;
   experts top out (DESIGN.md §12).
 - The wall is a tall slate panel in the centre of the face, the time stacked on its left, the
-  grade and proficiency tags side by side on its right, larger than the design's for legibility
-  on the wrist. Other routes dim on the wall, seconds scale every 10 s.
+  grade level with the hours and the proficiency level with the minutes on its right, at the
+  digits' size. Other routes dim on the wall, seconds scale every 10 s.
 - The design's other two wall areas, a floating panel on the right and the right half of the
   screen, are in the code too (`Draw.LAYOUT`); the full face will offer all three as a setting.
 

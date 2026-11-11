@@ -66,7 +66,8 @@ class Geom {
     public var full as Boolean;           // the wall is the right half
     public var digitMaxW as Float;        // the widest the two-digit block may be
     public var tagX as Float;             // the tags' centre x
-    public var tagsInLine as Boolean;     // side by side rather than stacked
+    public var tagMode as Number;         // Climb.TAGS_INLINE, TAGS_STACKED or TAGS_ROWS
+    public var digitScale as Float;       // applied after the digits are fitted
 
     // Wall area (DESIGN.md §3.2, plus the prototype's centre panel):
     //   LAYOUT_PANEL  the floating panel, default width 0.30
@@ -79,7 +80,8 @@ class Geom {
         self.round = round;
         self.layout = layout;
         full = layout == Climb.LAYOUT_HALF;
-        tagsInLine = layout == Climb.LAYOUT_CENTRE;
+        tagMode = layout == Climb.LAYOUT_CENTRE ? Climb.TAGS_ROWS : (full ? Climb.TAGS_STACKED : Climb.TAGS_INLINE);
+        digitScale = layout == Climb.LAYOUT_CENTRE ? 0.9 : 1.0;
         digitMaxW = 0.0;
         tagX = 0.0;
         if (layout == Climb.LAYOUT_CENTRE) {
@@ -102,7 +104,8 @@ class Geom {
             var gapW = 0.025 * W;
             dcx = (lb + x0 - gapW) / 2;
             digitMaxW = x0 - gapW - lb;
-            tagX = (x1 + W - (round ? 0.0 : 0.02 * W)) / 2;
+            // Mirrors the digits: between the wall right + the gap and the bezel.
+            tagX = (x1 + gapW + W - lb) / 2;
             var hp = ww * 0.12;
             var vp = 0.03 * H;
             rx0 = x0 + hp;
@@ -382,7 +385,10 @@ class Route {
 module Climb {
 
     enum { LAYOUT_PANEL, LAYOUT_HALF, LAYOUT_CENTRE }
-    const CENTRE_WIDTH = 0.36;     // the centre panel's width, as a fraction of W
+    const CENTRE_WIDTH = 0.36;
+    // The tags: side by side, stacked, or stacked level with the hours and minutes rows
+    // at the digits' size.
+    enum { TAGS_INLINE, TAGS_STACKED, TAGS_ROWS }     // the centre panel's width, as a fraction of W
 
     const MOVES = 30;          // moves per minute at grade 6
     const LOWER = 3;           // lower-off seconds

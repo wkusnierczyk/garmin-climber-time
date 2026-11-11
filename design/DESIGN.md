@@ -93,8 +93,8 @@ User setting **Wall area**: a floating panel, the right half of the screen, or a
 | Wall x | (W − cw·W)/2 to (W + cw·W)/2 | same |
 | Wall y | H/2 ∓ √(r² − (cw·W/2)²), r = 0.48 W: the corners just inside the bezel | 0.04 H to 0.96 H |
 | Route region | wall inset by 12 % of wall width each side, 0.03 H top and bottom | same |
-| Digits | stacked only; centred between the bezel's left edge at y = H/2 ± 0.20 H and the wall left − 0.025 W, shrunk to fit that width | centred between 0.03 W and the wall left − 0.025 W |
-| Tags | centred at x = (wall right + W)/2 | same |
+| Digits | stacked only; centred between the bezel's left edge at y = H/2 ± 0.20 H and the wall left − 0.025 W, shrunk to fit that width, then 0.9 × that size | centred between 0.03 W and the wall left − 0.025 W |
+| Tags | level with the time rows, centred between the wall right + 0.025 W and the bezel (§3.3) | same |
 | Rope anchor y | wall top + max(3 px, 0.012 H) | same |
 
 Centre width cw is 0.36 W in the prototype (on a 416 px screen: a 150 × 370 px wall, climber c ≈ 86 px against ≈ 62 px in the floating panel). The corner radius is 0.03 W, as for the floating panel. Whether cw becomes a setting, like the floating panel's width, is open.
@@ -105,7 +105,7 @@ In right-half mode the route region stays where the bezel leaves room on a round
 
 ### 3.3 Tags
 
-Two small tags sit at mid-height (y = H/2), centred on the panel's right edge (floating panel), in the strip right of the route ((route right + W)/2, right half), or right of the wall ((wall right + W)/2, centre panel). They sit side by side; the prototype stacks them, grade above proficiency, in the right half, and keeps them side by side in the centre panel. Side by side or stacked is a candidate setting:
+Two small tags sit at mid-height (y = H/2), centred on the panel's right edge (floating panel), in the strip right of the route ((route right + W)/2, right half), or right of the wall ((wall right + W)/2, centre panel). They sit side by side. The prototype stacks them, grade above proficiency, in the right half. In the centre panel it puts the grade level with the hours row and the proficiency level with the minutes row, both in the digits' font at the digits' size, centred between the wall right + 0.025 W and the bezel (mirroring the digits), in boxes hugging the widest of 8, B, I and E (padding 0.12 fs, corner radius max(2 px, 0.12 fs), outline max(2 px, 0.05 fs)). Side by side, stacked or level with the time rows is a candidate setting:
 
 - **Grade tag** (setting **Show grade tag**, default on): filled in the route colour, the grade number cut out in dark (route colour mixed 82 % toward black).
 - **Proficiency tag** (setting **Show proficiency tag**, default on): filled in the wall colour, outlined in the route colour, letter B, I or E in the route colour.

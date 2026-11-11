@@ -35,16 +35,16 @@ module Draw {
         return fallback;
     }
 
-    // Stacked digits, 0.30 H, shrunk to fit between the bezel and the wall (DESIGN.md §4.1).
-    function digitFont(dc as Graphics.Dc, g as Geom) as Graphics.FontType {
-        var fs = (g.H * 0.30).toNumber();
-        var f = vectorFont(fs, Graphics.FONT_NUMBER_THAI_HOT);
-        var maxW = g.digitMaxW;
+    // Stacked digits' font size: 0.30 H, shrunk to fit between the bezel and the wall
+    // (DESIGN.md §4.1), then scaled by the layout's digitScale.
+    function digitSize(dc as Graphics.Dc, g as Geom) as Number {
+        var fs = g.H * 0.30;
+        var f = vectorFont(fs.toNumber(), Graphics.FONT_NUMBER_THAI_HOT);
         var tot = 2 * 1.04 * dc.getTextWidthInPixels("0", f);
-        if (tot > maxW && f != Graphics.FONT_NUMBER_THAI_HOT) {
-            f = vectorFont((fs * maxW / tot).toNumber(), Graphics.FONT_NUMBER_THAI_HOT);
+        if (tot > g.digitMaxW) {
+            fs = fs * g.digitMaxW / tot;
         }
-        return f;
+        return (fs * g.digitScale).toNumber();
     }
 
     // Each digit centred in its own cell 1.04 × width("0") (DESIGN.md §4.2).
@@ -59,8 +59,8 @@ module Draw {
     }
 
     function time(dc as Graphics.Dc, g as Geom, dx as Float, dy as Float, hh as Number, mm as Number, font as Graphics.FontType, hc as Number, mc as Number) as Void {
-        digits(dc, hh.format("%02d"), g.dcx + dx, g.H * 0.365 + dy, font, hc);
-        digits(dc, mm.format("%02d"), g.dcx + dx, g.H * 0.635 + dy, font, mc);
+        digits(dc, hh.format("%02d"), g.dcx + dx, g.H * ROW_HOURS + dy, font, hc);
+        digits(dc, mm.format("%02d"), g.dcx + dx, g.H * ROW_MINUTES + dy, font, mc);
     }
 
     function aa(dc as Graphics.Dc) as Void {
@@ -130,7 +130,7 @@ module Draw {
     }
 
     function staticLayer(dc as Graphics.Dc, g as Geom, r as Route, rc as Number, others as Array<OtherHold>,
-                         hh as Number, mm as Number, digitFont as Graphics.FontType, tagFont as Graphics.FontType) as Void {
+                         hh as Number, mm as Number, digitFont as Graphics.FontType, tagFont as Graphics.FontType, tagSize as Float) as Void {
         aa(dc);
         var W = g.W;
         var ww = g.x1 - g.x0;
@@ -218,53 +218,83 @@ module Draw {
         dc.drawCircle((g.rx0 + g.rx1) / 2, g.ay, Climb.maxf(1.5, r.hs * 0.22));
         dc.setPenWidth(1);
 
-        tags(dc, g, r, rc, tagFont);
+        tags(dc, g, r, rc, tagFont, tagSize);
         time(dc, g, 0.0, 0.0, hh, mm, digitFont, HOURS, rc);
     }
 
     // Tag font size, as a fraction of H. The design's 0.055 side by side was hard to
     // read on the wrist; the prototype stacks them larger.
     const TAG_FS = 0.085;
+    const ROW_HOURS = 0.365;        // stacked time rows' centres, as fractions of H
+    const ROW_MINUTES = 0.635;
 
-    // [grade] and [B/I/E], stacked or side by side, centred at mid-height on g.tagX
-    // (DESIGN.md §3.3, enlarged for the prototype).
-    function tags(dc as Graphics.Dc, g as Geom, r as Route, rc as Number, font as Graphics.FontType) as Void {
-        var fs = g.H * TAG_FS;
+    // [grade] and [B/I/E] (DESIGN.md §3.3, enlarged for the prototype), by g.tagMode:
+    //   TAGS_INLINE   side by side at mid-height
+    //   TAGS_STACKED  grade above proficiency, about mid-height
+    //   TAGS_ROWS     grade level with the hours, proficiency level with the minutes,
+    //                 at the digits' size (fs is then the digits' font size)
+    function tags(dc as Graphics.Dc, g as Geom, r as Route, rc as Number, font as Graphics.FontType, fs as Float) as Void {
         var asc = fs * 0.72;
-        var bw = fs * 1.05;
-        var th = asc + fs * 0.5;
-        var gap = fs * 0.18;
-        var lw = Climb.maxf(1.5, fs * 0.09);
-        var rad = Climb.maxf(1.5, fs * 0.18);
-        var x;
-        var y;
-        var dx = 0.0;
-        var dy = 0.0;
-        if (g.tagsInLine) {
-            x = g.tagX - bw - gap / 2;
-            y = g.H / 2 - th / 2;
-            dx = bw + gap;
+        var bw;
+        var th;
+        var lw;
+        var rad;
+        if (g.tagMode == Climb.TAGS_ROWS) {
+            // A box hugging the glyph: the widest of the characters, padded.
+            var cw = 0;
+            var chars = ["8", "B", "I", "E"] as Array<String>;
+            for (var i = 0; i < chars.size(); i++) {
+                var w = dc.getTextWidthInPixels(chars[i], font);
+                if (w > cw) {
+                    cw = w;
+                }
+            }
+            var pad = fs * 0.12;
+            bw = cw + 2 * pad;
+            th = asc + 2 * pad;
+            lw = Climb.maxf(2.0, fs * 0.05);
+            rad = Climb.maxf(2.0, fs * 0.12);
         } else {
-            x = g.tagX - bw / 2;
-            y = g.H / 2 - (th + gap / 2);
-            dy = th + gap;
+            bw = fs * 1.05;
+            th = asc + fs * 0.5;
+            lw = Climb.maxf(1.5, fs * 0.09);
+            rad = Climb.maxf(1.5, fs * 0.18);
+        }
+        var gap = fs * 0.18;
+        var cx1;
+        var cy1;
+        var cx2;
+        var cy2;
+        if (g.tagMode == Climb.TAGS_INLINE) {
+            cx1 = g.tagX - (bw + gap) / 2;
+            cx2 = g.tagX + (bw + gap) / 2;
+            cy1 = g.H / 2;
+            cy2 = cy1;
+        } else if (g.tagMode == Climb.TAGS_STACKED) {
+            cx1 = g.tagX;
+            cx2 = cx1;
+            cy1 = g.H / 2 - (th + gap) / 2;
+            cy2 = g.H / 2 + (th + gap) / 2;
+        } else {
+            cx1 = g.tagX;
+            cx2 = cx1;
+            cy1 = g.H * ROW_HOURS;
+            cy2 = g.H * ROW_MINUTES;
         }
         var letters = ["B", "I", "E"] as Array<String>;
 
         dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(x, y, bw, th, rad);
+        dc.fillRoundedRectangle(cx1 - bw / 2, cy1 - th / 2, bw, th, rad);
         dc.setColor(mix(rc, 0, 0.82), Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x + bw / 2, y + th / 2, font, r.grade.toString(), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-        x += dx;
-        y += dy;
+        dc.drawText(cx1, cy1, font, r.grade.toString(), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
         dc.setColor(WALL, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(x, y, bw, th, rad);
+        dc.fillRoundedRectangle(cx2 - bw / 2, cy2 - th / 2, bw, th, rad);
         dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
         dc.setPenWidth(lw.toNumber());
-        dc.drawRoundedRectangle(x + lw / 2, y + lw / 2, bw - lw, th - lw, Climb.maxf(1.0, rad - lw / 2));
+        dc.drawRoundedRectangle(cx2 - bw / 2 + lw / 2, cy2 - th / 2 + lw / 2, bw - lw, th - lw, Climb.maxf(1.0, rad - lw / 2));
         dc.setPenWidth(1);
-        dc.drawText(x + bw / 2, y + th / 2, font, letters[r.prof], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(cx2, cy2, font, letters[r.prof], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 
     function seg(dc as Graphics.Dc, P as Pose, a as Number, b as Number, dx as Float, dy as Float, w as Float) as Void {
