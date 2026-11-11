@@ -1,0 +1,48 @@
+# Compiled binaries
+bin/
+mir/
+gen/
+deploy/
+export/
+
+# Debug files
+debug.xml
+internal-mir/
+external-mir/
+
+# Node files
+node_modules/
+package-lock.json
+package.json
+test_build-settings.json
+
+# Build artifacts
+*.prg
+*.prg.*
+# monkeyc writes one beside the .prg once an app has settings (Premium, #32)
+ClimberTime*-settings.json
+
+# IDE/Editor settings
+.settings/
+.project
+.cproject
+.vscode/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Developer Key (CRITICAL: Never commit this)
+developer_key*
+# Python bytecode
+__pycache__/
+
+# make preview's contact sheets, for review and never committed (#140)
+/.dev/scratchpad/preview/
+
+# make graphics' full-size captures and make hero's candidates, inputs to a manual step
+# and never committed (#188)
+/.dev/scratchpad/hero/
+
+# The version and commit make writes before every Premium build, for its About entry (#181)
+/premium/resources-stamp/

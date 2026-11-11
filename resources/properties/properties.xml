@@ -1,0 +1,5 @@
+<!-- At least one property, always: Properties.getValue on an app with none throws
+     an uncatchable error (playbook, reference/settings.md). Unused by the prototype. -->
+<properties>
+    <property id="Placeholder" type="number">0</property>
+</properties>

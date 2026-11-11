@@ -1,0 +1,36 @@
+# Climber Time
+
+A Garmin Connect IQ watch face: the time on the left, a climbing wall on the right, and a
+miniature climber marking the seconds, one route per minute. The design is
+[`design/DESIGN.md`](design/DESIGN.md), whose behavioural reference is the browser simulator
+(not in the repository yet).
+
+## Status: prototype 0.0.1
+
+A sideloadable prototype, not a release. It shows the correct time and the climber as in the
+simulator, with the settings fixed:
+
+- Difficulty cycles through grades 4 to 8, and each grade is climbed three times, as beginner,
+  intermediate, then expert: 4B 4I 4E 5B ... 8E, then again. One route per minute, so the
+  cycle is 15 minutes and every hour starts at 4B.
+- Each climb ends with a 3 s lower-off on the rope onto the next route's start.
+- Beginners fall onto the rope and restart; intermediates may fall once or miss a jump;
+  experts top out (DESIGN.md §12).
+- Floating slate panel, other routes dim on the wall, seconds scale every 10 s, grade and
+  proficiency tags.
+
+Not in the prototype: settings, an always-on scene (the same face is drawn in every display
+mode), the custom digit font (the watch's Roboto Condensed Bold vector font stands in), and
+every product other than the epix Pro (Gen 2) 47 mm.
+
+## Build and sideload
+
+Needs the Connect IQ SDK (the Makefile follows the SDK manager's current SDK), the developer
+key at `../garmin-keys/developer_key`, `git-lfs`, and `libmtp` (`brew install libmtp`) for
+sideloading.
+
+```sh
+make build      # ClimberTime.prg for DEVICE (default epix2pro47mm)
+make run        # build and load into the simulator
+make sideload   # build for the watch connected by USB and copy it over
+```

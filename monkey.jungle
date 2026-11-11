@@ -1,0 +1,8 @@
+# Prototype: one edition, one product. The Lite/Premium split comes with the real face.
+project.manifest = manifest.xml
+
+# Strict typing from the first line (playbook, reference/build.md).
+project.typecheck = 3
+
+# Name the source directory: the default globs .dev/ too.
+base.sourcePath = source
