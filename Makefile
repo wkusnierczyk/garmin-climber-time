@@ -6,6 +6,25 @@ DEVICE   ?= epix2pro47mm
 SIM_PORT ?= 1234
 APP      := ClimberTime
 OUTPUT   := $(APP).prg
+# Held in a variable so that make -n does not run the sub-make (playbook, testing.md).
+SUBMAKE  := $(MAKE)
+
+# make sideload does not give up on a watch that is slow to show up. A watch just
+# plugged in or restarted can take tens of seconds to offer MTP: it may be absent from
+# the bus, or present as Garmin 091e:0003 rather than its MTP id, and the first MTP
+# access right after it appears can fail ("Could not read GarminDevice.xml").
+#   WAIT, EVERY     wait up to WAIT seconds for a watch to appear, looking every EVERY
+#                   seconds (tools/sideload.sh wait; WAIT=0 does not wait)
+#   TRIES, BACKOFF  attempts at each of detect and install, BACKOFF seconds before the
+#                   second, doubling after each failure (5+10+20+40+80 s by default)
+## Seconds sideload waits for a watch to appear
+WAIT    ?= 300
+## Seconds between sideload's looks for a watch
+EVERY   ?= 5
+## Attempts at detecting the watch, and at installing
+TRIES   ?= 6
+## Seconds before the second attempt, doubled each time
+BACKOFF ?= 5
 
 MONKEYC   = "$(SDK_BIN)/monkeyc"
 MONKEYDO  = "$(SDK_BIN)/monkeydo"
@@ -32,12 +51,24 @@ sim:
 run: build sim
 	@$(MONKEYDO) $(OUTPUT) $(DEVICE)
 
-## Build for the connected watch and copy it over USB (MTP; brew install libmtp)
+## Build for the connected watch and copy it over USB, retrying with backoff (MTP; brew install libmtp) [WAIT EVERY TRIES BACKOFF]
 sideload:
-	@watch=$$(CIQ_HOME="$(CIQ_HOME)" tools/sideload.sh detect) || exit 1; \
+	@tools/sideload.sh wait "$(WAIT)" "$(EVERY)" || exit 1
+	@n=1; gap=$(BACKOFF); \
+	until watch=$$(CIQ_HOME="$(CIQ_HOME)" tools/sideload.sh detect); do \
+	  test $$n -lt $(TRIES) || { echo "The watch did not answer after $(TRIES) attempts."; exit 1; }; \
+	  echo "Detect attempt $$n of $(TRIES) failed; trying again in $${gap}s."; \
+	  sleep $$gap; n=$$((n+1)); gap=$$((gap*2)); \
+	done; \
 	echo "Watch detected: $$watch"; \
 	grep -q '<iq:product id="'"$$watch"'"/>' manifest.xml || { echo "manifest.xml does not list $$watch."; exit 1; }; \
-	$(MAKE) --no-print-directory build DEVICE=$$watch && tools/sideload.sh install $(OUTPUT)
+	$(SUBMAKE) --no-print-directory build DEVICE=$$watch || exit 1; \
+	n=1; gap=$(BACKOFF); \
+	until tools/sideload.sh install $(OUTPUT); do \
+	  test $$n -lt $(TRIES) || { echo "Install failed after $(TRIES) attempts."; exit 1; }; \
+	  echo "Install attempt $$n of $(TRIES) failed; trying again in $${gap}s."; \
+	  sleep $$gap; n=$$((n+1)); gap=$$((gap*2)); \
+	done
 
 ## Remove build output
 clean:

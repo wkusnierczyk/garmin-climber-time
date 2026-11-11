@@ -34,6 +34,10 @@ Needs the Connect IQ SDK (the Makefile follows the SDK manager's current SDK), t
 key at `../garmin-keys/developer_key`, `git-lfs`, and `libmtp` (`brew install libmtp`) for
 sideloading.
 
+`make sideload` waits up to 5 minutes for the watch to appear, then retries detection and
+installation with doubling gaps; a watch just plugged in or restarted can take a while to offer
+MTP. Tune with `WAIT`, `EVERY`, `TRIES` and `BACKOFF`.
+
 ```sh
 make build      # ClimberTime.prg for DEVICE (default epix2pro47mm)
 make run        # build and load into the simulator

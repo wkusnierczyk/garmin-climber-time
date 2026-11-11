@@ -71,8 +71,18 @@ quiet() {
 # a watch that answers always has files on it.
 LISTING=
 
+# Run a command, killed after $1 seconds. A libmtp call can hang for minutes against a
+# watch that is on the bus but not yet offering MTP (seen as Garmin 091e:0003 on an epix
+# Pro (Gen 2), 2026-11-11): one hung probe used up a whole 300 s wait. macOS has no
+# timeout(1); perl's alarm survives the exec. A killed call may have printed part of its
+# output: the probe below checks the status, and a cut-short listing has no "File ID:".
+bounded() {
+  secs=$1; shift
+  perl -e 'alarm shift; exec @ARGV or exit 127' "$secs" "$@"
+}
+
 load_listing() {
-  LISTING=$(mtp-files 2>&1 | quiet)
+  LISTING=$(bounded 60 mtp-files 2>&1 | quiet)
   case $LISTING in
     *"File ID:"*) ;;
     *) die_no_watch "No watch found: libmtp lists no files on a device." \
@@ -167,9 +177,11 @@ resolve_wait() {
 # reported by the detection that follows, rather than being polled at, silently,
 # for the whole budget.
 watch_present() {
-  case $(mtp-detect 2>&1) in
-    *"No raw devices found."*) return 1 ;;
-    *)                         return 0 ;;
+  # Killed on the timeout (status 142, SIGALRM) is "not yet", whatever it printed first.
+  out=$(bounded 15 mtp-detect 2>&1) || [ $? -lt 128 ] || return 1
+  case $out in
+    ''|*"No raw devices found."*) return 1 ;;
+    *)                            return 0 ;;
   esac
 }
 
