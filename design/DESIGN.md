@@ -5,7 +5,7 @@ Version: 1.0
 Date: 2026-10-15  
 Owner: Wacek  
 Platform: Garmin Connect IQ watch face, Monkey C  
-Reference simulator: `simulator/second-ascent-simulator.html` (also published at https://claude.ai/artifact/L39yNMssUR76suoq4hqDpG)
+Reference simulator: `second-ascent-simulator.html` (also published at https://claude.ai/artifact/L39yNMssUR76suoq4hqDpG)
 
 "Second Ascent" is a working title (seconds, plus a climber ascending). See [Risks and open questions](#18-risks-and-open-questions) before naming the store listing.
 
@@ -39,7 +39,7 @@ A watch face with the time as digits on the left and a climbing wall on the righ
 
 On top of that core, the face can tell a small story: routes get harder through the hour, the climber can fall and be caught by the rope, downclimb the route he just climbed, get lowered off at the quarter hours, and take a beer break on the hour.
 
-The design was developed and tuned in a browser simulator (`simulator/second-ascent-simulator.html`). It reproduces the face pixel for pixel at each device resolution, ticks at 1 Hz like the watch, and implements every rule in this document. **The rules and constants in this document are authoritative.** The simulator is the behavioural reference: where this document is silent, match the simulator. If the two disagree, fix the simulator.
+The design was developed and tuned in a browser simulator (`second-ascent-simulator.html`). It reproduces the face pixel for pixel at each device resolution, ticks at 1 Hz like the watch, and implements every rule in this document. **The rules and constants in this document are authoritative.** The simulator is the behavioural reference: where this document is silent, match the simulator. If the two disagree, fix the simulator.
 
 ### 1.1 Goals
 
@@ -541,7 +541,7 @@ Dependencies: wallWidth applies to the floating panel only; otherRoutes to per-m
 
 Screen, always-on or low-power mode, per-second redraw region overlay, play and pause, speed (1×, 4×, 15×, 60×), seconds motion (1 Hz tick or smooth), now, ±1 minute, jump to :55, second slider, set time, jump to the next route of a grade, generate new wall, copy config JSON, reset.
 
-The simulator also has a demo-only option (`showLogo`, off by default) that draws a partner logo under the time, to show how a climbing gym could advertise on the face. It is **not part of the design** and must not be implemented in the published face; a branded build, if ever made, is a private variant outside this document.
+A partner logo under the time is not part of the design and must not be implemented in the published face; a branded build, if ever made, is a private variant outside this document.
 
 ## 15. Implementation notes for Connect IQ
 
@@ -577,7 +577,7 @@ Everything in the simulator maps to `fillEllipse`, `fillRoundedRectangle`, `fill
 
 ## 16. The simulator
 
-`simulator/second-ascent-simulator.html` is self-contained (fonts from Google Fonts). Open it in a browser.
+`second-ascent-simulator.html` is self-contained (fonts from Google Fonts). Open it in a browser.
 
 - Renders at the device's native resolution, quantizes colours on MIP screens, and ticks at 1 Hz.
 - Settings persist in the browser's local storage.

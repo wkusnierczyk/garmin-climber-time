@@ -1,0 +1,936 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Second Ascent</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;700&family=Roboto:wght@400;500;700&family=Roboto+Condensed:wght@400;500;700&family=Rubik:wght@400;500;700&family=Barlow+Semi+Condensed:wght@400;500;700&display=swap">
+<style>
+/* Layout: workbench. Watch on a stage at left with route tag, filmstrip and minute strip; grouped controls in a rail at right; stacks on phones. */
+:root{
+  --bg:#E6EAE8;          /* chalk-dusted grey */
+  --surface:#F6F8F7;
+  --ink:#192023;
+  --muted:#58635F;
+  --line:#CBD2CE;
+  --accent:#0B7480;      /* rope teal */
+  --accent-ink:#FFFFFF;
+  --case-hi:#5B6266; --case-lo:#16191B;
+  --font-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --font-body:"Barlow",system-ui,sans-serif;
+  --font-data:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121618;--surface:#1A1F22;--ink:#E4EAE7;--muted:#8E9A96;--line:#2B3336;--accent:#3CC2CC;--accent-ink:#06282B;
+  --case-hi:#4A5155;--case-lo:#0A0C0D;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121618;--surface:#1A1F22;--ink:#E4EAE7;--muted:#8E9A96;--line:#2B3336;--accent:#3CC2CC;--accent-ink:#06282B;
+  --case-hi:#4A5155;--case-lo:#0A0C0D;color-scheme:dark}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--font-body);font-size:15px;line-height:1.45;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.app{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}
+@media (max-width:900px){.app{grid-template-columns:minmax(0,1fr)}}
+header{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
+h1{font-family:var(--font-display);font-weight:700;font-size:34px;letter-spacing:.01em;margin:0;text-wrap:balance;text-transform:uppercase}
+header p{margin:0;color:var(--muted);max-width:62ch}
+.stage{display:flex;flex-direction:column;gap:20px;min-width:0}
+.bench{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:18px}
+.case{--sz:min(400px,calc(100vw - 80px));width:var(--sz);max-width:100%;padding:calc(var(--sz)*.06);border-radius:50%;
+  background:radial-gradient(circle at 32% 24%,var(--case-hi),var(--case-lo) 72%);box-shadow:0 14px 30px rgba(0,0,0,.28),inset 0 0 0 2px rgba(255,255,255,.06);box-sizing:border-box}
+.case.rect{border-radius:24%/21%;padding:calc(var(--sz)*.07) calc(var(--sz)*.065)}
+.case canvas{display:block;width:100%;height:auto;border-radius:50%;background:#000}
+.case.rect canvas{border-radius:15%/13%}
+.case.mip canvas{image-rendering:pixelated}
+.readouts{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;width:100%}
+.tag{display:flex;align-items:stretch;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg);min-width:0}
+.tag .sw{width:14px;flex:none}
+.tag .body{padding:8px 12px;display:grid;grid-template-columns:auto auto;gap:2px 14px;font-family:var(--font-data);font-size:12px;font-variant-numeric:tabular-nums}
+.tag .body b{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:.06em;text-transform:uppercase;grid-column:1/-1}
+.k{color:var(--muted)}
+.ok{color:#2E9B57}.over{color:#D9493B}
+.strip-h{font-family:var(--font-display);font-weight:600;font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.film{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.film figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:4px}
+.film canvas{width:100%;max-width:110px;height:auto;border-radius:50%;background:#000;display:block}
+.film.rect canvas{border-radius:14%}
+.film figcaption,.mins span{font-family:var(--font-data);font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+@media (max-width:520px){.film{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.mins{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:6px}
+.mins div{display:flex;flex-direction:column;align-items:center;gap:3px}
+.mins i{display:block;width:100%;aspect-ratio:1;max-width:30px;border-radius:50%;border:2px solid transparent}
+.mins div.now i{border-color:var(--ink)}
+.mins div.now span{color:var(--ink);font-weight:700}
+@media (max-width:520px){.mins{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px 16px 16px;display:flex;flex-direction:column}
+fieldset{border:0;border-top:1px solid var(--line);margin:0;padding:12px 0 6px;display:flex;flex-direction:column;gap:8px;min-width:0}
+fieldset:first-child{border-top:0}
+legend{font-family:var(--font-display);font-weight:600;font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:12px 0 2px;float:left;width:100%}
+legend+*{clear:both}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+.row label{flex:1;min-width:0}
+.row output{font-family:var(--font-data);font-size:12px;color:var(--muted);min-width:3.5ch;text-align:right;font-variant-numeric:tabular-nums}
+select,input[type=range]{font:inherit;font-size:14px;max-width:58%}
+select{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+input[type=range]{accent-color:var(--accent);width:150px}
+input[type=checkbox]{accent-color:var(--accent);width:17px;height:17px}
+input[type=time]{font:inherit;font-size:14px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:3px 6px}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+button{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;padding:5px 10px;cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:hover{border-color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+textarea{width:100%;box-sizing:border-box;font-family:var(--font-data);font-size:11px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px;min-height:90px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Second Ascent</h1>
+    <p>Hours and minutes on the left. On the right, a climber sends one route per minute, tops out, then either gets lowered off on the rope in the final seconds or climbs back down the same route over the next minute.</p>
+  </header>
+
+  <div class="stage">
+    <section class="bench" aria-label="Watch preview">
+      <div class="case" id="case"><canvas id="face" width="454" height="454" aria-label="Simulated watch face"></canvas></div>
+      <div class="readouts">
+        <div class="tag" id="tag"><div class="sw" id="tagSw"></div><div class="body" id="tagBody"></div></div>
+        <div class="tag"><div class="body" id="diag"></div></div>
+      </div>
+    </section>
+    <section class="bench" style="align-items:stretch">
+      <div>
+        <h2 class="strip-h">This minute, frame by frame</h2>
+        <div class="film" id="film"></div>
+      </div>
+      <div>
+        <h2 class="strip-h">Route colours, next 12 minutes</h2>
+        <div class="mins" id="mins"></div>
+      </div>
+    </section>
+  </div>
+
+  <aside class="panel" aria-label="Design controls">
+    <fieldset>
+      <legend>Clock</legend>
+      <div class="btns">
+        <button class="primary" id="play" type="button">Pause</button>
+        <button id="now" type="button">Now</button>
+        <button id="mMinus" type="button">−1 min</button>
+        <button id="mPlus" type="button">+1 min</button>
+        <button id="j55" type="button">Jump to :55</button>
+      </div>
+      <div class="row"><label for="sec">Second</label><input type="range" id="sec" min="0" max="59" step="1" value="0"><output id="secOut">00</output></div>
+      <div class="row"><label for="setTime">Set time</label><input type="time" id="setTime" step="1" value="09:59:50"></div>
+      <div class="row"><label for="jumpGrade">Jump to the next route of grade</label><select id="jumpGrade"><option value="">—</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></div>
+      <div class="row"><label for="speed">Speed</label><select id="speed" data-key="speed"><option value="1">1×</option><option value="4">4×</option><option value="15">15×</option><option value="60">60×</option></select></div>
+      <div class="row"><label for="tick">Seconds motion</label><select id="tick" data-key="tick"><option value="tick">1 Hz tick (as on watch)</option><option value="smooth">Smooth (preview only)</option></select></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Device</legend>
+      <div class="row"><label for="device">Screen</label><select id="device" data-key="device"></select></div>
+      <div class="row"><label for="aod" id="aodLabel">Always-on mode</label><input type="checkbox" id="aod" data-key="aod"></div>
+      <div class="row"><label for="bbox">Show per-second redraw region</label><input type="checkbox" id="bbox" data-key="showBBox"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Digits</legend>
+      <div class="row"><label for="font">Typeface</label><select id="font" data-key="font"><option>Roboto</option><option>Roboto Condensed</option><option>Rubik</option><option>Barlow Semi Condensed</option></select></div>
+      <div class="row"><label for="weight">Weight</label><select id="weight" data-key="weight"><option value="700">Bold</option><option value="500">Medium</option><option value="400">Regular</option></select></div>
+      <div class="row"><label for="layout">Time layout</label><select id="layout" data-key="layout"><option value="stacked">Stacked HH / MM</option><option value="inline">Linear HHMM</option></select></div>
+      <div class="row"><label for="digitSize">Size</label><input type="range" id="digitSize" data-key="digitSize" min="0.8" max="1.2" step="0.02"><output data-for="digitSize"></output></div>
+      <div class="row"><label for="hourColor">Hours colour</label><select id="hourColor" data-key="hourColor"><option value="white">White</option><option value="grey">Grey</option><option value="route">Route colour</option></select></div>
+      <div class="row"><label for="minColor">Minutes colour</label><select id="minColor" data-key="minColor"><option value="route">Route colour</option><option value="white">White</option><option value="grey">Grey</option></select></div>
+      <div class="row"><label for="h24">24-hour</label><input type="checkbox" id="h24" data-key="hour24"></div>
+      <div class="row"><label for="lz">Leading zero on hours</label><input type="checkbox" id="lz" data-key="leadZero"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Route</legend>
+      <div class="row"><label for="palette">Colour per minute</label><select id="palette" data-key="palette"><option value="shuffle">Gym colours, shuffled</option><option value="cycle">Gym colours, in order</option><option value="hue">Hue wheel (6° per minute)</option></select></div>
+      <div class="row"><label for="moves">Moves per minute</label><select id="moves" data-key="moves"><option value="15">15</option><option value="20">20</option><option value="30">30</option><option value="60">60</option></select></div>
+      <div class="row"><label for="features">Wall features</label><select id="features" data-key="features"><option value="random">New holds every minute</option><option value="fixed">Fixed wall, new path highlighted</option></select></div>
+      <div class="row"><label for="grades">Rising difficulty</label><input type="checkbox" id="grades" data-key="grades"></div>
+      <div class="row"><label for="gMin" id="gMinLabel">Easiest grade</label><select id="gMin" data-key="gMin"><option value="4">4 · very easy</option><option value="5">5 · easy</option><option value="6">6 · moderate</option><option value="7">7 · hard</option><option value="8">8 · very hard</option></select></div>
+      <div class="row"><label for="gMax">Hardest grade</label><select id="gMax" data-key="gMax"><option value="4">4 · very easy</option><option value="5">5 · easy</option><option value="6">6 · moderate</option><option value="7">7 · hard</option><option value="8">8 · very hard</option></select></div>
+      <div class="row"><label for="showGrade">Show grade tag on the wall</label><input type="checkbox" id="showGrade" data-key="showGrade"></div>
+      <div class="row"><label for="showProf">Show proficiency tag (B / I / E)</label><input type="checkbox" id="showProf" data-key="showProf"></div>
+      <div class="row"><label for="holdStyle">Hold shapes</label><select id="holdStyle" data-key="holdStyle"><option value="mixed">Jugs, crimps, slopers, pinches</option><option value="dots">Plain dots</option></select></div>
+      <div class="row"><label for="volumes">Volumes</label><input type="checkbox" id="volumes" data-key="volumes"></div>
+      <div class="row"><label for="others">Other routes on the wall (dimmed)</label><input type="checkbox" id="others" data-key="otherRoutes"></div>
+      <div class="row"><label for="chalk">Chalk on used holds</label><input type="checkbox" id="chalk" data-key="chalk"></div>
+      <div class="row"><span class="note" id="seedNote">Fixed wall #1</span><button id="regen" type="button">Generate new wall</button></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Wall</legend>
+      <div class="row"><label for="wallStyle">Surface</label><select id="wallStyle" data-key="wallStyle"><option value="slate">Slate panel</option><option value="plywood">Plywood</option><option value="none">None (holds on black)</option></select></div>
+      <div class="row"><label for="wallClip">Wall area</label><select id="wallClip" data-key="wallClip"><option value="panel">Floating panel</option><option value="half">Right half of screen</option></select></div>
+      <div class="row"><label for="wallWidth">Width</label><input type="range" id="wallWidth" data-key="wallWidth" min="0.22" max="0.36" step="0.01"><output data-for="wallWidth"></output></div>
+      <div class="row"><label for="tnut">T-nut grid</label><input type="checkbox" id="tnut" data-key="tnut"></div>
+      <div class="row"><label for="scale">Seconds scale</label><select id="scale" data-key="scale"><option value="off">Off</option><option value="10">Ticks every 10 s</option><option value="15">Ticks every 15 s</option><option value="5">Ticks every 5 s</option></select></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Climber</legend>
+      <div class="row"><label for="climberColor">Colour</label><select id="climberColor" data-key="climberColor"><option value="white">White</option><option value="grey">Chalk grey</option><option value="amber">Amber</option></select></div>
+      <div class="row"><label for="climberScale">Size</label><input type="range" id="climberScale" data-key="climberScale" min="0.8" max="2" step="0.05"><output data-for="climberScale"></output></div>
+      <div class="row"><label for="prof">Proficiency</label><select id="prof" data-key="prof"><option value="expert">Expert: never falls</option><option value="intermediate">Intermediate: sometimes falls once</option><option value="beginner">Beginner: falls often, never tops out</option></select></div>
+      <div class="row"><label for="profCycle">Cycle proficiency on each grade (B → I → E)</label><input type="checkbox" id="profCycle" data-key="profCycle"></div>
+      <div class="row"><label for="descent">Descent</label><select id="descent" data-key="descent"><option value="line">Lowered on the rope</option><option value="wall">Downclimb the next minute</option></select></div>
+      <div class="row"><label for="lower">Lower-off after top-out</label><select id="lower" data-key="lower"><option value="0">Off (instant reset)</option><option value="2">2 s</option><option value="3">3 s</option><option value="4">4 s</option><option value="5">5 s</option></select></div>
+      <div class="row"><label for="topRope">Show rope while climbing</label><input type="checkbox" id="topRope" data-key="topRope"></div>
+      <div class="row"><label for="quarters">Lowered on the rope at :00 :15 :30 :45</label><input type="checkbox" id="quarters" data-key="quarters"></div>
+      <div class="row"><label for="beer">Beer break on the hour</label><input type="checkbox" id="beer" data-key="beer"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Hand-off</legend>
+      <p class="note">Copies the settings plus derived geometry (wall rect, level spacing, climber size, palette) as JSON, ready to paste into the Monkey C build.</p>
+      <div class="btns"><button id="copy" type="button" class="primary">Copy config JSON</button><button id="reset" type="button">Reset to defaults</button></div>
+      <textarea id="out" readonly hidden aria-label="Config JSON"></textarea>
+    </fieldset>
+  </aside>
+</div>
+
+<script>
+(()=>{
+const DEVICES={
+  r454:{w:454,h:454,shape:'round',tech:'amoled',label:'Round 454 · AMOLED'},
+  r416:{w:416,h:416,shape:'round',tech:'amoled',label:'Round 416 · AMOLED'},
+  r280:{w:280,h:280,shape:'round',tech:'mip',label:'Round 280 · MIP 64-colour'},
+  r260:{w:260,h:260,shape:'round',tech:'mip',label:'Round 260 · MIP 64-colour'},
+  s320:{w:320,h:360,shape:'rect',tech:'amoled',label:'Rect 320×360 · AMOLED'}
+};
+const FONTS=['Roboto','Roboto Condensed','Rubik','Barlow Semi Condensed'];
+const DEF={device:'r454',speed:1,tick:'tick',aod:false,showBBox:false,font:'Roboto',weight:700,layout:'stacked',digitSize:1,
+  hourColor:'white',minColor:'route',hour24:true,leadZero:true,palette:'shuffle',moves:30,holdStyle:'mixed',volumes:true,otherRoutes:true,
+  chalk:false,wallStyle:'slate',wallClip:'panel',wallWidth:0.30,tnut:true,scale:'10',climberColor:'white',climberScale:1,lower:3,topRope:false,descent:'line',features:'random',wallSeed:1,grades:true,gMin:4,gMax:8,showGrade:true,quarters:false,beer:false,prof:'expert',showProf:true,profCycle:false};
+const STORE='second-ascent-v1';
+let S={...DEF};
+try{const j=JSON.parse(localStorage.getItem(STORE)||'null');if(j)S={...DEF,...j}}catch(e){}
+if(!DEVICES[S.device])S.device=DEF.device;
+if(!FONTS.includes(S.font))S.font=DEF.font;
+if(S.wallClip!=='panel'&&S.wallClip!=='half')S.wallClip='panel';
+const save=()=>{try{localStorage.setItem(STORE,JSON.stringify(S))}catch(e){}};
+
+/* ---------- utils ---------- */
+function mulberry32(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function hash(n){let x=n|0;x=Math.imul(x^(x>>>16),0x45d9f3b);x=Math.imul(x^(x>>>16),0x45d9f3b);return(x^(x>>>16))>>>0}
+const mix=(a,b,t)=>a.map((v,i)=>Math.round(v+(b[i]-v)*t));
+const css=c=>`rgb(${c[0]},${c[1]},${c[2]})`;
+const hex=c=>'#'+c.map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();
+const lerp=(a,b,t)=>a+(b-a)*t;
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function hsl2rgb(h,s,l){const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l);const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,9-k(n),1));return[f(0),f(8),f(4)].map(v=>Math.round(v*255))}
+const BLACK=[0,0,0],WHITE=[255,255,255];
+
+/* ---------- colour per minute ---------- */
+const GYM=[['Yellow',[247,201,72]],['Green',[52,196,106]],['Blue',[58,134,255]],['Red',[239,68,68]],['Purple',[160,108,240]],
+  ['Orange',[255,140,43]],['Pink',[255,111,176]],['Teal',[34,195,195]],['White',[232,232,232]]];
+function routeColor(absMin,mode){
+  const L=GYM.length;
+  if(mode==='hue'){const h=(((absMin%60)+60)%60)*6;return{name:'Hue '+h+'°',rgb:hsl2rgb(h,.85,.58),idx:-1}}
+  if(mode==='cycle'){const i=((absMin%L)+L)%L;return{name:GYM[i][0],rgb:GYM[i][1],idx:i}}
+  const hour=Math.floor(absMin/60),mm=absMin-hour*60;let i=hash(hour*7919+13)%L;
+  for(let k=1;k<=mm;k++)i=(i+1+hash(hour*61+k)%(L-1))%L;   // never repeats the previous minute
+  return{name:GYM[i][0],rgb:GYM[i][1],idx:i};
+}
+
+/* ---------- minute plan ---------- */
+// Each hour is laid out in slots. 'up'+'down' pairs share one route (downclimb mode), 'line' climbs and is lowered
+// on the rope, 'beer' sits at the bottom. key = the route's first minute; ord counts routes within the hour.
+const planCache=new Map();
+function hourPlan(hr){
+  const ck=hr+'|'+S.descent+S.beer+S.quarters+S.prof+S.profCycle;if(planCache.has(ck))return planCache.get(ck);
+  const wall=S.descent==='wall',base=hr*60,sp=new Array(60).fill(null),slots=new Array(60);
+  if(S.beer){sp[0]='beer';if(wall)sp[1]='beer'}
+  if(wall&&S.quarters)for(const q of[0,15,30,45])if(!sp[q])sp[q]='line';
+  let ord=0,i=0;
+  while(i<60){
+    if(sp[i]==='beer'){slots[i]={kind:'beer',beerIdx:wall?i:0};i++;continue}
+    if(!wall||sp[i]==='line'){slots[i]={kind:'line',key:base+i,ord:ord++};i++;continue}
+    let j=i;while(j<60&&!sp[j])j++;           // free run i..j-1, filled with up+down pairs
+    const profAt=o=>S.profCycle?PROFS[o%3]:S.prof,mixed=S.profCycle||S.prof==='beginner';
+    if(!mixed&&(j-i)%2){slots[i]={kind:'line',key:base+i,ord:ord++};i++}   // odd run: the spare minute goes on the rope at its START (right after the beer),
+    while(i<j){                                                            // never next to a quarter rope
+      if(profAt(ord)==='beginner'||i+1>=j){slots[i]={kind:'line',key:base+i,ord:ord++};i++}   // beginners never downclimb: one minute, then the rope
+      else{slots[i]={kind:'up',key:base+i,ord};slots[i+1]={kind:'down',key:base+i,ord};ord++;i+=2}
+    }
+  }
+  for(let j=59;j>=0;j--)if(slots[j].kind==='beer'){const nx=slots.slice(j+1).find(s=>s.kind!=='beer');slots[j].key=nx.key;slots[j].ord=nx.ord}   // beer: the next route is already up on the wall
+  if(planCache.size>48)planCache.clear();planCache.set(ck,slots);return slots;
+}
+function slotFor(absMin){const hr=Math.floor(absMin/60);return hourPlan(hr)[absMin-hr*60]}
+function MARK(absMin){const k=slotFor(absMin).kind;return k==='beer'?'🍺':S.descent!=='wall'?'':k==='up'?'↑':k==='down'?'↓':'⤓'}
+function kindText(k){return k==='beer'?'beer break':k==='up'?'↑ climb':k==='down'?'↓ downclimb, no jumps':S.lower?'↑ climb, lowered from :'+(60-S.lower):'↑ climb'}
+function colorFor(absMin){const sl=slotFor(absMin);   // one colour per route, however many minutes it spans
+  return S.palette==='hue'?routeColor(sl.key,'hue'):routeColor(Math.floor(sl.key/60)*60+sl.ord,S.palette);
+}
+
+/* ---------- difficulty ---------- */
+// sp: level spacing vs. grade 6 (sparser = fewer, longer moves); sz: hold size; mix: hold types; dynos: jumps per route
+const GRADE={
+  4:{sp:.80,sz:1.35,mix:{jug:.75,pinch:.15,sloper:.10}},
+  5:{sp:.90,sz:1.15,mix:{jug:.50,pinch:.20,sloper:.15,crimp:.15}},
+  6:{sp:1.00,sz:1.00,mix:{jug:.30,crimp:.25,sloper:.20,pinch:.25}},
+  7:{sp:1.12,sz:.76,mix:{jug:.05,crimp:.35,sloper:.20,pinch:.15,edge:.25},dynos:2,air:.40,dw:2},
+  8:{sp:1.24,sz:.56,mix:{crimp:.25,edge:.35,sloper:.10,micro:.30},dynos:4,air:.55,dw:2.5}};
+// air: how high the body launches on a dyno (× climber height); dw: how many normal moves of time a dyno takes,
+// so the flight is spread over several 1 Hz ticks and actually visible on the watch
+function pickMix(mix,r){let a=0;for(const[t,p]of Object.entries(mix)){a+=p;if(r<a)return t}return Object.keys(mix)[0]}
+function gradeFor(absMin){                      // easiest → hardest, one step per route, then restart
+  if(!S.grades)return S.gMin;
+  const a=Math.min(S.gMin,S.gMax),b=Math.max(S.gMin,S.gMax),n=b-a+1,idx=Math.floor(slotFor(absMin).ord/(S.profCycle?3:1));   // cycle restarts each hour; with proficiency cycling each grade is climbed three times
+  return a+((idx%n)+n)%n;
+}
+const PROFS=['beginner','intermediate','expert'];
+function profFor(absMin){return S.profCycle?PROFS[slotFor(absMin).ord%3]:S.prof}   // 4B 4I 4E 5B 5I 5E …
+function makeDynos(absMin,M,GP){          // hand moves (even indices), at least one full limb cycle apart
+  const set=new Set();if(!GP.dynos||M<8)return set;const r=mulberry32(hash(absMin*17+3));
+  const cand=[];for(let i=2;i<=M-4;i+=2)cand.push(i);
+  for(let j=cand.length-1;j>0;j--){const k=Math.floor(r()*(j+1));[cand[j],cand[k]]=[cand[k],cand[j]]}
+  for(const i of cand){if(set.size>=GP.dynos)break;if(![...set].some(j=>Math.abs(j-i)<4))set.add(i)}
+  return set;
+}
+function timing(M,dynos,GP){const cum=[0];for(let i=0;i<M;i++)cum.push(cum[i]+(dynos.has(i)?(GP.dw||1):1));return cum}
+
+/* ---------- geometry ---------- */
+function geom(dev){
+  const W=dev.w,H=dev.h,round=dev.shape==='round',full=S.wallClip==='half';
+  let x0,x1,y0,y1,dcx,rx0,rx1,ry0,ry1,ay;
+  if(full){                         // wall fills the right half; route region kept inside the bezel
+    x0=.5*W;x1=W;y0=0;y1=H;dcx=(S.layout==='inline'?.25:.27)*W;
+    if(round){rx0=.56*W;rx1=.80*W;ry0=.15*H;ry1=.86*H}else{rx0=.56*W;rx1=.93*W;ry0=.08*H;ry1=.94*H}
+    ay=ry0-.035*H;
+  }else{
+    if(round){x0=.555*W;x1=x0+S.wallWidth*W;y0=.17*H;y1=.83*H;dcx=.30*W}
+    else{x0=.56*W;x1=Math.min(.95*W,x0+S.wallWidth*W*1.3);y0=.07*H;y1=.93*H;dcx=.285*W}
+    const hp=(x1-x0)*.12,vp=.03*H;rx0=x0+hp;rx1=x1-hp;ry0=y0+vp;ry1=y1-vp;ay=y0+Math.max(3,H*.012);
+  }
+  return{W,H,round,full,x0,x1,y0,y1,rx0,rx1,ry0,ry1,dcx,ay};
+}
+
+/* ---------- route ---------- */
+const START=[0,-4,1,-3];               // limb order per cycle: LH, LF, RH, RF; left on even levels, right on odd
+const nMoves=(M,o)=>Math.floor((M-o+3)/4);
+const routeCache=new Map();
+function getRoute(absMin,G,dev){
+  const sl=slotFor(absMin);absMin=sl.key;   // minutes that share a route (up+down, beer preview) share one key
+  const key=[absMin,sl.ord,S.beer,S.quarters,dev.w,dev.h,S.moves,S.wallWidth,S.wallClip,S.climberScale,S.holdStyle,S.volumes,S.descent,S.features,S.wallSeed,S.grades,S.gMin,S.gMax,S.prof,S.profCycle].join('|');
+  if(routeCache.has(key))return routeCache.get(key);
+  const rng=mulberry32(hash(absMin*31+7));
+  const g=gradeFor(absMin),GP=GRADE[g],e=(g-4)/4;
+  const LM=m=>Math.max(2*nMoves(m,0),1+2*nMoves(m,2));
+  const L0=LM(S.moves),dy0=(G.ry1-G.ry0)/(L0+4);           // grade-6 spacing; climber size is tied to it
+  let M=S.moves;
+  if(GP.sp!==1){const tgt=1+(L0-1)/GP.sp;M=4;while(LM(M+1)<=tgt)M++}   // as many moves as fit at this grade's spacing
+  const Lmax=LM(M);
+  const dy=(G.ry1-G.ry0-5*dy0)/Math.max(1,Lmax-1);
+  const ly=k=>k<=1?G.ry1-(k+4)*dy0:G.ry1-5*dy0-(k-1)*dy;   // start holds keep grade-6 spacing so every grade starts in the same stance
+  const cx=(G.rx0+G.rx1)/2,half=(G.rx1-G.rx0)/2;
+  const phase=rng()*6.283,lean=rng()*2-1;
+  const c=Math.min(5*dy0,(G.x1-G.x0)*.85)*S.climberScale;   // cap the base size, then scale, so every step of the setting changes the size
+  const hs0=clamp(dy0*.62,3.5,15),hs=hs0*GP.sz;
+  if(S.features==='fixed'){
+    // One fixed set of holds; each minute picks a path through it and highlights only those holds.
+    const F=getField(G,dev,L0,dy0,hs0),wallMode=S.descent==='wall';
+    const holds={};
+    for(let k=-4;k<=Lmax;k++){
+      const side=(k&1)?1:-1;let w=0,sid=absMin*1009+k;
+      if(wallMode){if(k<=1){w=1;sid=1013+k}else w=clamp((4-k)/3,0,1)}   // shared start holds
+      const ctr=cx+(half*.30*Math.sin(k*.33+phase)+lean*half*.18*(k/Lmax))*(1-w),tx=ctr+side*half*(.32+e*.12);
+      const row=clamp(Math.round((G.ry1-ly(k))/dy0)-4,-4,L0);
+      // score: distance from the path + how well the hold's size suits the grade (+ a little per-minute variety)
+      let best=null,bs=1e9;
+      for(const h of F.rows[row]){const fit=(w>=1||h.sz==null)?0:Math.abs((h.sz-.62)/.68-(1-e))*.9;
+        const sc=Math.abs(h.x-tx)/half+fit+(w>=1?0:(hash(sid*31+h.id)%1000)/4000);if(sc<bs){bs=sc;best=h}}
+      holds[k]=best;
+    }
+    const R={holds,Lmax,dy,dy0,c,hs:hs0,M,vols:F.vols,field:F.list,pathSet:new Set(Object.values(holds).map(h=>h.id)),fixed:true,grade:g,air:GP.air,dynos:makeDynos(absMin,M,GP)};R.cum=timing(M,R.dynos,GP);R.key=absMin;R.prof=profFor(absMin);R.sitX=(holds[-4].x+holds[-3].x)/2;R.groundY=G.ry1+.03*G.H;
+    if(routeCache.size>200)routeCache.clear();
+    routeCache.set(key,R);return R;
+  }
+  const holds={};
+  for(let k=-4;k<=Lmax;k++){
+    const side=(k&1)?1:-1;
+    let x=cx+half*.30*Math.sin(k*.33+phase)+lean*half*.18*(k/Lmax)+side*half*(.16+.30*rng()+e*.08);
+    x=clamp(x,G.rx0+hs0*.6,G.rx1-hs0*.6);
+    const y=ly(k)+(rng()-.5)*(k<=1?dy0:dy)*.25;
+    let type;
+    if(k<0)type='foot';
+    else if(k>=Lmax-1)type='jug';
+    else type=pickMix(GP.mix,rng());
+    if(S.holdStyle==='dots')type=k<0?'footdot':'dot';
+    holds[k]={x,y,type,rot:(rng()-.5)*.9,s:k<0?hs*.65:hs*(.9+rng()*.25)*(type==='micro'?.75:1)};
+  }
+  if(S.descent==='wall'){
+    // Up on even minutes, back down the same route on odd ones. Every route shares the same start holds,
+    // so a climber finishing a descent is already on the next route's start: no jump at :00.
+    const ax=k=>{const r=mulberry32(hash(k*7+17))(),side=(k&1)?1:-1;return clamp(cx+side*half*(.16+.30*r),G.rx0+hs*.6,G.rx1-hs*.6)};
+    for(let k=-4;k<=Lmax;k++){const wb=k<=1?1:clamp((4-k)/3,0,1),h=holds[k];
+      if(wb>0){h.x=lerp(h.x,ax(k),wb);h.y=lerp(h.y,ly(k),wb)}}
+  }
+  // each side's holds strictly climb, so a later hand hold is never level with or below an earlier one
+  for(let k=-2;k<=Lmax;k++){const lim=holds[k-2].y-.6*Math.min(dy,dy0);if(holds[k].y>lim)holds[k].y=lim}
+  const vols=[];
+  if(S.volumes&&S.holdStyle!=='dots'){
+    const nv=1+(rng()<.5?1:0);
+    for(let v=0;v<nv;v++){const k=3+Math.floor(rng()*(Lmax-6));const h=holds[k];
+      vols.push({x:h.x+(rng()-.5)*hs*1.4,y:h.y+hs*.3,r:hs*(1.7+rng()*.6),rot:rng()*6.283})}
+  }
+  const dynos=makeDynos(absMin,M,GP);   // a dyno lands on a big hold
+  for(const i of dynos){const o=i%4,h=holds[START[o]+2*Math.floor((i-o+3)/4)+2];if(h){h.type=S.holdStyle==='dots'?'dot':'jug';h.s=hs0*1.05;h.y-=.6*dy}}   // and sits further up: a real gap
+  const R={key:absMin,prof:profFor(absMin),holds,Lmax,dy,dy0,c,hs:hs0,M,vols,grade:g,dynos,air:GP.air,cum:timing(M,dynos,GP),sitX:(holds[-4].x+holds[-3].x)/2,groundY:G.ry1+.03*G.H};
+  if(routeCache.size>200)routeCache.clear();
+  routeCache.set(key,R);return R;
+}
+const fieldCache=new Map();
+function getField(G,dev,Lmax,dy,hs){
+  const key=[S.wallSeed,dev.w,dev.h,Lmax,S.wallWidth,S.wallClip,S.holdStyle,S.volumes,S.climberScale].join('|');
+  if(fieldCache.has(key))return fieldCache.get(key);
+  const rng=mulberry32(hash(S.wallSeed*977+5)),per=4,w=G.rx1-G.rx0,list=[],rows={};let id=0;
+  // every hold type and size, so each grade's path can find holds that suit it
+  const SZ={jug:1.3,sloper:1.15,pinch:1,crimp:.85,edge:.95,micro:.62},FMIX={jug:.25,crimp:.2,sloper:.15,pinch:.15,edge:.12,micro:.13};
+  const mk=k=>{if(k<0)return{type:S.holdStyle==='dots'?'footdot':'foot',sz:null};const t=pickMix(FMIX,rng());return{type:S.holdStyle==='dots'?'dot':t,sz:SZ[t]}};
+  for(let k=-4;k<=Lmax;k++){rows[k]=[];const st=(k&1)?.22:-.22;           // rows staggered so the grid doesn't read as a grid
+    for(let j=0;j<per;j++){const fx=clamp((j+.5+st+(rng()-.5)*.4)/per,.05,.95);
+      const tp=mk(k),h={id:id++,x:G.rx0+fx*w,y:G.ry1-(k+4)*dy+(rng()-.5)*dy*.3,type:tp.type,sz:tp.sz,rot:(rng()-.5)*.9,s:k<0?hs*.65:hs*tp.sz*(.92+rng()*.16)};
+      rows[k].push(h);list.push(h)}}
+  if(G.full){                                // dress the rest of the half with holds the path never uses
+    for(let i=0;i<40;i++){const x=lerp(G.x0+hs,G.W*.97,rng()),y=lerp(G.H*.04,G.ry1,rng());   // never below the start footholds
+      if(G.round){const dx=x-G.W/2,dy2=y-G.H/2,rr=G.W/2-hs;if(dx*dx+dy2*dy2>rr*rr)continue}
+      if(x>G.rx0-hs&&x<G.rx1+hs&&y>G.ry0-hs&&y<G.ry1+hs)continue;
+      const tp=mk(1),h={id:id++,x,y,type:tp.type,sz:tp.sz,rot:(rng()-.5)*.9,s:hs*tp.sz*(.8+rng()*.3)};list.push(h)}}
+  const vols=[];
+  if(S.volumes&&S.holdStyle!=='dots'){for(let v=0;v<3;v++){const k=2+Math.floor(rng()*(Lmax-4));const h=rows[k][Math.floor(rng()*per)];
+    vols.push({x:h.x+(rng()-.5)*hs,y:h.y+hs*.3,r:hs*(1.7+rng()*.6),rot:rng()*6.283})}}
+  const F={rows,list,vols};fieldCache.clear();fieldCache.set(key,F);return F;
+}
+const otherCache=new Map();
+function getOthers(day,G,dev){
+  const key=[day,dev.w,dev.h,S.wallWidth,S.wallClip].join('|');
+  if(otherCache.has(key))return otherCache.get(key);
+  const rng=mulberry32(hash(day*97+3)),list=[];
+  const xa=G.x0+(G.x1-G.x0)*.06,xb=G.x1-(G.x1-G.x0)*.06,ya=G.full?G.H*.05:G.ry0,yb=G.ry1;   // never below the start footholds
+  for(let r=0;r<3;r++){const ci=hash(day*5+r)%GYM.length;
+    for(let i=0;i<11;i++){
+      let x=lerp(xa,xb,rng()),y=lerp(ya,yb,rng());
+      if(G.round){const dx=x-G.W/2,dy=y-G.H/2,rr=G.W/2-10;if(dx*dx+dy*dy>rr*rr)continue}
+      list.push({x,y,ci,s:.55+rng()*.5,type:['jug','crimp','sloper','pinch'][Math.floor(rng()*4)],rot:(rng()-.5)*.9})}}
+  otherCache.set(key,list);return list;
+}
+
+/* ---------- climber pose ---------- */
+function limbAt(R,o,m){
+  let i=Math.floor(m),f=m-i;if(i>=R.M){i=R.M;f=0}
+  const done=Math.max(0,Math.floor((i-o+3)/4));const lv=START[o]+2*done;const p=R.holds[lv];
+  if(i<R.M&&i%4===o&&f>0){
+    const q=R.holds[lv+2],e=ease(f),side=(o<2)?-1:1;
+    return{x:lerp(p.x,q.x,e)+side*Math.sin(Math.PI*f)*.07*R.c,y:lerp(p.y,q.y,e),lv,moving:true};
+  }
+  return{x:p.x,y:p.y,lv};
+}
+function ik(j,t,a,b,side){
+  const dx=t.x-j.x,dy=t.y-j.y,d=Math.hypot(dx,dy)||1e-6,ux=dx/d,uy=dy/d;
+  if(d>=a+b-.01)return{x:j.x+ux*d*a/(a+b),y:j.y+uy*d*a/(a+b)};
+  const x=(a*a-b*b+d*d)/(2*d),h=Math.sqrt(Math.max(0,a*a-x*x));
+  const bx=j.x+ux*x,by=j.y+uy*x,n1={x:bx-uy*h,y:by+ux*h},n2={x:bx+uy*h,y:by-ux*h};
+  return(side<0?(n1.x<n2.x):(n1.x>n2.x))?n1:n2;
+}
+function pose(R,m,noAir,miss){
+  const c=R.c,LH=limbAt(R,0,m),LF=limbAt(R,1,m),RH=limbAt(R,2,m),RF=limbAt(R,3,m);
+  const di=Math.floor(m),df=m-di,lift=0;
+  let air=(!noAir&&R.dynos&&R.dynos.has(di)&&di<R.M&&df>0)?Math.sin(Math.PI*df):0;
+  if(miss!=null){                           // missed jump: the hand falls short and he drops back onto the holds he jumped from
+    air=Math.sin(Math.PI*miss)*.85;
+    const o=di%4,h=o===0?LH:RH,lv=START[o]+2*Math.floor((di-o+3)/4),p=R.holds[lv],q=R.holds[lv+2];
+    if(p&&q){const k=.65*Math.sin(Math.PI*miss);h.x=lerp(p.x,q.x,k);h.y=lerp(p.y,q.y,k)}
+  }
+  // Constraint: both feet stay below the lower hand. A foot that would end up level with or above it
+  // comes off its hold and hangs instead (rare: dense grades, dynos).
+  const lowHand=Math.max(LH.y,RH.y)+.12*c;
+  if(LF.y<lowHand)LF.y=lowHand;if(RF.y<lowHand)RF.y=lowHand;
+  const hx=(LH.x+RH.x)/2,hy=(LH.y+RH.y)/2,fx=(LF.x+RF.x)/2,fy=(LF.y+RF.y)/2;
+  // Shoulders and hips sit proportionally between hands and feet, so on a short hand-foot gap
+  // (crouched on a dense grade) they get closer together but can never swap order.
+  const gap=Math.max(fy-hy,.2*c);
+  let sm={x:hx*.6+fx*.4,y:hy+Math.min(.30*c,gap*.3)-lift*.3},hm={x:fx*.6+hx*.4,y:fy-Math.min(.34*c,gap*.34)};
+  let dx=sm.x-hm.x,dy=sm.y-hm.y,d=Math.hypot(dx,dy)||1;dx/=d;dy/=d;
+  // Constraint: the torso always points up, at most ~40° off vertical, so the head is always above the waist.
+  if(dy>-.75){dy=-.75;dx=(dx<0?-1:1)*Math.sqrt(1-dy*dy)}
+  const T=.30*c,mid={x:(sm.x+hm.x)/2,y:(sm.y+hm.y)/2};
+  sm={x:mid.x+dx*T/2,y:mid.y+dy*T/2};hm={x:mid.x-dx*T/2,y:mid.y-dy*T/2};
+  const px=dy,py=-dx;                       // perpendicular pointing to climber's left
+  const sL={x:sm.x+px*.08*c,y:sm.y+py*.08*c},sR={x:sm.x-px*.08*c,y:sm.y-py*.08*c};
+  const pL={x:hm.x+px*.055*c,y:hm.y+py*.055*c},pR={x:hm.x-px*.055*c,y:hm.y-py*.055*c};
+  const a=.19*c,l=.22*c;
+  const head={x:sm.x+dx*.14*c,y:sm.y+dy*.14*c,r:.085*c};
+  if(air){                                  // dyno in flight: body launched, feet off the wall, the other hand lets go too
+    const L=air*(R.air||.4)*c;
+    for(const p of[sm,hm,sL,sR,pL,pR,head])p.y-=L;
+    const movingLeft=di%4===0,mv=movingLeft?LH:RH,ms=movingLeft?sL:sR,st=movingLeft?RH:LH,ss=movingLeft?sR:sL,sd=movingLeft?1:-1;
+    mv.y=Math.min(mv.y,ms.y-.32*c*air);                       // reaching hand leads the body upward
+    st.x=lerp(st.x,ss.x+sd*.05*c,air);st.y=lerp(st.y,ss.y-.34*c,air);
+    for(const[F,p,s2]of[[LF,pL,-1],[RF,pR,1]]){F.x=lerp(F.x,p.x+s2*.08*c,air);F.y=lerp(F.y,p.y+.40*c,air)}   // legs dangle
+  }
+  return{c,sm,hm,sL,sR,pL,pR,LH,RH,LF,RF,head,
+    eL:ik(sL,LH,a,a,-1),eR:ik(sR,RH,a,a,1),kL:ik(pL,LF,l,l,-1),kR:ik(pR,RF,l,l,1)};
+}
+function poseBox(P){
+  const pts=[P.LH,P.RH,P.LF,P.RF,P.eL,P.eR,P.kL,P.kR,P.sL,P.sR,P.pL,P.pR];
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const p of pts){x0=Math.min(x0,p.x);y0=Math.min(y0,p.y);x1=Math.max(x1,p.x);y1=Math.max(y1,p.y)}
+  const pad=Math.max(2,.06*P.c);x0=Math.min(x0,P.head.x-P.head.r);y0=Math.min(y0,P.head.y-P.head.r);x1=Math.max(x1,P.head.x+P.head.r);
+  return{x0:x0-pad,y0:y0-pad,x1:x1+pad,y1:y1+pad};
+}
+
+/* ---------- lower-off ---------- */
+function climbM(R,sf,L=0,uniform=false){const u=clamp(sf/(59-L),0,1);
+  if(uniform||!R.cum)return u*R.M;
+  const t=u*R.cum[R.M];let i=0;while(i<R.M-1&&R.cum[i+1]<=t)i++;   // dynos get a longer slice of the minute
+  return Math.min(R.M,i+(t-R.cum[i])/(R.cum[i+1]-R.cum[i]));
+}   // climb runs :00 → :(59-L), lower-off fills the rest
+const PKEYS=['sm','hm','sL','sR','pL','pR','LH','RH','LF','RF','eL','eR','kL','kR'];
+function blendPose(A,B,w){const P={c:A.c};for(const k of PKEYS)P[k]={x:lerp(A[k].x,B[k].x,w),y:lerp(A[k].y,B[k].y,w)};
+  P.head={x:lerp(A.head.x,B.head.x,w),y:lerp(A.head.y,B.head.y,w),r:A.head.r};return P}
+function hangPose(H,c,ph){            // sitting in the harness, hands on the rope, feet walking the wall
+  const sm={x:H.x,y:H.y-.30*c},hm={x:H.x,y:H.y};
+  const sL={x:sm.x-.08*c,y:sm.y},sR={x:sm.x+.08*c,y:sm.y},pL={x:hm.x-.055*c,y:hm.y},pR={x:hm.x+.055*c,y:hm.y};
+  const LH={x:H.x-.03*c,y:sm.y-.16*c},RH={x:H.x+.03*c,y:sm.y-.03*c};
+  const w=Math.sin(ph)*.05*c,LF={x:H.x-.16*c,y:H.y+.34*c+w},RF={x:H.x+.16*c,y:H.y+.34*c-w};
+  const a=.19*c,l=.22*c;
+  return{c,sm,hm,sL,sR,pL,pR,LH,RH,LF,RF,eL:ik(sL,LH,a,a,-1),eR:ik(sR,RH,a,a,1),kL:ik(pL,LF,l,l,-1),kR:ik(pR,RF,l,l,1),head:{x:sm.x,y:sm.y-.14*c,r:.085*c}};
+}
+function lowerPose(R,Rn,u,mEnd){      // over this route, from where the climb ended down to where the next route starts
+  const A=pose(R,mEnd??R.M),B=pose(Rn,0),e=ease(u);
+  const H={x:lerp(A.hm.x,B.hm.x,e),y:lerp(A.hm.y,B.hm.y,e)};
+  const T=hangPose(H,R.c,u*Math.PI*4);
+  const w=Math.min(clamp(u/.2,0,1),clamp((1-u)/.2,0,1));
+  const P=blendPose(u<.5?A:B,T,w);P.lowering=true;return P;
+}
+function poseAt(R,Rn,sf,absMin){
+  const sl=slotFor(absMin);
+  if(sl.kind==='beer')return beerPose(R,sl.beerIdx*60+sf,S.descent==='wall'?120:60);
+  if(sl.kind==='up')return climbPose(R,sf,59);
+  if(sl.kind==='down'){const e=attemptPlan(R,59).endM;return pose(R,e*(1-clamp(sf/59,0,1)),true)}   // back down from wherever the ascent ended; even pace, nobody jumps down
+  const top=59-S.lower;return(S.lower>0&&sf>top)?lowerPose(R,Rn,(sf-top)/(60-top),attemptPlan(R,top).endM):climbPose(R,sf,top);
+}
+
+/* ---------- proficiency: attempts and falls ---------- */
+// A fall: the rope catches him a little below (1 s), then he is lowered to the start (2.5 s) and tries again.
+// Expert never falls. Intermediate falls once mid-route on about half the routes and then runs out of time.
+// Beginner falls on every attempt that has time to spare, and stalls short of the top on the last one.
+const FALL_T=1,FALL_LOWER_T=2.5;
+function uOfM(R,m){const i=clamp(Math.floor(m),0,R.M-1);return R.cum[i]+(m-i)*(R.cum[i+1]-R.cum[i])}
+function mOfU(R,u){let i=0;while(i<R.M-1&&R.cum[i+1]<=u)i++;return Math.min(R.M,i+(u-R.cum[i])/(R.cum[i+1]-R.cum[i]))}
+function attemptPlan(R,T){
+  const pf=R.prof||S.prof,pk=pf+'|'+T;R.plans=R.plans||{};if(R.plans[pk])return R.plans[pk];
+  const rng=mulberry32(hash(R.key*13+(pf==='beginner'?5:pf==='intermediate'?3:1)));
+  const maxFalls=pf==='expert'?0:pf==='intermediate'?(rng()<.5?1:0):99;
+  const dyn=[...(R.dynos||[])].sort((a,b)=>a-b),firstDyno=dyn.length?dyn[0]:null;
+  // Jumps by proficiency. Expert: always makes them. Intermediate (on a route without a rope fall): may miss a jump,
+  // drop back onto the holds he jumped from, then make it on the second try; the climb is paced so he still tops out.
+  // Beginner: never makes a jump; he comes off mid-air straight onto the rope, or stalls below it.
+  const miss=new Set();if(pf==='intermediate'&&maxFalls===0)for(const d of dyn)if(rng()<.5)miss.add(d);
+  let extra=0;for(const d of miss)extra+=R.cum[d+1]-R.cum[d];
+  const spu=T/(R.cum[R.M]+extra);
+  const segs=[];let t=0,nf=0;
+  for(;;){
+    let mf=null;
+    if(nf<maxFalls){mf=R.M*(pf==='beginner'?.15+.25*rng():.4+.2*rng());
+      if(pf==='beginner'&&firstDyno!=null&&firstDyno<mf)mf=firstDyno+.5;            // fails the jump, at the top of the leap
+      if(pf==='intermediate'){const d=dyn.find(d=>mf>=d&&mf<d+1);if(d!=null)mf=d}   // his rope fall is between moves, never off a jump
+      if(t+uOfM(R,mf)*spu+FALL_T+FALL_LOWER_T+3>T)mf=null}
+    if(mf==null){segs.push({k:'climb',t0:t,t1:T,cap:pf==='beginner'?Math.min(.8*R.M,firstDyno??R.M):R.M});break}
+    const tc=uOfM(R,mf)*spu;segs.push({k:'climb',t0:t,t1:t+tc,cap:R.M});t+=tc;
+    segs.push({k:'fall',t0:t,t1:t+FALL_T+FALL_LOWER_T,mf});t+=FALL_T+FALL_LOWER_T;nf++;
+  }
+  const last=segs[segs.length-1];
+  const reached=miss.size?mapUnits(R,(T-last.t0)/spu,miss).m:mOfU(R,(T-last.t0)/spu);
+  last.cap=Math.floor(Math.min(last.cap,reached)+1e-9);   // end on a completed move: settled on holds, never mid-reach or mid-jump
+  return R.plans[pk]={segs,spu,falls:nf,misses:miss.size,miss,endM:last.cap};
+}
+function mapUnits(R,u,miss){             // time units → move progress, with a missed attempt inserted before each missed jump
+  for(let j=0;j<R.M;j++){const w=R.cum[j+1]-R.cum[j];
+    if(miss.has(j)){if(u<w)return{m:j,miss:u/w};u-=w}
+    if(u<w)return{m:j+u/w};u-=w}
+  return{m:R.M};
+}
+function climbPose(R,sf,T){
+  const pl=attemptPlan(R,T),t=clamp(sf,0,T),n=pl.segs.length;
+  for(let i=0;i<n;i++){const s=pl.segs[i];if(t<s.t1||i===n-1){
+    if(s.k==='fall')return fallPose(R,s.mf,t-s.t0);
+    if(pl.misses){const r=mapUnits(R,(t-s.t0)/pl.spu,pl.miss);return r.miss!=null?pose(R,r.m,false,r.miss):pose(R,Math.min(s.cap,r.m))}
+    return pose(R,Math.min(s.cap,mOfU(R,(t-s.t0)/pl.spu)))}}
+}
+function fallPose(R,mf,tt){
+  const c=R.c,A=pose(R,mf),B=pose(R,0),H0={x:A.hm.x,y:Math.min(A.hm.y+.45*c,B.hm.y)};
+  if(tt<FALL_T){                             // off the wall, caught by the rope, swinging a little
+    const k=ease(clamp(tt/.35,0,1)),H={x:A.hm.x+Math.sin(tt*9)*.05*c,y:lerp(A.hm.y,H0.y,k)};
+    const P=blendPose(A,hangPose(H,c,0),k);P.lowering=true;return P;
+  }
+  const u=clamp((tt-FALL_T)/FALL_LOWER_T,0,1),e=ease(u),H={x:lerp(H0.x,B.hm.x,e),y:lerp(H0.y,B.hm.y,e)};
+  const P=blendPose(B,hangPose(H,c,u*Math.PI*3),clamp((1-u)/.25,0,1));P.lowering=true;return P;
+}
+function beerPose(R,tau,D){               // sitting at the foot of the wall; a sip every 8 s
+  const c=R.c,gy=R.groundY,H={x:R.sitX,y:gy-.05*c};
+  const sm={x:H.x,y:H.y-.30*c},hm={x:H.x,y:H.y};
+  const sL={x:sm.x-.08*c,y:sm.y},sR={x:sm.x+.08*c,y:sm.y},pL={x:H.x-.055*c,y:H.y},pR={x:H.x+.055*c,y:H.y};
+  const head={x:sm.x,y:sm.y-.14*c,r:.085*c};
+  const kL={x:H.x-.14*c,y:H.y-.14*c},kR={x:H.x+.14*c,y:H.y-.14*c};
+  const LF={x:H.x-.21*c,y:gy},RF={x:H.x+.21*c,y:gy},LH={x:kL.x+.01*c,y:kL.y-.02*c};
+  const ph=(tau%8)/8,a=ph<.4?Math.sin(Math.PI*ph/.4):0;
+  const rest={x:kR.x+.03*c,y:kR.y-.04*c},mouth={x:head.x+.07*c,y:head.y+.06*c};
+  const RH={x:lerp(rest.x,mouth.x,a),y:lerp(rest.y,mouth.y,a)},al=.19*c;
+  const sit={c,sm,hm,sL,sR,pL,pR,LH,RH,LF,RF,head,kL,kR,eL:ik(sL,LH,al,al,-1),eR:ik(sR,RH,al,al,1),beer:true,
+    bottle:{x:RH.x,y:RH.y,ang:lerp(-.15,-2.0,a)}};
+  const w=Math.min(clamp(tau/2,0,1),clamp((D-1-tau)/3,0,1));   // sit down from / stand up into the start holds
+  if(w>=1)return sit;
+  const P=blendPose(pose(R,0),sit,w);P.beer=true;if(w>.6)P.bottle={x:P.RH.x,y:P.RH.y,ang:-.15};return P;
+}
+function anchorOf(G){return{x:(G.rx0+G.rx1)/2,y:G.ay}}
+function redrawBox(info,t){
+  const a=poseBox(info.P),b=poseBox(poseAt(info.R,info.Rn,Math.max(0,t.s-1),t.absMin));
+  let x0=Math.min(a.x0,b.x0),y0=Math.min(a.y0,b.y0),x1=Math.max(a.x1,b.x1),y1=Math.max(a.y1,b.y1);
+  if(info.ropeShown||(info.kind==='line'&&S.lower>0&&t.s-1>59-S.lower)){const n=info.anchor;x0=Math.min(x0,n.x-2);x1=Math.max(x1,n.x+2);y0=Math.min(y0,n.y-3)}
+  return{x0,y0,x1,y1};
+}
+
+/* ---------- drawing ---------- */
+function rrPath(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function drawHold(ctx,h,col,scale=1){
+  const s=h.s*scale,dark=mix(col,BLACK,.38),lite=mix(col,WHITE,.35);
+  ctx.save();ctx.translate(h.x,h.y);
+  switch(h.type){
+    case'jug':ctx.fillStyle=css(col);ctx.beginPath();ctx.ellipse(0,0,s*.62,s*.42,0,0,7);ctx.fill();
+      ctx.fillStyle=css(dark);ctx.beginPath();ctx.ellipse(0,s*.12,s*.38,s*.17,0,0,7);ctx.fill();break;
+    case'crimp':ctx.rotate(h.rot*.5);ctx.fillStyle=css(col);rrPath(ctx,-s*.55,-s*.2,s*1.1,s*.4,s*.18);ctx.fill();break;
+    case'sloper':ctx.fillStyle=css(col);ctx.beginPath();ctx.ellipse(0,0,s*.7,s*.5,0,0,7);ctx.fill();
+      ctx.fillStyle=css(lite);ctx.beginPath();ctx.ellipse(-s*.18,-s*.16,s*.22,s*.14,0,0,7);ctx.fill();break;
+    case'pinch':ctx.rotate(h.rot);ctx.fillStyle=css(col);rrPath(ctx,-s*.22,-s*.55,s*.44,s*1.1,s*.2);ctx.fill();break;
+    case'edge':ctx.rotate(h.rot*.3);ctx.fillStyle=css(col);rrPath(ctx,-s*.8,-Math.max(.75,s*.08),s*1.6,Math.max(1.5,s*.16),Math.max(.7,s*.08));ctx.fill();break;
+    case'micro':ctx.fillStyle=css(col);ctx.beginPath();ctx.arc(0,0,Math.max(1.2,s*.26),0,7);ctx.fill();break;
+    case'foot':ctx.fillStyle=css(col);ctx.beginPath();ctx.ellipse(0,0,s*.45,s*.32,0,0,7);ctx.fill();break;
+    case'footdot':ctx.fillStyle=css(col);ctx.beginPath();ctx.arc(0,0,s*.32,0,7);ctx.fill();break;
+    default:ctx.fillStyle=css(col);ctx.beginPath();ctx.arc(0,0,s*.45,0,7);ctx.fill();
+  }
+  if((h.type==='jug'||h.type==='sloper')&&s>8){ctx.fillStyle=css(mix(col,BLACK,.6));ctx.beginPath();ctx.arc(0,h.type==='jug'?-s*.16:0,Math.max(1,s*.07),0,7);ctx.fill()}
+  ctx.restore();
+}
+function drawClimber(ctx,P,col,dim=1){
+  const c=P.c,cc=css(dim<1?mix(BLACK,col,dim):col);
+  ctx.strokeStyle=cc;ctx.fillStyle=cc;ctx.lineCap='round';ctx.lineJoin='round';
+  const limb=(a,b,d)=>{ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(d.x,d.y);ctx.stroke()};
+  ctx.lineWidth=Math.max(1.5,.06*c);
+  limb(P.sL,P.eL,P.LH);limb(P.sR,P.eR,P.RH);
+  ctx.lineWidth=Math.max(1.8,.07*c);
+  limb(P.pL,P.kL,P.LF);limb(P.pR,P.kR,P.RF);
+  ctx.lineWidth=Math.max(2.5,.13*c);
+  ctx.beginPath();ctx.moveTo(P.hm.x,P.hm.y);ctx.lineTo(P.sm.x,P.sm.y);ctx.stroke();
+  ctx.beginPath();ctx.arc(P.head.x,P.head.y,Math.max(2,P.head.r),0,7);ctx.fill();
+  if(P.bottle){const b=P.bottle,L=Math.max(9,.30*c),w=Math.max(3.5,.105*c),bc=[205,128,42],lc=[238,224,186];   // amber glass, cream label
+    const f=v=>css(dim<1?mix(BLACK,v,dim):v);ctx.save();ctx.translate(b.x,b.y+w*.4);ctx.rotate(b.ang);
+    ctx.fillStyle=f(bc);rrPath(ctx,-w/2,-L*.62,w,L*.62+w*.2,w*.28);ctx.fill();rrPath(ctx,-w*.2,-L,w*.4,L*.45,w*.12);ctx.fill();
+    ctx.fillStyle=f(lc);ctx.fillRect(-w/2,-L*.42,w,L*.2);ctx.restore()}
+}
+const CLIMBER={white:[245,245,245],grey:[196,202,198],amber:[255,188,84]};
+const WALL={slate:[36,41,45],plywood:[92,74,55],none:[0,0,0]};
+function digitColor(k,rc){return k==='route'?rc:k==='grey'?[150,156,153]:[246,246,246]}
+function cellText(ctx,str,cx,cy,fs,cols,maxW){
+  if(maxW){ctx.font=`${S.weight} ${fs}px "${S.font}", Roboto, system-ui, sans-serif`;const cw0=ctx.measureText('0').width,cl=ctx.measureText(':').width;
+    const tot=[...str].reduce((a,ch)=>a+(ch===':'?Math.max(cl*1.6,cw0*.45):cw0*1.04),0);if(tot>maxW)fs*=maxW/tot}
+  // Every digit gets a fixed cell the width of '0', so proportional faces never shift as the time changes.
+  ctx.font=`${S.weight} ${fs}px "${S.font}", Roboto, system-ui, sans-serif`;ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  const cw=ctx.measureText('0').width,asc=ctx.measureText('0').actualBoundingBoxAscent||fs*.7;
+  const ws=[...str].map(ch=>ch===':'?Math.max(ctx.measureText(':').width*1.6,cw*.45):cw*1.04);
+  let x=cx-ws.reduce((a,b)=>a+b,0)/2;const xs=x;
+  for(let i=0;i<str.length;i++){ctx.fillStyle=css(cols[i]);ctx.fillText(str[i],x+ws[i]/2,cy+asc/2-(str[i]===':'?asc*.04:0));x+=ws[i]}
+  const n=str.length-1,lw=ctx.measureText(str[n]).width;
+  return{x0:xs+ws[0]/2-ctx.measureText(str[0]).width/2,x1:x-ws[n]/2+lw/2,cy,asc};   // glyph edges, for aligning things under the time
+}
+// Route tags on the wall edge (or in the free strip right of the route), side by side:
+// [grade] filled in the route colour with the number cut out, [B/I/E] wall-coloured with a route-colour outline and letter.
+function drawTags(ctx,G,R,rc,wallRGB){
+  const items=[];
+  if(S.showGrade)items.push({t:String(R.grade),filled:true});
+  if(S.showProf)items.push({t:{beginner:'B',intermediate:'I',expert:'E'}[R.prof||S.prof]||'E',filled:false});
+  if(!items.length)return;
+  const fs=G.H*.055;ctx.font=`700 ${fs}px "${S.font}", Roboto, system-ui, sans-serif`;ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  const asc=ctx.measureText('8').actualBoundingBoxAscent||fs*.7,bw=fs*.95,th=asc+fs*.5,gap=fs*.22,lw=Math.max(1.2,fs*.11),rad=Math.max(1.5,fs*.18);
+  const tot=items.length*bw+(items.length-1)*gap,y=G.H/2;let x=(G.full?(G.rx1+G.W)/2:G.x1)-tot/2;
+  for(const it of items){
+    if(it.filled){ctx.fillStyle=css(rc);rrPath(ctx,x,y-th/2,bw,th,rad);ctx.fill();ctx.fillStyle=css(mix(rc,BLACK,.82))}
+    else{ctx.fillStyle=css(wallRGB);rrPath(ctx,x,y-th/2,bw,th,rad);ctx.fill();
+      ctx.strokeStyle=css(rc);ctx.lineWidth=lw;rrPath(ctx,x+lw/2,y-th/2+lw/2,bw-lw,th-lw,Math.max(1,rad-lw/2));ctx.stroke();ctx.fillStyle=css(rc)}
+    ctx.fillText(it.t,x+bw/2,y+asc/2);x+=bw+gap;
+  }
+}
+function drawDigits(ctx,G,t,rc,dim=1){
+  let h=t.h;if(!S.hour24)h=h%12||12;
+  const hh=S.leadZero?String(h).padStart(2,'0'):String(h),mm=String(t.m).padStart(2,'0');
+  const d=c=>dim<1?mix(BLACK,c,dim):c;
+  const hc=d(digitColor(S.hourColor,rc)),mc=d(digitColor(S.minColor,rc));
+  const mg=G.W*.03,maxW=2*Math.min(G.dcx-mg,G.x0-G.dcx-mg);   // keep digits clear of the bezel and the wall
+  if(S.layout==='stacked'){
+    const fs=G.H*.30*S.digitSize;
+    cellText(ctx,hh,G.dcx,G.H*.365,fs,[...hh].map(()=>hc),maxW);
+    return cellText(ctx,mm,G.dcx,G.H*.635,fs,[mc,mc],maxW);
+  }else{
+    const fs=G.H*.19*S.digitSize,str=hh+mm;   // HHMM, no separator; hour padding follows the leading-zero setting
+    return cellText(ctx,str,G.dcx,G.H*.5,fs,[...str].map((ch,i)=>i<hh.length?hc:mc),maxW);
+  }
+}
+
+function renderFace(ctx,devId,t){
+  const dev=DEVICES[devId],G=geom(dev),W=G.W,H=G.H;
+  const aod=S.aod&&dev.tech==='amoled';
+  const R=getRoute(t.absMin,G,dev),col=colorFor(t.absMin),rc=col.rgb,sl=slotFor(t.absMin);
+  const frac=S.tick==='tick'?0:t.frac;
+  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+  ctx.save();
+  if(G.round){ctx.beginPath();ctx.arc(W/2,H/2,W/2,0,7);ctx.clip()}else{rrPath(ctx,0,0,W,H,W*.13);ctx.clip()}
+  const climberCol=CLIMBER[S.climberColor]||CLIMBER.white;
+  let P;
+  if(aod){
+    const ox=((t.absMin%3)-1)*2,oy=((Math.floor(t.absMin/3)%3)-1)*2;ctx.translate(ox,oy);   // burn-in shift
+    drawDigits(ctx,G,t,rc,.55);
+    for(let k=-4;k<=R.Lmax;k++){const h=R.holds[k];ctx.fillStyle=css(mix(BLACK,rc,.6));ctx.beginPath();ctx.arc(h.x,h.y,Math.max(1.2,h.s*.18),0,7);ctx.fill()}
+    P=sl.kind==='beer'?beerPose(R,30,60):pose(R,sl.kind==='down'?R.M:0);drawClimber(ctx,P,climberCol,.5);
+    ctx.restore();return{R,col,P,G,aod,kind:sl.kind};
+  }
+  // wall
+  const wc=WALL[S.wallStyle];
+  let wallPath=()=>{};
+  if(S.wallStyle!=='none'||S.tnut){
+    if(G.full){wallPath=()=>{ctx.beginPath();ctx.rect(G.x0,0,W-G.x0,H)}}
+    else wallPath=()=>rrPath(ctx,G.x0,G.y0,G.x1-G.x0,G.y1-G.y0,W*.03);
+  }
+  if(S.wallStyle!=='none'){wallPath();ctx.fillStyle=css(wc);ctx.fill()}
+  if(S.tnut){
+    ctx.save();wallPath();ctx.clip();
+    const g=Math.max(7,R.dy0*1.15),r=Math.max(.8,g*.07);ctx.fillStyle=css(S.wallStyle==='none'?[34,34,34]:mix(wc,S.wallStyle==='plywood'?BLACK:WHITE,.14));
+    const bz=G.full;
+    for(let y=(bz?0:G.y0)+g*.5,row=0;y<(bz?H:G.y1);y+=g,row++)
+      for(let x=G.x0+g*(row%2?.9:.4);x<W;x+=g){ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill()}
+    ctx.restore();
+  }
+  // other routes
+  const base=S.wallStyle==='none'?BLACK:wc;
+  if(S.otherRoutes&&!R.fixed){
+    const day=Math.floor(t.absMin/1440);
+    for(const o of getOthers(day,G,dev)){
+      let ci=o.ci;if(ci===col.idx)continue;
+      let clash=false;for(let k=-4;k<=R.Lmax;k++){const h=R.holds[k];if(Math.hypot(h.x-o.x,h.y-o.y)<R.hs*1.3){clash=true;break}}
+      if(clash)continue;
+      drawHold(ctx,{x:o.x,y:o.y,type:S.holdStyle==='dots'?'dot':o.type,rot:o.rot,s:R.hs*o.s},mix(GYM[ci][1],base,.62));
+    }
+  }
+  for(const v of R.vols){ctx.save();ctx.translate(v.x,v.y);ctx.rotate(v.rot);ctx.fillStyle=css(R.fixed?mix(base,WHITE,.13):mix(rc,base,.45));ctx.beginPath();
+    for(let i=0;i<3;i++){const a=i*2.094;ctx.lineTo(Math.cos(a)*v.r,Math.sin(a)*v.r)}ctx.closePath();ctx.fill();ctx.restore()}
+  // route
+  if(R.fixed){const nc=mix(base,WHITE,.26);for(const h of R.field)if(!R.pathSet.has(h.id))drawHold(ctx,h,nc)}
+  for(let k=-4;k<=R.Lmax;k++)drawHold(ctx,R.holds[k],rc);
+  const Rn=getRoute(t.absMin+1,G,dev);
+  P=poseAt(R,Rn,t.s+frac,t.absMin);
+  if(S.chalk){const top=(P.lowering||P.beer)?0:Math.max(P.LH.lv,P.RH.lv),down=sl.kind==='down';
+    for(let k=0;k<=R.Lmax;k++){if(down?k<=top:k>=top-1)continue;const h=R.holds[k];ctx.fillStyle='rgba(255,255,255,.55)';ctx.beginPath();ctx.arc(h.x-h.s*.18,h.y-h.s*.12,Math.max(1,h.s*.2),0,7);ctx.fill()}}
+  // finish tape above top hold, start tape under the two start holds
+  {const tp=R.holds[R.Lmax],w=Math.max(4,R.hs*.9),th=Math.max(1.5,R.hs*.16);ctx.fillStyle=css(rc);
+   ctx.fillRect(tp.x-w/2,tp.y-R.hs*.75-th,w,th);
+   for(const k of[0,1]){const h=R.holds[k];ctx.fillRect(h.x-w*.35,h.y+h.s*.6,w*.7,th)}}
+  // seconds scale
+  if(S.scale!=='off'){                      // fixed, evenly spaced scale: identical every minute, for orientation only
+    const step=+S.scale,xL=G.x0+Math.max(2,W*.008);ctx.fillStyle=css(rc);   // in the route colour
+    for(let s=step;s<60;s+=step){const y=lerp(G.ry1,G.ry0,s/60),major=s%15===0,len=major?Math.max(5,W*.016):Math.max(3,W*.008);
+      ctx.fillRect(xL,Math.round(y)-.5,len,Math.max(1.5,W*.005))}
+  }
+  // top anchor and rope
+  const anchor=anchorOf(G),ropeShown=!!P.lowering||S.topRope;
+  ctx.strokeStyle=css([150,156,152]);ctx.lineWidth=Math.max(1,R.c*.03);ctx.beginPath();ctx.arc(anchor.x,anchor.y,Math.max(1.5,R.hs*.22),0,7);ctx.stroke();
+  if(ropeShown){ctx.strokeStyle=css([214,212,200]);ctx.lineWidth=Math.max(1,R.c*.025);ctx.beginPath();ctx.moveTo(anchor.x,anchor.y);ctx.lineTo(P.hm.x,P.hm.y);ctx.stroke()}
+  drawTags(ctx,G,R,rc,S.wallStyle==='none'?BLACK:WALL[S.wallStyle]);
+  drawClimber(ctx,P,climberCol);
+  const mb=drawDigits(ctx,G,t,rc);
+  ctx.restore();
+  return{R,Rn,col,P,G,aod,anchor,ropeShown,kind:sl.kind};
+}
+function quantizeMip(ctx,W,H){
+  const im=ctx.getImageData(0,0,W,H),d=im.data;
+  for(let i=0;i<d.length;i+=4){d[i]=Math.round(d[i]/85)*85;d[i+1]=Math.round(d[i+1]/85)*85;d[i+2]=Math.round(d[i+2]/85)*85}
+  ctx.putImageData(im,0,0);
+}
+function litFraction(ctx,W,H,round){
+  const d=ctx.getImageData(0,0,W,H).data;let lit=0,tot=0;
+  for(let y=0;y<H;y+=2)for(let x=0;x<W;x+=2){
+    if(round){const dx=x-W/2,dy=y-H/2;if(dx*dx+dy*dy>W*W/4)continue}
+    tot++;const i=(y*W+x)*4;if(d[i]>10||d[i+1]>10||d[i+2]>10)lit++}
+  return lit/tot;
+}
+
+/* ---------- clock ---------- */
+let simMs=Date.now(),playing=true,last=performance.now();
+function timeAt(ms){const d=new Date(ms);const absMin=Math.floor((ms-d.getTimezoneOffset()*60000)/60000);
+  return{h:d.getHours(),m:d.getMinutes(),s:d.getSeconds(),frac:d.getMilliseconds()/1000,absMin}}
+
+/* ---------- UI ---------- */
+const face=document.getElementById('face'),fctx=face.getContext('2d',{willReadFrequently:true});
+const caseEl=document.getElementById('case');
+const devSel=document.getElementById('device');
+for(const[id,d]of Object.entries(DEVICES)){const o=document.createElement('option');o.value=id;o.textContent=d.label;devSel.appendChild(o)}
+const ctrls=[...document.querySelectorAll('[data-key]')];
+function syncControls(){
+  for(const el of ctrls){const k=el.dataset.key;if(el.type==='checkbox')el.checked=!!S[k];else el.value=String(S[k])}
+  document.querySelectorAll('output[data-for]').forEach(o=>{o.textContent=(+S[o.dataset.for]).toFixed(2)});
+  document.getElementById('wallWidth').disabled=S.wallClip==='half';
+  document.getElementById('lower').disabled=S.descent==='wall'&&!S.quarters&&!S.profCycle&&S.prof!=='beginner';
+  document.getElementById('quarters').disabled=S.descent!=='wall';
+  document.getElementById('prof').disabled=!!S.profCycle;
+  {const jg=document.getElementById('jumpGrade'),a=Math.min(S.gMin,S.gMax),b=Math.max(S.gMin,S.gMax);jg.disabled=!S.grades;
+   for(const o of jg.options)if(o.value)o.disabled=+o.value<a||+o.value>b}
+  document.getElementById('others').disabled=S.features==='fixed';
+  document.getElementById('gMax').disabled=!S.grades;
+  document.getElementById('gMinLabel').textContent=S.grades?'Easiest grade':'Grade';
+  document.getElementById('regen').disabled=S.features!=='fixed';
+  document.getElementById('seedNote').textContent=S.features==='fixed'?'Fixed wall #'+S.wallSeed:'Fixed wall not in use';
+}
+function readVal(el){if(el.type==='checkbox')return el.checked;const v=el.value;return(el.type==='range'||/^-?\d+(\.\d+)?$/.test(v))?+v:v}
+let dirty=true,lastKey='',lastFilmKey='';
+for(const el of ctrls)el.addEventListener('input',()=>{S[el.dataset.key]=readVal(el);save();syncControls();applyDevice();dirty=true;
+  if(el.dataset.key==='font'||el.dataset.key==='weight')loadFont()});
+function applyDevice(){
+  const dev=DEVICES[S.device];
+  if(face.width!==dev.w||face.height!==dev.h){face.width=dev.w;face.height=dev.h}
+  caseEl.classList.toggle('rect',dev.shape==='rect');caseEl.classList.toggle('mip',dev.tech==='mip');
+  document.getElementById('film').classList.toggle('rect',dev.shape==='rect');
+  document.getElementById('aodLabel').textContent=dev.tech==='amoled'?'Always-on mode':'Low-power mode';
+}
+function loadFont(){if(document.fonts&&document.fonts.load)document.fonts.load(`${S.weight} 64px "${S.font}"`,'0123456789:').then(()=>{dirty=true;lastFilmKey=''}).catch(()=>{})}
+
+const playBtn=document.getElementById('play');
+playBtn.onclick=()=>{playing=!playing;playBtn.textContent=playing?'Pause':'Play';};
+document.getElementById('now').onclick=()=>{simMs=Date.now();dirty=true};
+document.getElementById('mMinus').onclick=()=>{simMs-=60000;dirty=true};
+document.getElementById('mPlus').onclick=()=>{simMs+=60000;dirty=true};
+document.getElementById('j55').onclick=()=>{simMs=Math.floor(simMs/60000)*60000+55000;dirty=true};
+const secEl=document.getElementById('sec'),secOut=document.getElementById('secOut');
+secEl.addEventListener('input',()=>{simMs=Math.floor(simMs/60000)*60000+(+secEl.value)*1000;dirty=true});
+document.getElementById('jumpGrade').addEventListener('change',e=>{   // go to the start of the next route with that grade; the cycle carries on from there
+  const g=+e.target.value;e.target.value='';if(!g)return;const t=timeAt(simMs);
+  for(let i=0;i<240;i++){const am=t.absMin+i,sl=slotFor(am);
+    if(sl.kind!=='beer'&&sl.kind!=='down'&&sl.key===am&&gradeFor(am)===g){simMs=Math.floor(simMs/60000)*60000+i*60000;dirty=true;break}}});
+document.getElementById('setTime').addEventListener('change',e=>{const[h,m,s]=(e.target.value||'').split(':').map(Number);
+  if(Number.isFinite(h)&&Number.isFinite(m)){const d=new Date(simMs);d.setHours(h,m,s||0,0);simMs=d.getTime();dirty=true}});
+document.addEventListener('keydown',e=>{
+  if(e.target.closest('select,input,textarea,button'))return;
+  if(e.key===' '){e.preventDefault();playBtn.click()}
+  if(e.key==='ArrowRight'){simMs+=1000;dirty=true}
+  if(e.key==='ArrowLeft'){simMs-=1000;dirty=true}
+});
+document.getElementById('regen').onclick=()=>{S.wallSeed=(S.wallSeed||1)+1;save();syncControls();dirty=true;lastFilmKey=''};
+document.getElementById('reset').onclick=()=>{S={...DEF};save();syncControls();applyDevice();loadFont();dirty=true;lastFilmKey=''};
+
+// filmstrip
+let FRAMES=[0,12,24,36,48,59];
+const film=document.getElementById('film');
+const filmCanvases=FRAMES.map(s=>{const f=document.createElement('figure');const c=document.createElement('canvas');c.width=220;c.height=220;
+  const cap=document.createElement('figcaption');cap.textContent=':'+String(s).padStart(2,'0');f.append(c,cap);film.appendChild(f);return c});
+const off=document.createElement('canvas'),octx=off.getContext('2d',{willReadFrequently:true});
+function renderFilm(t){
+  const L=slotFor(t.absMin).kind==='line'?S.lower:0;
+  const top=59-L,desc=L>=3?[60-L,Math.round((119-L)/2),59]:L===2?[58,59]:[];
+  const climb=L>0?(desc.length===3?[0,Math.round(top/2),top]:[0,Math.round(top/3),Math.round(2*top/3),top]):[0,12,24,36,48,59];
+  FRAMES=[...climb,...desc];
+  const mk=MARK(t.absMin),wd=mk?' '+mk:'';
+  filmCanvases.forEach((c,i)=>{c.nextSibling.textContent=':'+String(FRAMES[i]).padStart(2,'0')+wd+(L>0&&FRAMES[i]>top?' ↓':L>0&&FRAMES[i]===top?' top':'')});
+  const dev=DEVICES[S.device];off.width=dev.w;off.height=dev.h;
+  FRAMES.forEach((s,i)=>{renderFace(octx,S.device,{...t,s,frac:0});if(dev.tech==='mip')quantizeMip(octx,dev.w,dev.h);
+    const c=filmCanvases[i];c.width=220;c.height=Math.round(220*dev.h/dev.w);const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(off,0,0,c.width,c.height)});
+}
+const minsEl=document.getElementById('mins');
+function renderMins(t){
+  minsEl.innerHTML='';
+  for(let i=0;i<12;i++){const am=t.absMin+i,c=colorFor(am).rgb;const mm=((am%1440)+1440)%1440;
+    const d=document.createElement('div');if(i===0)d.className='now';
+    d.innerHTML=`<i style="background:${css(c)}"></i><span>${String(Math.floor(mm/60)).padStart(2,'0')}:${String(mm%60).padStart(2,'0')}${MARK(am)}</span>${S.grades||S.profCycle?`<span>${S.grades?gradeFor(am):''}${S.profCycle?profFor(am)[0].toUpperCase():''}</span>`:''}`;
+    minsEl.appendChild(d)}
+}
+
+// readouts
+const tagSw=document.getElementById('tagSw'),tagBody=document.getElementById('tagBody'),diag=document.getElementById('diag');
+let lastInfo=null,statsAt=0;
+function updateReadouts(info,t){
+  const R=info.R,dev=DEVICES[S.device];
+  tagSw.style.background=css(info.col.rgb);
+  const sl=slotFor(t.absMin),per=R.M/(sl.kind==='line'?59-S.lower:59),
+    fp=(sl.kind==='up'||sl.kind==='line')?attemptPlan(R,sl.kind==='up'?59:59-S.lower):null,
+    fallTxt=fp?(fp.misses?fp.misses+' missed jump'+(fp.misses>1?'s':'')+' · ':'')+(fp.falls?fp.falls+' fall'+(fp.falls>1?'s':''):'no falls')+(fp.endM>=R.M-1e-6?' · tops out':' · no top'):'—',perTxt=per.toFixed(2)+' move';
+  const set=String(t.h).padStart(2,'0')+':'+String(t.m).padStart(2,'0');
+  tagBody.innerHTML=`<b>${info.col.name} · grade ${R.grade} · set ${set}</b><span class="k">Holds</span><span>${R.Lmax+5}</span><span class="k">Moves</span><span>${R.M}${R.dynos&&R.dynos.size?' · '+R.dynos.size+' dyno'+(R.dynos.size>1?'s':''):''}</span><span class="k">Per tick</span><span>${perTxt}</span><span class="k">Climber</span><span>${Math.round(R.c)} px tall</span><span class="k">This minute</span><span>${kindText(sl.kind)}</span><span class="k">Attempt</span><span>${fallTxt}</span>`;
+  const now=performance.now();
+  if(now-statsAt>400||!lastInfo){statsAt=now;
+    const lit=litFraction(fctx,dev.w,dev.h,dev.shape==='round');
+    let rows=`<b>Diagnostics</b><span class="k">Lit pixels</span><span>${(lit*100).toFixed(1)}%</span>`;
+    if(info.aod)rows+=`<span class="k">AOD limit 10%</span><span class="${lit<=.10?'ok':'over'}">${lit<=.10?'within':'over'}</span>`;
+    else{
+      const bx=redrawBox(info,t),w=Math.ceil(bx.x1-bx.x0),h=Math.ceil(bx.y1-bx.y0);
+      rows+=`<span class="k">Redraw / sec</span><span>${w}×${h} px</span><span class="k">Share of screen</span><span>${(w*h/(dev.w*dev.h)*100).toFixed(1)}%</span>`;
+      if(t.s===0)rows+=`<span class="k">At :00</span><span>full redraw</span>`;
+    }
+    diag.innerHTML=rows;
+  }
+  lastInfo=info;
+}
+function drawBBox(info,t){
+  if(!S.showBBox||info.aod)return;
+  const{x0,y0,x1,y1}=redrawBox(info,t);
+  fctx.save();fctx.setLineDash([4,3]);fctx.strokeStyle='#FF3DCB';fctx.lineWidth=1.5;fctx.strokeRect(x0,y0,x1-x0,y1-y0);fctx.restore();
+}
+
+// export
+document.getElementById('copy').onclick=async()=>{
+  const dev=DEVICES[S.device],G=geom(dev),t=timeAt(simMs),R=getRoute(t.absMin,G,dev);
+  const f=v=>+v.toFixed(4);
+  const out={face:'Second Ascent',settings:S,device:{id:S.device,...dev},
+    geometry:{wall:{x0:f(G.x0/G.W),x1:f(G.x1/G.W),y0:f(G.y0/G.H),y1:f(G.y1/G.H)},routeRegion:{x0:f(G.rx0/G.W),x1:f(G.rx1/G.W),y0:f(G.ry0/G.H),y1:f(G.ry1/G.H)},
+      digitsCenterX:f(G.dcx/G.W),levels:{from:-4,to:R.Lmax,spacingPx:f(R.dy)},climberPx:f(R.c),holdPx:f(R.hs),
+      timing:{descent:S.descent,wallDescent:'even minute climbs, odd minute downclimbs the same route in the same colour (moves reversed); colour changes every 2 minutes; all routes share start holds',climbSec:[0,59-S.lower],topOutSec:59-S.lower,lowerOffSec:S.lower?[60-S.lower,59]:null,lowerOffRoute:'current minute',rope:'anchor→harness during lower-off'},limbOrder:['LH','LF','RH','RF'],limbStartLevel:START,segments:{arm:.19,leg:.22,torso:.30,head:.085,unit:'climberPx'}},
+    palette:GYM.map(([n,c])=>({name:n,hex:hex(c)})),grades:GRADE,mipQuantize:'each channel → {0x00,0x55,0xAA,0xFF}'};
+  const txt=JSON.stringify(out,null,2),ta=document.getElementById('out');ta.value=txt;
+  const btn=document.getElementById('copy');
+  try{await navigator.clipboard.writeText(txt);btn.textContent='Copied';ta.hidden=true}
+  catch(e){ta.hidden=false;ta.focus();ta.select();btn.textContent='Select and copy below'}
+  setTimeout(()=>btn.textContent='Copy config JSON',1800);
+};
+
+// loop
+function frame(ts){
+  const dt=ts-last;last=ts;
+  if(playing){simMs+=dt*S.speed}
+  const t=timeAt(simMs);
+  const key=S.tick==='tick'?t.absMin+':'+t.s:'';
+  if(dirty||key===''||key!==lastKey){
+    dirty=false;lastKey=key;
+    const dev=DEVICES[S.device];
+    const info=renderFace(fctx,S.device,t);
+    if(dev.tech==='mip')quantizeMip(fctx,dev.w,dev.h);
+    updateReadouts(info,t);
+    drawBBox(info,t);
+    secEl.value=t.s;secOut.textContent=String(t.s).padStart(2,'0');
+    const fk=t.absMin+JSON.stringify(S);
+    if(fk!==lastFilmKey){lastFilmKey=fk;renderFilm(t);renderMins(t)}
+  }
+  requestAnimationFrame(frame);
+}
+syncControls();applyDevice();loadFont();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{dirty=true;lastFilmKey=''});
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

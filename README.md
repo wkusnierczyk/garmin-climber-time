@@ -3,7 +3,7 @@
 A Garmin Connect IQ watch face: the time on the left, a climbing wall on the right, and a
 miniature climber marking the seconds, one route per minute. The design is
 [`design/DESIGN.md`](design/DESIGN.md), whose behavioural reference is the browser simulator
-(not in the repository yet).
+[`design/second-ascent-simulator.html`](design/second-ascent-simulator.html) (open it in a browser).
 
 ## Status: prototype 0.0.1
 
