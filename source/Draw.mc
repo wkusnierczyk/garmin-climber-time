@@ -6,7 +6,8 @@ import Toybox.Lang;
 module Draw {
 
     const WALL = 0x24292D;          // slate
-    const LAYOUT = Climb.LAYOUT_CENTRE;   // which wall area the build draws; see Geom
+    const LAYOUT = Climb.LAYOUT_HALF;     // which wall area the build draws; see Geom
+    const TIME_LINEAR = true;             // HHMM in one line (centre panel, right half); see Geom
     const CLIMBER = 0xF5F5F5;       // white
     const HOURS = 0xF6F6F6;
     const ROPE = 0xD6D4C8;
@@ -38,9 +39,9 @@ module Draw {
     // Stacked digits' font size: 0.30 H, shrunk to fit between the bezel and the wall
     // (DESIGN.md §4.1), then scaled by the layout's digitScale.
     function digitSize(dc as Graphics.Dc, g as Geom) as Number {
-        var fs = g.H * 0.30;
+        var fs = g.H * (g.timeLinear ? 0.19 : 0.30);
         var f = vectorFont(fs.toNumber(), Graphics.FONT_NUMBER_THAI_HOT);
-        var tot = 2 * 1.04 * dc.getTextWidthInPixels("0", f);
+        var tot = (g.timeLinear ? 4 : 2) * 1.04 * dc.getTextWidthInPixels("0", f);
         if (tot > g.digitMaxW) {
             fs = fs * g.digitMaxW / tot;
         }
@@ -58,7 +59,53 @@ module Draw {
         }
     }
 
+    // Widest of the tag characters in font f.
+    function tagGlyphWidth(dc as Graphics.Dc, f as Graphics.FontType) as Number {
+        var cw = 0;
+        var chars = ["8", "B", "I", "E"] as Array<String>;
+        for (var i = 0; i < chars.size(); i++) {
+            var w = dc.getTextWidthInPixels(chars[i], f);
+            if (w > cw) {
+                cw = w;
+            }
+        }
+        return cw;
+    }
+
+    // The tags' font size at which two hugging boxes and their gap span `width`: measured
+    // at `guess` and scaled, as vector fonts scale linearly.
+    function tagSizeForWidth(dc as Graphics.Dc, guess as Float, width as Float) as Float {
+        var f = vectorFont(guess.toNumber(), Graphics.FONT_NUMBER_MILD);
+        var w = 2 * (tagGlyphWidth(dc, f) + 0.24 * guess) + 0.18 * guess;
+        return w > 0 ? guess * width / w : guess;
+    }
+
+    // The right half's two-line group, centred vertically: [digits row y, tags row y].
+    // A digit is about 0.72 of its font size tall, a tag box 0.96 of the tags' size.
+    function groupRows(g as Geom) as Array<Float> {
+        var dh = 0.72 * g.digitSize;
+        var th = 0.96 * g.tagSize;
+        var gap = 0.18 * g.digitSize;
+        var top = g.H / 2 - (dh + gap + th) / 2;
+        return [top + dh / 2, top + dh + gap + th / 2];
+    }
+
     function time(dc as Graphics.Dc, g as Geom, dx as Float, dy as Float, hh as Number, mm as Number, font as Graphics.FontType, hc as Number, mc as Number) as Void {
+        if (g.timeGroup) {
+            // HHMM right-aligned to groupRight: the four cells end there.
+            var cw = 1.04 * dc.getTextWidthInPixels("0", font);
+            var y = groupRows(g)[0];
+            digits(dc, hh.format("%02d"), g.groupRight - 3 * cw + dx, y + dy, font, hc);
+            digits(dc, mm.format("%02d"), g.groupRight - cw + dx, y + dy, font, mc);
+            return;
+        }
+        if (g.timeLinear) {
+            // HHMM, no separator (DESIGN.md §4.1): two blocks of fixed cells side by side.
+            var cw = 1.04 * dc.getTextWidthInPixels("0", font);
+            digits(dc, hh.format("%02d"), g.dcx - cw + dx, g.H / 2 + dy, font, hc);
+            digits(dc, mm.format("%02d"), g.dcx + cw + dx, g.H / 2 + dy, font, mc);
+            return;
+        }
         digits(dc, hh.format("%02d"), g.dcx + dx, g.H * ROW_HOURS + dy, font, hc);
         digits(dc, mm.format("%02d"), g.dcx + dx, g.H * ROW_MINUTES + dy, font, mc);
     }
@@ -225,7 +272,7 @@ module Draw {
     // Tag font size, as a fraction of H. The design's 0.055 side by side was hard to
     // read on the wrist; the prototype stacks them larger.
     const TAG_FS = 0.085;
-    const TAG_ROW_SCALE = 0.6;      // TAGS_ROWS: the tags' font size as a fraction of the digits'
+    const TAG_ROW_SCALE = 0.6;      // centre panel: the tags' font size as a fraction of the digits'
     const ROW_HOURS = 0.365;        // stacked time rows' centres, as fractions of H
     const ROW_MINUTES = 0.635;
 
@@ -240,16 +287,9 @@ module Draw {
         var th;
         var lw;
         var rad;
-        if (g.tagMode == Climb.TAGS_ROWS) {
+        if (g.tagHug) {
             // A box hugging the glyph: the widest of the characters, padded.
-            var cw = 0;
-            var chars = ["8", "B", "I", "E"] as Array<String>;
-            for (var i = 0; i < chars.size(); i++) {
-                var w = dc.getTextWidthInPixels(chars[i], font);
-                if (w > cw) {
-                    cw = w;
-                }
-            }
+            var cw = tagGlyphWidth(dc, font);
             var pad = fs * 0.12;
             bw = cw + 2 * pad;
             th = asc + 2 * pad;
@@ -266,7 +306,12 @@ module Draw {
         var cy1;
         var cx2;
         var cy2;
-        if (g.tagMode == Climb.TAGS_INLINE) {
+        if (g.timeGroup) {
+            cx2 = g.groupRight - bw / 2;
+            cx1 = cx2 - bw - gap;
+            cy1 = groupRows(g)[1];
+            cy2 = cy1;
+        } else if (g.tagMode == Climb.TAGS_INLINE) {
             cx1 = g.tagX - (bw + gap) / 2;
             cx2 = g.tagX + (bw + gap) / 2;
             cy1 = g.H / 2;

@@ -30,17 +30,24 @@ class View extends WatchUi.WatchFace {
         var w = dc.getWidth();
         var h = dc.getHeight();
         var shape = System.getDeviceSettings().screenShape;
-        var g = new Geom(w, h, shape == System.SCREEN_SHAPE_ROUND, Draw.LAYOUT);
+        var g = new Geom(w, h, shape == System.SCREEN_SHAPE_ROUND, Draw.LAYOUT, Draw.TIME_LINEAR);
         _geom = g;
         var ds = Draw.digitSize(dc, g);
+        g.digitSize = ds.toFloat();
         _digitFont = Draw.vectorFont(ds, Graphics.FONT_NUMBER_THAI_HOT);
-        if (g.tagMode == Climb.TAGS_ROWS) {
+        if (g.timeGroup) {
+            // The two tags together as wide as the minutes' two digit cells.
+            var target = 2 * 1.04 * dc.getTextWidthInPixels("0", _digitFont);
+            _tagSize = Draw.tagSizeForWidth(dc, ds * Draw.TAG_ROW_SCALE, target);
+            _tagFont = Draw.vectorFont(_tagSize.toNumber(), Graphics.FONT_NUMBER_MILD);
+        } else if (g.tagHug) {
             _tagSize = ds * Draw.TAG_ROW_SCALE;
             _tagFont = Draw.vectorFont(_tagSize.toNumber(), Graphics.FONT_NUMBER_MILD);
         } else {
             _tagSize = g.H * Draw.TAG_FS;
             _tagFont = Draw.vectorFont(_tagSize.toNumber(), Graphics.FONT_XTINY);
         }
+        g.tagSize = _tagSize;
         if (Graphics has :createBufferedBitmap) {
             _static = Graphics.createBufferedBitmap({ :width => w, :height => h });
         }

@@ -68,35 +68,59 @@ class Geom {
     public var tagX as Float;             // the tags' centre x
     public var tagMode as Number;         // Climb.TAGS_INLINE, TAGS_STACKED or TAGS_ROWS
     public var digitScale as Float;       // applied after the digits are fitted
+    public var timeLinear as Boolean;     // HHMM on one line at mid-height, not stacked
+    public var tagHug as Boolean;         // tags sized from the digits, boxes hugging the glyph
+    public var timeGroup as Boolean;      // right half: time over tags, right-aligned to groupRight
+    public var groupRight as Float;
+    public var digitSize as Float = 0.0;  // set by the view once the fonts are fitted
+    public var tagSize as Float = 0.0;
 
     // Wall area (DESIGN.md §3.2, plus the prototype's centre panel):
     //   LAYOUT_PANEL  the floating panel, default width 0.30
     //   LAYOUT_HALF   the right half of the screen
     //   LAYOUT_CENTRE a panel in the middle of the face, as tall as the bezel allows,
     //                 the time stacked left of it and the tags in a line right of it
-    function initialize(w as Number, h as Number, round as Boolean, layout as Number) {
+    function initialize(w as Number, h as Number, round as Boolean, layout as Number, timeLinear as Boolean) {
         W = w.toFloat();
         H = h.toFloat();
         self.round = round;
         self.layout = layout;
         full = layout == Climb.LAYOUT_HALF;
-        tagMode = layout == Climb.LAYOUT_CENTRE ? Climb.TAGS_ROWS : (full ? Climb.TAGS_STACKED : Climb.TAGS_INLINE);
+        // Linear time in the centre panel or the right half, for now; its tags then sit
+        // in a line too. In the right half, time and tags form a two-line group left of
+        // the wall, right-aligned to it and centred vertically.
+        self.timeLinear = timeLinear && layout != Climb.LAYOUT_PANEL;
+        timeGroup = self.timeLinear && full;
+        groupRight = 0.0;
+        tagHug = layout == Climb.LAYOUT_CENTRE || timeGroup;
+        if (timeGroup) {
+            tagMode = Climb.TAGS_INLINE;
+        } else if (layout == Climb.LAYOUT_CENTRE) {
+            tagMode = self.timeLinear ? Climb.TAGS_INLINE : Climb.TAGS_ROWS;
+        } else {
+            tagMode = full ? Climb.TAGS_STACKED : Climb.TAGS_INLINE;
+        }
         digitScale = layout == Climb.LAYOUT_CENTRE ? 0.9 : 1.0;
+        if (timeGroup) {
+            digitScale = 1.1;
+        }
         digitMaxW = 0.0;
         tagX = 0.0;
         if (layout == Climb.LAYOUT_CENTRE) {
             var ww = Climb.CENTRE_WIDTH * W;
             x0 = (W - ww) / 2;
             x1 = x0 + ww;
-            var lb = 0.03 * W;            // the bezel's left edge beside the minutes row
+            var lb = 0.03 * W;            // the bezel's left edge beside the time
             if (round) {
                 // The panel's corners on a circle just inside the bezel.
                 var r = W / 2 - 0.02 * W;
                 var hh = Math.sqrt(r * r - ww * ww / 4).toFloat();
                 y0 = H / 2 - hh;
                 y1 = H / 2 + hh;
-                var dy = 0.20 * H;
-                lb = W / 2 - Math.sqrt(W * W / 4 - dy * dy).toFloat();
+                // Beside the minutes row's far edge when stacked; beside a linear
+                // time's top and bottom, plus a margin, when linear.
+                var dy = self.timeLinear ? 0.07 * H : 0.20 * H;
+                lb = W / 2 - Math.sqrt(W * W / 4 - dy * dy).toFloat() + (self.timeLinear ? 0.02 * W : 0.0);
             } else {
                 y0 = 0.04 * H;
                 y1 = 0.96 * H;
@@ -134,6 +158,16 @@ class Geom {
             ay = ry0 - 0.035 * H;
             digitMaxW = 2 * Climb.minf(dcx - 0.03 * W, x0 - dcx - 0.03 * W);
             tagX = (rx1 + W) / 2;
+            if (timeGroup) {
+                groupRight = x0 - 0.03 * W;
+                // The bezel's left edge beside the time's row, a little above mid-height.
+                var lb = 0.03 * W;
+                if (round) {
+                    var dy = 0.10 * H;
+                    lb = W / 2 - Math.sqrt(W * W / 4 - dy * dy).toFloat() + 0.03 * W;
+                }
+                digitMaxW = groupRight - lb;
+            }
             return;
         }
         if (round) {
@@ -385,10 +419,9 @@ class Route {
 module Climb {
 
     enum { LAYOUT_PANEL, LAYOUT_HALF, LAYOUT_CENTRE }
-    const CENTRE_WIDTH = 0.36;
-    // The tags: side by side, stacked, or stacked level with the hours and minutes rows
-    // at the digits' size.
-    enum { TAGS_INLINE, TAGS_STACKED, TAGS_ROWS }     // the centre panel's width, as a fraction of W
+    const CENTRE_WIDTH = 0.36;     // the centre panel's width, as a fraction of W
+    // The tags: side by side, stacked, or stacked level with the hours and minutes rows.
+    enum { TAGS_INLINE, TAGS_STACKED, TAGS_ROWS }
 
     const MOVES = 30;          // moves per minute at grade 6
     const LOWER = 3;           // lower-off seconds
