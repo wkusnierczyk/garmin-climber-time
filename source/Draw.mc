@@ -6,7 +6,7 @@ import Toybox.Lang;
 module Draw {
 
     const WALL = 0x24292D;          // slate
-    const WALL_HALF = true;         // the wall fills the right half, not a floating panel
+    const LAYOUT = Climb.LAYOUT_CENTRE;   // which wall area the build draws; see Geom
     const CLIMBER = 0xF5F5F5;       // white
     const HOURS = 0xF6F6F6;
     const ROPE = 0xD6D4C8;
@@ -39,8 +39,7 @@ module Draw {
     function digitFont(dc as Graphics.Dc, g as Geom) as Graphics.FontType {
         var fs = (g.H * 0.30).toNumber();
         var f = vectorFont(fs, Graphics.FONT_NUMBER_THAI_HOT);
-        var mg = g.W * 0.03;
-        var maxW = 2 * Climb.minf(g.dcx - mg, g.x0 - g.dcx - mg);
+        var maxW = g.digitMaxW;
         var tot = 2 * 1.04 * dc.getTextWidthInPixels("0", f);
         if (tot > maxW && f != Graphics.FONT_NUMBER_THAI_HOT) {
             f = vectorFont((fs * maxW / tot).toNumber(), Graphics.FONT_NUMBER_THAI_HOT);
@@ -227,8 +226,8 @@ module Draw {
     // read on the wrist; the prototype stacks them larger.
     const TAG_FS = 0.085;
 
-    // [grade] above [B/I/E], centred at mid-height in the strip right of the route
-    // (DESIGN.md §3.3, stacked and enlarged for the prototype).
+    // [grade] and [B/I/E], stacked or side by side, centred at mid-height on g.tagX
+    // (DESIGN.md §3.3, enlarged for the prototype).
     function tags(dc as Graphics.Dc, g as Geom, r as Route, rc as Number, font as Graphics.FontType) as Void {
         var fs = g.H * TAG_FS;
         var asc = fs * 0.72;
@@ -237,16 +236,27 @@ module Draw {
         var gap = fs * 0.18;
         var lw = Climb.maxf(1.5, fs * 0.09);
         var rad = Climb.maxf(1.5, fs * 0.18);
-        var cx = g.full ? (g.rx1 + g.W) / 2 : g.x1;
-        var x = cx - bw / 2;
-        var y = g.H / 2 - (th + gap / 2);
+        var x;
+        var y;
+        var dx = 0.0;
+        var dy = 0.0;
+        if (g.tagsInLine) {
+            x = g.tagX - bw - gap / 2;
+            y = g.H / 2 - th / 2;
+            dx = bw + gap;
+        } else {
+            x = g.tagX - bw / 2;
+            y = g.H / 2 - (th + gap / 2);
+            dy = th + gap;
+        }
         var letters = ["B", "I", "E"] as Array<String>;
 
         dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
         dc.fillRoundedRectangle(x, y, bw, th, rad);
         dc.setColor(mix(rc, 0, 0.82), Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y + th / 2, font, r.grade.toString(), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-        y += th + gap;
+        dc.drawText(x + bw / 2, y + th / 2, font, r.grade.toString(), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        x += dx;
+        y += dy;
 
         dc.setColor(WALL, Graphics.COLOR_TRANSPARENT);
         dc.fillRoundedRectangle(x, y, bw, th, rad);
@@ -254,7 +264,7 @@ module Draw {
         dc.setPenWidth(lw.toNumber());
         dc.drawRoundedRectangle(x + lw / 2, y + lw / 2, bw - lw, th - lw, Climb.maxf(1.0, rad - lw / 2));
         dc.setPenWidth(1);
-        dc.drawText(cx, y + th / 2, font, letters[r.prof], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(x + bw / 2, y + th / 2, font, letters[r.prof], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 
     function seg(dc as Graphics.Dc, P as Pose, a as Number, b as Number, dx as Float, dy as Float, w as Float) as Void {

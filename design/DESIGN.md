@@ -75,7 +75,7 @@ All geometry is expressed as fractions of the screen width W and height H, so ot
 
 ### 3.2 Wall area
 
-User setting **Wall area**: a floating panel or the right half of the screen.
+User setting **Wall area**: a floating panel, the right half of the screen, or a centre panel. All three stay in the design; the user picks one.
 
 | | Floating panel, round | Floating panel, rect | Right half, round | Right half, rect |
 |---|---|---|---|---|
@@ -86,18 +86,31 @@ User setting **Wall area**: a floating panel or the right half of the screen.
 | Digits centre x | 0.30 W | 0.285 W | 0.27 W stacked, 0.25 W linear | same |
 | Rope anchor y | wall top + max(3 px, 0.012 H) | same | route top − 0.035 H | same |
 
+**Centre panel** (added 2026-11-11, after the right half proved small on the wrist): a tall panel in the middle of the face, the time stacked on its left and the tags on its right. It gives the wall and the climber the most height of the three.
+
+| | Centre panel, round | Centre panel, rect |
+|---|---|---|
+| Wall x | (W − cw·W)/2 to (W + cw·W)/2 | same |
+| Wall y | H/2 ∓ √(r² − (cw·W/2)²), r = 0.48 W: the corners just inside the bezel | 0.04 H to 0.96 H |
+| Route region | wall inset by 12 % of wall width each side, 0.03 H top and bottom | same |
+| Digits | stacked only; centred between the bezel's left edge at y = H/2 ± 0.20 H and the wall left − 0.025 W, shrunk to fit that width | centred between 0.03 W and the wall left − 0.025 W |
+| Tags | centred at x = (wall right + W)/2 | same |
+| Rope anchor y | wall top + max(3 px, 0.012 H) | same |
+
+Centre width cw is 0.36 W in the prototype (on a 416 px screen: a 150 × 370 px wall, climber c ≈ 86 px against ≈ 62 px in the floating panel). The corner radius is 0.03 W, as for the floating panel. Whether cw becomes a setting, like the floating panel's width, is open.
+
 Wall **width** (floating panel only) is a setting from 0.22 to 0.36 of W, default 0.30. The floating panel has a corner radius of 0.03 W.
 
 In right-half mode the route region stays where the bezel leaves room on a round screen; the rest of the half is wall and, on a fixed wall, unused holds (§5.4).
 
 ### 3.3 Tags
 
-Two small tags sit side by side at mid-height (y = H/2), centred on the panel's right edge (floating panel) or in the strip right of the route ((route right + W)/2, right half):
+Two small tags sit at mid-height (y = H/2), centred on the panel's right edge (floating panel), in the strip right of the route ((route right + W)/2, right half), or right of the wall ((wall right + W)/2, centre panel). They sit side by side; the prototype stacks them, grade above proficiency, in the right half, and keeps them side by side in the centre panel. Side by side or stacked is a candidate setting:
 
 - **Grade tag** (setting **Show grade tag**, default on): filled in the route colour, the grade number cut out in dark (route colour mixed 82 % toward black).
 - **Proficiency tag** (setting **Show proficiency tag**, default on): filled in the wall colour, outlined in the route colour, letter B, I or E in the route colour.
 
-Order is [grade][proficiency]. If one is hidden the other takes the first slot. Sizes in Appendix A.6. The climber is drawn over the tags.
+Order is [grade][proficiency], left to right or top to bottom. If one is hidden the other takes the first slot. Sizes in Appendix A.6; the prototype uses fs = 0.085 H, box width 1.05 fs, gap 0.18 fs, outline max(1.5 px, 0.09 fs), after 0.055 H proved barely readable on the wrist. The climber is drawn over the tags.
 
 ### 3.4 Seconds scale
 
@@ -521,7 +534,7 @@ These become Connect IQ properties (§15.5). Keys match the simulator's settings
 | showGrade | on, off | on | §3.3 |
 | showProf | on, off | on | §3.3 |
 | wallStyle | slate, plywood, none | slate | §5.1 |
-| wallClip | panel, half | panel | §3.2 |
+| wallClip | panel, half, centre | panel | §3.2 |
 | wallWidth | 0.22 to 0.36 | 0.30 | §3.2 |
 | tnut | on, off | on | §5.1 |
 | scale | off, 10, 15, 5 | 10 | §3.4 |

@@ -62,15 +62,56 @@ class Geom {
     public var dcx as Float;
     public var ay as Float;
 
-    public var full as Boolean;
+    public var layout as Number;
+    public var full as Boolean;           // the wall is the right half
+    public var digitMaxW as Float;        // the widest the two-digit block may be
+    public var tagX as Float;             // the tags' centre x
+    public var tagsInLine as Boolean;     // side by side rather than stacked
 
-    // Wall area (DESIGN.md §3.2): the right half of the screen when full, else the
-    // floating panel at the default width 0.30.
-    function initialize(w as Number, h as Number, round as Boolean, full as Boolean) {
+    // Wall area (DESIGN.md §3.2, plus the prototype's centre panel):
+    //   LAYOUT_PANEL  the floating panel, default width 0.30
+    //   LAYOUT_HALF   the right half of the screen
+    //   LAYOUT_CENTRE a panel in the middle of the face, as tall as the bezel allows,
+    //                 the time stacked left of it and the tags in a line right of it
+    function initialize(w as Number, h as Number, round as Boolean, layout as Number) {
         W = w.toFloat();
         H = h.toFloat();
         self.round = round;
-        self.full = full;
+        self.layout = layout;
+        full = layout == Climb.LAYOUT_HALF;
+        tagsInLine = layout == Climb.LAYOUT_CENTRE;
+        digitMaxW = 0.0;
+        tagX = 0.0;
+        if (layout == Climb.LAYOUT_CENTRE) {
+            var ww = Climb.CENTRE_WIDTH * W;
+            x0 = (W - ww) / 2;
+            x1 = x0 + ww;
+            var lb = 0.03 * W;            // the bezel's left edge beside the minutes row
+            if (round) {
+                // The panel's corners on a circle just inside the bezel.
+                var r = W / 2 - 0.02 * W;
+                var hh = Math.sqrt(r * r - ww * ww / 4).toFloat();
+                y0 = H / 2 - hh;
+                y1 = H / 2 + hh;
+                var dy = 0.20 * H;
+                lb = W / 2 - Math.sqrt(W * W / 4 - dy * dy).toFloat();
+            } else {
+                y0 = 0.04 * H;
+                y1 = 0.96 * H;
+            }
+            var gapW = 0.025 * W;
+            dcx = (lb + x0 - gapW) / 2;
+            digitMaxW = x0 - gapW - lb;
+            tagX = (x1 + W - (round ? 0.0 : 0.02 * W)) / 2;
+            var hp = ww * 0.12;
+            var vp = 0.03 * H;
+            rx0 = x0 + hp;
+            rx1 = x1 - hp;
+            ry0 = y0 + vp;
+            ry1 = y1 - vp;
+            ay = y0 + Climb.maxf(3.0, H * 0.012);
+            return;
+        }
         if (full) {
             x0 = 0.5 * W;
             x1 = W;
@@ -88,6 +129,8 @@ class Geom {
                 ry1 = 0.94 * H;
             }
             ay = ry0 - 0.035 * H;
+            digitMaxW = 2 * Climb.minf(dcx - 0.03 * W, x0 - dcx - 0.03 * W);
+            tagX = (rx1 + W) / 2;
             return;
         }
         if (round) {
@@ -110,6 +153,8 @@ class Geom {
         ry0 = y0 + vp;
         ry1 = y1 - vp;
         ay = y0 + Climb.maxf(3.0, H * 0.012);
+        digitMaxW = 2 * Climb.minf(dcx - 0.03 * W, x0 - dcx - 0.03 * W);
+        tagX = x1;
     }
 }
 
@@ -335,6 +380,9 @@ class Route {
 }
 
 module Climb {
+
+    enum { LAYOUT_PANEL, LAYOUT_HALF, LAYOUT_CENTRE }
+    const CENTRE_WIDTH = 0.36;     // the centre panel's width, as a fraction of W
 
     const MOVES = 30;          // moves per minute at grade 6
     const LOWER = 3;           // lower-off seconds
