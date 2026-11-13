@@ -19,17 +19,11 @@ A clear and concise description of what you expected to happen.
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
-**Platform**  
-Desktop
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
-
-Mobile
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+**Platform**
+ - Watch: [e.g. epix Pro (Gen 2) 47 mm]
+ - Firmware: [e.g. 21.19]
+ - App version: [e.g. 0.1.0, or the commit of a sideloaded build]
+ - SDK, for a build or simulator problem: [e.g. 9.3.0]
 
 **Context**
 Add any other context about the problem here.
