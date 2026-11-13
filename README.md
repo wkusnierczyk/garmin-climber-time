@@ -42,4 +42,7 @@ MTP. Tune with `WAIT`, `EVERY`, `TRIES` and `BACKOFF`.
 make build      # ClimberTime.prg for DEVICE (default epix2pro47mm)
 make run        # build and load into the simulator
 make sideload   # build for the watch connected by USB and copy it over
+make test       # run the (:test) functions in the simulator
+make export     # export/ClimberTime-<version>.iq, the signed store bundle, version from manifest.xml
+make help       # every target and variable, with the values they have now
 ```
