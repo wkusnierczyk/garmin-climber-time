@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
-<title>Second Ascent</title>
+<title>Climber Time simulator</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;700&family=Roboto:wght@400;500;700&family=Roboto+Condensed:wght@400;500;700&family=Rubik:wght@400;500;700&family=Barlow+Semi+Condensed:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;700&family=Roboto:wght@400;500;700&family=Roboto+Condensed:wght@400;500;700&family=Rubik:wght@400;500;700&family=Roboto+Slab:wght@700&family=Ubuntu:wght@700&family=Lato:wght@700&family=Barlow+Semi+Condensed:wght@400;500;700&display=swap">
 <style>
 /* Layout: workbench. Watch on a stage at left with route tag, filmstrip and minute strip; grouped controls in a rail at right; stacks on phones. */
 :root{
@@ -90,8 +90,8 @@ textarea{width:100%;box-sizing:border-box;font-family:var(--font-data);font-size
 <body>
 <div class="app">
   <header>
-    <h1>Second Ascent</h1>
-    <p>Hours and minutes on the left. On the right, a climber sends one route per minute, tops out, then either gets lowered off on the rope in the final seconds or climbs back down the same route over the next minute.</p>
+    <h1>Climber Time</h1>
+    <p>The design reference for Climber Time. Hours and minutes on the left; on the wall, a climber climbs one route per grade three times, as beginner, intermediate and expert, a minute each, and is lowered off on the rope in the final seconds. Defaults are Lite 0.1.0's (DESIGN.md §14.3).</p>
   </header>
 
   <div class="stage">
@@ -135,24 +135,27 @@ textarea{width:100%;box-sizing:border-box;font-family:var(--font-data);font-size
       <legend>Device</legend>
       <div class="row"><label for="device">Screen</label><select id="device" data-key="device"></select></div>
       <div class="row"><label for="aod" id="aodLabel">Always-on mode</label><input type="checkbox" id="aod" data-key="aod"></div>
+      <div class="row"><label for="aodGuard">Always-on burn-in protection</label><select id="aodGuard" data-key="aodGuard"></select></div>
+      <div class="row"><button id="burn" type="button">Check always-on burn-in over a day</button></div>
+      <p class="note" id="burnOut">Renders every minute of a day in 12 and 24 h, as the burn-in protector would see it.</p>
       <div class="row"><label for="bbox">Show per-second redraw region</label><input type="checkbox" id="bbox" data-key="showBBox"></div>
     </fieldset>
 
     <fieldset>
       <legend>Digits</legend>
-      <div class="row"><label for="font">Typeface</label><select id="font" data-key="font"><option>Roboto</option><option>Roboto Condensed</option><option>Rubik</option><option>Barlow Semi Condensed</option></select></div>
+      <div class="row"><label for="font">Typeface</label><select id="font" data-key="font"><option>Roboto Condensed</option><option>Roboto</option><option>Roboto Slab</option><option>Ubuntu</option><option>Lato</option><option>Rubik</option><option>Barlow Semi Condensed</option></select></div>
       <div class="row"><label for="weight">Weight</label><select id="weight" data-key="weight"><option value="700">Bold</option><option value="500">Medium</option><option value="400">Regular</option></select></div>
       <div class="row"><label for="layout">Time layout</label><select id="layout" data-key="layout"><option value="stacked">Stacked HH / MM</option><option value="inline">Linear HHMM</option></select></div>
       <div class="row"><label for="digitSize">Size</label><input type="range" id="digitSize" data-key="digitSize" min="0.8" max="1.2" step="0.02"><output data-for="digitSize"></output></div>
-      <div class="row"><label for="hourColor">Hours colour</label><select id="hourColor" data-key="hourColor"><option value="white">White</option><option value="grey">Grey</option><option value="route">Route colour</option></select></div>
-      <div class="row"><label for="minColor">Minutes colour</label><select id="minColor" data-key="minColor"><option value="route">Route colour</option><option value="white">White</option><option value="grey">Grey</option></select></div>
+      <div class="row"><label for="hourColor">Hours colour</label><select id="hourColor" data-key="hourColor"></select></div>
+      <div class="row"><label for="minColor">Minutes colour</label><select id="minColor" data-key="minColor"></select></div>
       <div class="row"><label for="h24">24-hour</label><input type="checkbox" id="h24" data-key="hour24"></div>
       <div class="row"><label for="lz">Leading zero on hours</label><input type="checkbox" id="lz" data-key="leadZero"></div>
     </fieldset>
 
     <fieldset>
       <legend>Route</legend>
-      <div class="row"><label for="palette">Colour per minute</label><select id="palette" data-key="palette"><option value="shuffle">Gym colours, shuffled</option><option value="cycle">Gym colours, in order</option><option value="hue">Hue wheel (6° per minute)</option></select></div>
+      <div class="row"><label for="palette">Colour per route</label><select id="palette" data-key="palette"><option value="round">Gym colours, one per grade round, at random</option><option value="shuffle">Gym colours, shuffled</option><option value="cycle">Gym colours, in order</option><option value="hue">Hue wheel (6° per minute)</option></select></div>
       <div class="row"><label for="moves">Moves per minute</label><select id="moves" data-key="moves"><option value="15">15</option><option value="20">20</option><option value="30">30</option><option value="60">60</option></select></div>
       <div class="row"><label for="features">Wall features</label><select id="features" data-key="features"><option value="random">New holds every minute</option><option value="fixed">Fixed wall, new path highlighted</option></select></div>
       <div class="row"><label for="grades">Rising difficulty</label><input type="checkbox" id="grades" data-key="grades"></div>
@@ -160,6 +163,9 @@ textarea{width:100%;box-sizing:border-box;font-family:var(--font-data);font-size
       <div class="row"><label for="gMax">Hardest grade</label><select id="gMax" data-key="gMax"><option value="4">4 · very easy</option><option value="5">5 · easy</option><option value="6">6 · moderate</option><option value="7">7 · hard</option><option value="8">8 · very hard</option></select></div>
       <div class="row"><label for="showGrade">Show grade tag on the wall</label><input type="checkbox" id="showGrade" data-key="showGrade"></div>
       <div class="row"><label for="showProf">Show proficiency tag (B / I / E)</label><input type="checkbox" id="showProf" data-key="showProf"></div>
+      <div class="row"><label for="profB">Proficiency tag, beginner</label><select id="profB" data-key="profB"></select></div>
+      <div class="row"><label for="profI">Proficiency tag, intermediate</label><select id="profI" data-key="profI"></select></div>
+      <div class="row"><label for="profE">Proficiency tag, expert</label><select id="profE" data-key="profE"></select></div>
       <div class="row"><label for="holdStyle">Hold shapes</label><select id="holdStyle" data-key="holdStyle"><option value="mixed">Jugs, crimps, slopers, pinches</option><option value="dots">Plain dots</option></select></div>
       <div class="row"><label for="volumes">Volumes</label><input type="checkbox" id="volumes" data-key="volumes"></div>
       <div class="row"><label for="others">Other routes on the wall (dimmed)</label><input type="checkbox" id="others" data-key="otherRoutes"></div>
@@ -200,18 +206,19 @@ textarea{width:100%;box-sizing:border-box;font-family:var(--font-data);font-size
 
 <script>
 (()=>{
-const DEVICES={
-  r454:{w:454,h:454,shape:'round',tech:'amoled',label:'Round 454 · AMOLED'},
-  r416:{w:416,h:416,shape:'round',tech:'amoled',label:'Round 416 · AMOLED'},
-  r280:{w:280,h:280,shape:'round',tech:'mip',label:'Round 280 · MIP 64-colour'},
-  r260:{w:260,h:260,shape:'round',tech:'mip',label:'Round 260 · MIP 64-colour'},
-  s320:{w:320,h:360,shape:'rect',tech:'amoled',label:'Rect 320×360 · AMOLED'}
+const DEVICES={   // the screen classes 0.1.0 can support: at least 360 px each way (owner, 2026-11-15; #16)
+  r454:{w:454,h:454,shape:'round',tech:'amoled',label:'Round 454 · AMOLED · epix Pro 47/51, fenix 8 47, venu 3, fr965'},
+  r466:{w:466,h:466,shape:'round',tech:'amoled',label:'Round 466 · AMOLED · fenix 9 Pro 51'},
+  r416:{w:416,h:416,shape:'round',tech:'amoled',label:'Round 416 · AMOLED · epix 2, fenix 8 43, venu 2, fr265'},
+  r390:{w:390,h:390,shape:'round',tech:'amoled',label:'Round 390 · AMOLED · epix Pro 42, venu 4 41, vivoactive 5/6, fr165'},
+  r360:{w:360,h:360,shape:'round',tech:'amoled',label:'Round 360 · AMOLED · venu 2S, fr265S'},
+  q448:{w:448,h:486,shape:'rect',tech:'amoled',label:'Rect 448×486 · AMOLED · venu X1'}
 };
-const FONTS=['Roboto','Roboto Condensed','Rubik','Barlow Semi Condensed'];
-const DEF={device:'r454',speed:1,tick:'tick',aod:false,showBBox:false,font:'Roboto',weight:700,layout:'stacked',digitSize:1,
-  hourColor:'white',minColor:'route',hour24:true,leadZero:true,palette:'shuffle',moves:30,holdStyle:'mixed',volumes:true,otherRoutes:true,
-  chalk:false,wallStyle:'slate',wallClip:'panel',wallWidth:0.30,tnut:true,scale:'10',climberColor:'white',climberScale:1,lower:3,topRope:false,descent:'line',features:'random',wallSeed:1,grades:true,gMin:4,gMax:8,showGrade:true,quarters:false,beer:false,prof:'expert',showProf:true,profCycle:false};
-const STORE='second-ascent-v1';
+const FONTS=['Roboto Condensed','Roboto','Roboto Slab','Ubuntu','Lato','Rubik','Barlow Semi Condensed'];
+const DEF={device:'r454',speed:1,tick:'tick',aod:false,showBBox:false,font:'Roboto Condensed',weight:700,layout:'inline',digitSize:0.94,
+  hourColor:'white',minColor:'grey',profB:'yellow',profI:'orange',profE:'red',aodGuard:'checker',hour24:true,leadZero:true,palette:'round',moves:30,holdStyle:'mixed',volumes:true,otherRoutes:true,
+  chalk:false,wallStyle:'slate',wallClip:'panel',wallWidth:0.30,tnut:true,scale:'10',climberColor:'white',climberScale:1,lower:3,topRope:false,descent:'line',features:'random',wallSeed:1,grades:true,gMin:4,gMax:8,showGrade:true,quarters:false,beer:false,prof:'expert',showProf:true,profCycle:true};
+const STORE='climber-time-v1';
 let S={...DEF};
 try{const j=JSON.parse(localStorage.getItem(STORE)||'null');if(j)S={...DEF,...j}}catch(e){}
 if(!DEVICES[S.device])S.device=DEF.device;
@@ -270,7 +277,22 @@ function hourPlan(hr){
 function slotFor(absMin){const hr=Math.floor(absMin/60);return hourPlan(hr)[absMin-hr*60]}
 function MARK(absMin){const k=slotFor(absMin).kind;return k==='beer'?'🍺':S.descent!=='wall'?'':k==='up'?'↑':k==='down'?'↓':'⤓'}
 function kindText(k){return k==='beer'?'beer break':k==='up'?'↑ climb':k==='down'?'↓ downclimb, no jumps':S.lower?'↑ climb, lowered from :'+(60-S.lower):'↑ climb'}
-function colorFor(absMin){const sl=slotFor(absMin);   // one colour per route, however many minutes it spans
+// One colour per grade round (owner, 2026-11-15): the beginner, the intermediate and the expert
+// climb the same route in the same colour, picked at random from the gym colours, never the
+// previous round's, across hours too. The colour says nothing about the difficulty. Rounds are
+// numbered absolutely, R = hour·n + floor(ordinal/3), n the rounds in an hour (20 on the rope;
+// fewer with downclimbing or a beer break), or per route without proficiency cycling; an even round takes hash(R) mod 9, an odd round the first colour
+// from its own hash on that is neither neighbour's, so no recursion is needed (Appendix B.2b).
+function roundIndex(R){const n=GYM.length,raw=x=>hash(x*977+17)%n;
+  if(((R%2)+2)%2===0)return raw(R);let i=raw(R);const a=raw(R-1),b=raw(R+1);while(i===a||i===b)i=(i+1)%n;return i}
+function roundColor(absMin){
+  const sl=slotFor(absMin),hr=Math.floor(sl.key/60),k=S.profCycle?3:1;
+  // rounds in an hour, from the hour plan (the same every hour), so that R runs on without gaps
+  const n=Math.floor(Math.max(...hourPlan(hr).map(x=>x.ord??0))/k)+1,R=hr*n+Math.floor(sl.ord/k),i=roundIndex(R);
+  return{name:GYM[i][0],rgb:GYM[i][1],idx:i};
+}
+function colorFor(absMin){
+  if(S.palette==='round')return roundColor(absMin);const sl=slotFor(absMin);   // one colour per route, however many minutes it spans
   return S.palette==='hue'?routeColor(sl.key,'hue'):routeColor(Math.floor(sl.key/60)*60+sl.ord,S.palette);
 }
 
@@ -314,18 +336,27 @@ function geom(dev){
     else{x0=.56*W;x1=Math.min(.95*W,x0+S.wallWidth*W*1.3);y0=.07*H;y1=.93*H;dcx=.285*W}
     const hp=(x1-x0)*.12,vp=.03*H;rx0=x0+hp;rx1=x1-hp;ry0=y0+vp;ry1=y1-vp;ay=y0+Math.max(3,H*.012);
   }
-  return{W,H,round,full,x0,x1,y0,y1,rx0,rx1,ry0,ry1,dcx,ay};
+  const timeGroup=S.layout==='inline';let groupRight=0,groupMaxW=0;   // the time group sits left of the wall, half or panel
+  if(timeGroup){groupRight=x0-.03*W;const dy=.10*H;const lb=round?W/2-Math.sqrt(W*W/4-dy*dy)+.03*W:.03*W;groupMaxW=groupRight-lb}
+  return{W,H,round,full,x0,x1,y0,y1,rx0,rx1,ry0,ry1,dcx,ay,timeGroup,groupRight,groupMaxW};
 }
 
 /* ---------- route ---------- */
 const START=[0,-4,1,-3];               // limb order per cycle: LH, LF, RH, RF; left on even levels, right on odd
 const nMoves=(M,o)=>Math.floor((M-o+3)/4);
 const routeCache=new Map();
+// One route per grade: the beginner's minute sets it, and the intermediate and expert climb
+// the same holds, in the same colour (roundColor).
+function routeSeed(sl){
+  if(!S.profCycle)return sl.key;
+  const hr=Math.floor(sl.key/60),o0=sl.ord-sl.ord%3;
+  const first=hourPlan(hr).find(x=>x.kind!=='beer'&&x.ord===o0);return first?first.key:sl.key;
+}
 function getRoute(absMin,G,dev){
-  const sl=slotFor(absMin);absMin=sl.key;   // minutes that share a route (up+down, beer preview) share one key
+  const sl=slotFor(absMin);absMin=sl.key;const seed=routeSeed(sl);   // minutes that share a route (up+down, beer preview) share one key
   const key=[absMin,sl.ord,S.beer,S.quarters,dev.w,dev.h,S.moves,S.wallWidth,S.wallClip,S.climberScale,S.holdStyle,S.volumes,S.descent,S.features,S.wallSeed,S.grades,S.gMin,S.gMax,S.prof,S.profCycle].join('|');
   if(routeCache.has(key))return routeCache.get(key);
-  const rng=mulberry32(hash(absMin*31+7));
+  const rng=mulberry32(hash(seed*31+7));
   const g=gradeFor(absMin),GP=GRADE[g],e=(g-4)/4;
   const LM=m=>Math.max(2*nMoves(m,0),1+2*nMoves(m,2));
   const L0=LM(S.moves),dy0=(G.ry1-G.ry0)/(L0+4);           // grade-6 spacing; climber size is tied to it
@@ -343,7 +374,7 @@ function getRoute(absMin,G,dev){
     const F=getField(G,dev,L0,dy0,hs0),wallMode=S.descent==='wall';
     const holds={};
     for(let k=-4;k<=Lmax;k++){
-      const side=(k&1)?1:-1;let w=0,sid=absMin*1009+k;
+      const side=(k&1)?1:-1;let w=0,sid=seed*1009+k;
       if(wallMode){if(k<=1){w=1;sid=1013+k}else w=clamp((4-k)/3,0,1)}   // shared start holds
       const ctr=cx+(half*.30*Math.sin(k*.33+phase)+lean*half*.18*(k/Lmax))*(1-w),tx=ctr+side*half*(.32+e*.12);
       const row=clamp(Math.round((G.ry1-ly(k))/dy0)-4,-4,L0);
@@ -353,7 +384,7 @@ function getRoute(absMin,G,dev){
         const sc=Math.abs(h.x-tx)/half+fit+(w>=1?0:(hash(sid*31+h.id)%1000)/4000);if(sc<bs){bs=sc;best=h}}
       holds[k]=best;
     }
-    const R={holds,Lmax,dy,dy0,c,hs:hs0,M,vols:F.vols,field:F.list,pathSet:new Set(Object.values(holds).map(h=>h.id)),fixed:true,grade:g,air:GP.air,dynos:makeDynos(absMin,M,GP)};R.cum=timing(M,R.dynos,GP);R.key=absMin;R.prof=profFor(absMin);R.sitX=(holds[-4].x+holds[-3].x)/2;R.groundY=G.ry1+.03*G.H;
+    const R={holds,Lmax,dy,dy0,c,hs:hs0,M,vols:F.vols,field:F.list,pathSet:new Set(Object.values(holds).map(h=>h.id)),fixed:true,grade:g,air:GP.air,dynos:makeDynos(seed,M,GP)};R.cum=timing(M,R.dynos,GP);R.key=absMin;R.prof=profFor(absMin);R.sitX=(holds[-4].x+holds[-3].x)/2;R.groundY=G.ry1+.03*G.H;
     if(routeCache.size>200)routeCache.clear();
     routeCache.set(key,R);return R;
   }
@@ -385,7 +416,7 @@ function getRoute(absMin,G,dev){
     for(let v=0;v<nv;v++){const k=3+Math.floor(rng()*(Lmax-6));const h=holds[k];
       vols.push({x:h.x+(rng()-.5)*hs*1.4,y:h.y+hs*.3,r:hs*(1.7+rng()*.6),rot:rng()*6.283})}
   }
-  const dynos=makeDynos(absMin,M,GP);   // a dyno lands on a big hold
+  const dynos=makeDynos(seed,M,GP);   // a dyno lands on a big hold
   for(const i of dynos){const o=i%4,h=holds[START[o]+2*Math.floor((i-o+3)/4)+2];if(h){h.type=S.holdStyle==='dots'?'dot':'jug';h.s=hs0*1.05;h.y-=.6*dy}}   // and sits further up: a real gap
   const R={key:absMin,prof:profFor(absMin),holds,Lmax,dy,dy0,c,hs:hs0,M,vols,grade:g,dynos,air:GP.air,cum:timing(M,dynos,GP),sitX:(holds[-4].x+holds[-3].x)/2,groundY:G.ry1+.03*G.H};
   if(routeCache.size>200)routeCache.clear();
@@ -641,7 +672,11 @@ function drawClimber(ctx,P,col,dim=1){
 }
 const CLIMBER={white:[245,245,245],grey:[196,202,198],amber:[255,188,84]};
 const WALL={slate:[36,41,45],plywood:[92,74,55],none:[0,0,0]};
-function digitColor(k,rc){return k==='route'?rc:k==='grey'?[150,156,153]:[246,246,246]}
+// Fixed colours for the minutes and the tags (0.1.0 fixes them; Premium makes them a setting).
+const FIXED_COLORS={white:['White',[246,246,246]],grey:['Grey',[150,156,153]],amber:['Amber',[255,188,84]],yellow:['Yellow',[247,201,72]],
+  orange:['Orange',[255,140,43]],red:['Red',[239,68,68]],pink:['Pink',[255,111,176]],purple:['Purple',[160,108,240]],
+  blue:['Blue',[58,134,255]],teal:['Teal',[34,195,195]],green:['Green',[52,196,106]],route:['Route colour (follows the route)',null]};
+function digitColor(k,rc){return k==='route'||!FIXED_COLORS[k]?rc:FIXED_COLORS[k][1]}
 function cellText(ctx,str,cx,cy,fs,cols,maxW){
   if(maxW){ctx.font=`${S.weight} ${fs}px "${S.font}", Roboto, system-ui, sans-serif`;const cw0=ctx.measureText('0').width,cl=ctx.measureText(':').width;
     const tot=[...str].reduce((a,ch)=>a+(ch===':'?Math.max(cl*1.6,cw0*.45):cw0*1.04),0);if(tot>maxW)fs*=maxW/tot}
@@ -654,9 +689,36 @@ function cellText(ctx,str,cx,cy,fs,cols,maxW){
   const n=str.length-1,lw=ctx.measureText(str[n]).width;
   return{x0:xs+ws[0]/2-ctx.measureText(str[0]).width/2,x1:x-ws[n]/2+lw/2,cy,asc};   // glyph edges, for aligning things under the time
 }
-// Route tags on the wall edge (or in the free strip right of the route), side by side:
+// Route tags on the wall edge (or in the free strip right of the route), side by side, or under the minutes in the time group:
 // [grade] filled in the route colour with the number cut out, [B/I/E] wall-coloured with a route-colour outline and letter.
+// The time group beside the wall, half or panel (prototype Draw.groupRows, View.onLayout): HHMM fitted
+// between the bezel and groupRight, then 1.1×; the tags sized so that their two boxes and
+// gap span the minutes' two cells; the digits row on H/2, the tags below it.
+function fontOf(fs,w){return `${w} ${fs}px "${S.font}", Roboto, system-ui, sans-serif`}
+function groupLayout(ctx,G){
+  let fs=G.H*.19;ctx.font=fontOf(fs,S.weight);let w0=ctx.measureText('0').width;
+  const tot=4*1.04*w0;if(tot>G.groupMaxW)fs*=G.groupMaxW/tot;fs*=1.1*S.digitSize;
+  ctx.font=fontOf(fs,S.weight);w0=ctx.measureText('0').width;const cw=1.04*w0;
+  const guess=fs*.6;ctx.font=fontOf(guess,700);
+  const gw=Math.max(...['8','B','I','E'].map(c=>ctx.measureText(c).width));
+  const tfs=guess*(2*cw)/(2*(gw+.24*guess)+.18*guess);
+  ctx.font=fontOf(tfs,700);const tgw=Math.max(...['8','B','I','E'].map(c=>ctx.measureText(c).width));
+  const dh=.72*fs,th=.96*tfs,gap=.18*fs;
+  return{fs,cw,tfs,tgw,yTime:G.H/2,yTags:G.H/2+dh/2+gap+th/2};
+}
+function drawGroupTags(ctx,G,R,rc,wallRGB){
+  const L=groupLayout(ctx,G),fs=L.tfs;ctx.font=fontOf(fs,700);ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  const asc=fs*.72,pad=fs*.12,bw=L.tgw+2*pad,th=asc+2*pad,lw=Math.max(2,fs*.05),rad=Math.max(2,fs*.12),gap=fs*.18;
+  const cx2=G.groupRight-bw/2,cx1=cx2-bw-gap,cy=L.yTags;
+  const glyph=(t,x)=>{const a=ctx.measureText(t).actualBoundingBoxAscent||asc;ctx.fillText(t,x,cy+a/2)};
+  if(S.showGrade){ctx.fillStyle=css(rc);rrPath(ctx,cx1-bw/2,cy-th/2,bw,th,rad);ctx.fill();ctx.fillStyle=css(mix(rc,BLACK,.82));glyph(String(R.grade),cx1)}
+  const pf=R.prof||S.prof,pc=digitColor(S[{beginner:'profB',intermediate:'profI',expert:'profE'}[pf]],rc);
+  if(S.showProf){ctx.fillStyle=css(wallRGB);rrPath(ctx,cx2-bw/2,cy-th/2,bw,th,rad);ctx.fill();
+    ctx.strokeStyle=css(pc);ctx.lineWidth=lw;rrPath(ctx,cx2-bw/2+lw/2,cy-th/2+lw/2,bw-lw,th-lw,Math.max(1,rad-lw/2));ctx.stroke();
+    ctx.fillStyle=css(pc);glyph({beginner:'B',intermediate:'I',expert:'E'}[pf]||'E',cx2)}
+}
 function drawTags(ctx,G,R,rc,wallRGB){
+  if(G.timeGroup)return drawGroupTags(ctx,G,R,rc,wallRGB);
   const items=[];
   if(S.showGrade)items.push({t:String(R.grade),filled:true});
   if(S.showProf)items.push({t:{beginner:'B',intermediate:'I',expert:'E'}[R.prof||S.prof]||'E',filled:false});
@@ -666,8 +728,9 @@ function drawTags(ctx,G,R,rc,wallRGB){
   const tot=items.length*bw+(items.length-1)*gap,y=G.H/2;let x=(G.full?(G.rx1+G.W)/2:G.x1)-tot/2;
   for(const it of items){
     if(it.filled){ctx.fillStyle=css(rc);rrPath(ctx,x,y-th/2,bw,th,rad);ctx.fill();ctx.fillStyle=css(mix(rc,BLACK,.82))}
-    else{ctx.fillStyle=css(wallRGB);rrPath(ctx,x,y-th/2,bw,th,rad);ctx.fill();
-      ctx.strokeStyle=css(rc);ctx.lineWidth=lw;rrPath(ctx,x+lw/2,y-th/2+lw/2,bw-lw,th-lw,Math.max(1,rad-lw/2));ctx.stroke();ctx.fillStyle=css(rc)}
+    else{const pc=digitColor(S[{beginner:'profB',intermediate:'profI',expert:'profE'}[R.prof||S.prof]],rc);
+      ctx.fillStyle=css(wallRGB);rrPath(ctx,x,y-th/2,bw,th,rad);ctx.fill();
+      ctx.strokeStyle=css(pc);ctx.lineWidth=lw;rrPath(ctx,x+lw/2,y-th/2+lw/2,bw-lw,th-lw,Math.max(1,rad-lw/2));ctx.stroke();ctx.fillStyle=css(pc)}
     ctx.fillText(it.t,x+bw/2,y+asc/2);x+=bw+gap;
   }
 }
@@ -676,6 +739,8 @@ function drawDigits(ctx,G,t,rc,dim=1){
   const hh=S.leadZero?String(h).padStart(2,'0'):String(h),mm=String(t.m).padStart(2,'0');
   const d=c=>dim<1?mix(BLACK,c,dim):c;
   const hc=d(digitColor(S.hourColor,rc)),mc=d(digitColor(S.minColor,rc));
+  if(G.timeGroup){const L=groupLayout(ctx,G),str=hh+mm;   // the last cell ends at groupRight
+    return cellText(ctx,str,G.groupRight-str.length*L.cw/2,L.yTime,L.fs,[...str].map((ch,i)=>i<hh.length?hc:mc))}
   const mg=G.W*.03,maxW=2*Math.min(G.dcx-mg,G.x0-G.dcx-mg);   // keep digits clear of the bezel and the wall
   if(S.layout==='stacked'){
     const fs=G.H*.30*S.digitSize;
@@ -687,6 +752,47 @@ function drawDigits(ctx,G,t,rc,dim=1){
   }
 }
 
+// Garmin's burn-in protector blanks the always-on screen if more than 10% of the pixels are lit
+// or any pixel stays lit for three minutes (measured for Matrix Time on the epix Pro). onUpdate
+// comes once a minute in always-on, so anything that moves does so once a minute, from the clock.
+// S.aodGuard picks the protection:
+//   rows    every other pixel row blanked, the other rows in the next minute: no pixel is lit two
+//           minutes running (on the watch: a black drawLine per row over the drawing's boxes)
+//   checker the same with a checkerboard, finer to the eye, harder to draw on the watch
+//   jitterS / jitterL  the time moved to the next corner of a square every minute,
+//           W/32 or W/12 each way from centre
+const AOD_GUARDS={rows:'Alternate pixel rows each minute',checker:'Checkerboard, alternating each minute',jitterS:'Corner jitter, W/32 (14 px)',jitterL:'Corner jitter, W/12 (38 px)'};
+function aodShift(absMin,W){const g=S.aodGuard;if(g!=='jitterS'&&g!=='jitterL')return{x:0,y:0};
+  const k=((absMin%4)+4)%4,d=W/(g==='jitterS'?32:12);return{x:(k===1||k===2?1:-1)*d,y:(k>=2?1:-1)*d}}
+// The holds step round the corners of a small square, one corner a minute (minute mod 4), from
+// the clock. A step of 2·HOLD_JIT clears a dot's own diameter.
+const HOLD_JIT=4;
+function aodHolds(ctx,R,rc,t){const k=((t.absMin%4)+4)%4,a=HOLD_JIT,dx=(k===1||k===2?1:-1)*a,dy=(k>=2?1:-1)*a;
+  ctx.fillStyle=css(mix(BLACK,rc,.6));
+  for(let i=-4;i<=R.Lmax;i++){const h=R.holds[i];if(!h)continue;ctx.beginPath();ctx.arc(h.x+dx,h.y+dy,Math.max(1.2,h.s*.18),0,7);ctx.fill()}}
+function aodMask(ctx,W,H,absMin){const g=S.aodGuard;if(g!=='rows'&&g!=='checker')return;
+  const im=ctx.getImageData(0,0,W,H),d=im.data,ph=((absMin%2)+2)%2;
+  for(let y=0;y<H;y++){if(g==='rows'){if((y+ph)%2)continue;for(let x=0;x<W;x++){const j=(y*W+x)*4;d[j]=d[j+1]=d[j+2]=0}}
+    else for(let x=(y+ph)%2;x<W;x+=2){const j=(y*W+x)*4;d[j]=d[j+1]=d[j+2]=0}}
+  ctx.putImageData(im,0,0)}
+// A day of always-on frames, one a minute from local midnight (plus two to wrap): the most
+// pixels lit at once, as a share of the screen, and the pixels lit three minutes running.
+function burnIn(h24,step=60,n=1442){
+  const dev=DEVICES[S.device],W=dev.w,H=dev.h,cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const x=cv.getContext('2d',{willReadFrequently:true}),keep={aod:S.aod,hour24:S.hour24};S.aod=true;S.hour24=h24;
+  const run=new Uint16Array(W*H),stuck=new Uint8Array(W*H);let area=0;
+  for(let y=0;y<H;y++)for(let i=0;i<W;i++){const dx=i+.5-W/2,dy=y+.5-H/2;if(dev.shape!=='round'||dx*dx+dy*dy<=W*W/4)area++}
+  const d0=new Date(simMs);d0.setHours(0,0,0,0);let maxLit=0,worst=0,nStuck=0;
+  try{
+  const lim=Math.ceil(180/step);
+  for(let m=0;m<n;m++){
+    renderFace(x,S.device,timeAt(d0.getTime()+m*step*1000));const d=x.getImageData(0,0,W,H).data;let lit=0;
+    for(let i=0,j=0;i<run.length;i++,j+=4){
+      if(d[j]|d[j+1]|d[j+2]){lit++;if(++run[i]>worst)worst=run[i];if(run[i]>=lim&&!stuck[i]){stuck[i]=1;nStuck++}}else run[i]=0}
+    if(lit>maxLit)maxLit=lit}
+  }finally{S.aod=keep.aod;S.hour24=keep.hour24}
+  return{maxLit:maxLit/area,worst:Math.round(worst*step/60*10)/10,nStuck};
+}
 function renderFace(ctx,devId,t){
   const dev=DEVICES[devId],G=geom(dev),W=G.W,H=G.H;
   const aod=S.aod&&dev.tech==='amoled';
@@ -698,11 +804,13 @@ function renderFace(ctx,devId,t){
   const climberCol=CLIMBER[S.climberColor]||CLIMBER.white;
   let P;
   if(aod){
-    const ox=((t.absMin%3)-1)*2,oy=((Math.floor(t.absMin/3)%3)-1)*2;ctx.translate(ox,oy);   // burn-in shift
+    // Always-on: the time, with the burn-in protection S.aodGuard picks (aodShift, aodMask), and
+    // the route's holds as dots, jittered on their own (aodHolds). No climber, wall or tags.
+    ctx.save();const J=aodShift(t.absMin,W);ctx.translate(J.x,J.y);
     drawDigits(ctx,G,t,rc,.55);
-    for(let k=-4;k<=R.Lmax;k++){const h=R.holds[k];ctx.fillStyle=css(mix(BLACK,rc,.6));ctx.beginPath();ctx.arc(h.x,h.y,Math.max(1.2,h.s*.18),0,7);ctx.fill()}
-    P=sl.kind==='beer'?beerPose(R,30,60):pose(R,sl.kind==='down'?R.M:0);drawClimber(ctx,P,climberCol,.5);
-    ctx.restore();return{R,col,P,G,aod,kind:sl.kind};
+    ctx.restore();aodMask(ctx,W,H,t.absMin);
+    aodHolds(ctx,R,rc,t);
+    ctx.restore();return{R,col,P:null,G,aod,kind:sl.kind};
   }
   // wall
   const wc=WALL[S.wallStyle];
@@ -767,9 +875,9 @@ function quantizeMip(ctx,W,H){
 }
 function litFraction(ctx,W,H,round){
   const d=ctx.getImageData(0,0,W,H).data;let lit=0,tot=0;
-  for(let y=0;y<H;y+=2)for(let x=0;x<W;x+=2){
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){   // every pixel: a row or checkerboard mask defeats subsampling
     if(round){const dx=x-W/2,dy=y-H/2;if(dx*dx+dy*dy>W*W/4)continue}
-    tot++;const i=(y*W+x)*4;if(d[i]>10||d[i+1]>10||d[i+2]>10)lit++}
+    tot++;const i=(y*W+x)*4;if(d[i]|d[i+1]|d[i+2])lit++}
   return lit/tot;
 }
 
@@ -783,6 +891,8 @@ const face=document.getElementById('face'),fctx=face.getContext('2d',{willReadFr
 const caseEl=document.getElementById('case');
 const devSel=document.getElementById('device');
 for(const[id,d]of Object.entries(DEVICES)){const o=document.createElement('option');o.value=id;o.textContent=d.label;devSel.appendChild(o)}
+for(const id of['hourColor','minColor','profB','profI','profE']){const el=document.getElementById(id);for(const[k,[n]]of Object.entries(FIXED_COLORS)){const o=document.createElement('option');o.value=k;o.textContent=n;el.appendChild(o)}}
+{const gs=document.getElementById('aodGuard');for(const[k,v]of Object.entries(AOD_GUARDS)){const o=document.createElement('option');o.value=k;o.textContent=v;gs.appendChild(o)}}
 const ctrls=[...document.querySelectorAll('[data-key]')];
 function syncControls(){
   for(const el of ctrls){const k=el.dataset.key;if(el.type==='checkbox')el.checked=!!S[k];else el.value=String(S[k])}
@@ -835,6 +945,10 @@ document.addEventListener('keydown',e=>{
 document.getElementById('regen').onclick=()=>{S.wallSeed=(S.wallSeed||1)+1;save();syncControls();dirty=true;lastFilmKey=''};
 document.getElementById('reset').onclick=()=>{S={...DEF};save();syncControls();applyDevice();loadFont();dirty=true;lastFilmKey=''};
 
+document.getElementById('burn').onclick=()=>{const out=document.getElementById('burnOut');out.textContent='Rendering 2 × 1,442 always-on frames…';
+  setTimeout(()=>{const r=[burnIn(true),burnIn(false)],f=(n,x)=>`${n}: at most ${(x.maxLit*100).toFixed(2)}% lit, longest run ${x.worst} min, ${x.nStuck} pixels lit 3 min running`;
+    const ok=r.every(x=>x.maxLit<=.10&&x.nStuck===0);
+    out.innerHTML=`<b class="${ok?'ok':'over'}">${ok?'Passes':'Fails'}</b> the 10% and 3-minute limits with ${AOD_GUARDS[S.aodGuard].toLowerCase()}.<br>${f('24 h',r[0])}<br>${f('12 h',r[1])}`;dirty=true},30)};
 // filmstrip
 let FRAMES=[0,12,24,36,48,59];
 const film=document.getElementById('film');
@@ -896,10 +1010,10 @@ function drawBBox(info,t){
 document.getElementById('copy').onclick=async()=>{
   const dev=DEVICES[S.device],G=geom(dev),t=timeAt(simMs),R=getRoute(t.absMin,G,dev);
   const f=v=>+v.toFixed(4);
-  const out={face:'Second Ascent',settings:S,device:{id:S.device,...dev},
+  const out={face:'Climber Time',settings:S,device:{id:S.device,...dev},
     geometry:{wall:{x0:f(G.x0/G.W),x1:f(G.x1/G.W),y0:f(G.y0/G.H),y1:f(G.y1/G.H)},routeRegion:{x0:f(G.rx0/G.W),x1:f(G.rx1/G.W),y0:f(G.ry0/G.H),y1:f(G.ry1/G.H)},
       digitsCenterX:f(G.dcx/G.W),levels:{from:-4,to:R.Lmax,spacingPx:f(R.dy)},climberPx:f(R.c),holdPx:f(R.hs),
-      timing:{descent:S.descent,wallDescent:'even minute climbs, odd minute downclimbs the same route in the same colour (moves reversed); colour changes every 2 minutes; all routes share start holds',climbSec:[0,59-S.lower],topOutSec:59-S.lower,lowerOffSec:S.lower?[60-S.lower,59]:null,lowerOffRoute:'current minute',rope:'anchor→harness during lower-off'},limbOrder:['LH','LF','RH','RF'],limbStartLevel:START,segments:{arm:.19,leg:.22,torso:.30,head:.085,unit:'climberPx'}},
+      timing:{descent:S.descent,wallDescent:'even minute climbs, odd minute downclimbs the same route in the same colour (moves reversed); colour as the palette setting gives; all routes share start holds',climbSec:[0,59-S.lower],topOutSec:59-S.lower,lowerOffSec:S.lower?[60-S.lower,59]:null,lowerOffRoute:'current minute',rope:'anchor→harness during lower-off'},limbOrder:['LH','LF','RH','RF'],limbStartLevel:START,segments:{arm:.19,leg:.22,torso:.30,head:.085,unit:'climberPx'}},
     palette:GYM.map(([n,c])=>({name:n,hex:hex(c)})),grades:GRADE,mipQuantize:'each channel → {0x00,0x55,0xAA,0xFF}'};
   const txt=JSON.stringify(out,null,2),ta=document.getElementById('out');ta.value=txt;
   const btn=document.getElementById('copy');

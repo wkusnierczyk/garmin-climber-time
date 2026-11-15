@@ -1,9 +1,9 @@
 # Climber Time
 
 A Garmin Connect IQ watch face: the time on the left, a climbing wall on the right, and a
-miniature climber marking the seconds, one route per minute. The design is
+miniature climber marking the seconds, one climb per minute. The design is
 [`design/DESIGN.md`](design/DESIGN.md), whose behavioural reference is the browser simulator
-[`design/second-ascent-simulator.html`](design/second-ascent-simulator.html) (open it in a browser).
+[`design/climber-time-simulator.html`](design/climber-time-simulator.html) (open it in a browser).
 
 ## Status: prototype 0.0.1
 
@@ -11,9 +11,10 @@ A sideloadable prototype, not a release. It shows the correct time and the climb
 simulator, with the settings fixed:
 
 - Difficulty cycles through grades 4 to 8, and each grade is climbed three times, as beginner,
-  intermediate, then expert: 4B 4I 4E 5B ... 8E, then again. One route per minute, so the
-  cycle is 15 minutes and every hour starts at 4B.
-- Each climb ends with a 3 s lower-off on the rope onto the next route's start.
+  intermediate, then expert: 4B 4I 4E 5B ... 8E, then again. One climb per minute, so the
+  cycle is 15 minutes and every hour starts at 4B. The three climbs of a grade are one route
+  in one colour; the next grade brings a new route in a new colour.
+- Each climb ends with a 3 s lower-off on the rope onto the next climb's start: the same route within a grade, a new one after the expert.
 - Beginners fall onto the rope and restart; intermediates may fall once or miss a jump;
   experts top out (DESIGN.md §12).
 - The wall is a panel on the right. Left of it, the time on one line (HHMM) sits above the
