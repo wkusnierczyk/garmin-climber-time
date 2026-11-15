@@ -5,7 +5,8 @@ import Toybox.Math;
 //
 // Prototype scope: the settings are fixed at the simulator's defaults, except
 // "Cycle proficiency on each grade" (on), so the face runs 4B 4I 4E 5B ... 8E, one
-// route per minute, each lowered on the rope at the end of its minute.
+// minute each, each lowered on the rope at the end of its minute. The three minutes of a
+// grade climb one route, in one colour (DESIGN.md §6.3, §7).
 
 class Hold {
     public var x as Float;
@@ -276,7 +277,10 @@ class Route {
         ord = Climb.posMod(key, 60);
         grade = 4 + (ord / 3) % 5;
         prof = ord % 3;
-        colorIdx = Climb.colorIndex(Climb.floorDiv(key, 60), ord);
+        colorIdx = Climb.roundColor(Climb.floorDiv(key, 60), ord / 3);
+        // One route per grade round (DESIGN.md §6.3): the beginner's minute seeds the holds
+        // and the jumps, and the intermediate and the expert climb the same route.
+        var seed = key.toLong() - prof;
 
         var gp = Climb.GRADES[grade - 4];
         var sp = gp[0] as Float;
@@ -287,7 +291,7 @@ class Route {
         var dw = gp[5] as Float;
         var e = (grade - 4) / 4.0;
 
-        var rng = new Mulberry(Rand.hash(key.toLong() * 31 + 7));
+        var rng = new Mulberry(Rand.hash(seed * 31 + 7));
         var l0 = Climb.levels(Climb.MOVES);
         dy0 = (g.ry1 - g.ry0) / (l0 + 4);
         m = Climb.MOVES;
@@ -350,7 +354,7 @@ class Route {
         }
         dynoList = [] as Array<Number>;
         if (nDynos > 0 && m >= 8) {
-            var r2 = new Mulberry(Rand.hash(key.toLong() * 17 + 3));
+            var r2 = new Mulberry(Rand.hash(seed * 17 + 3));
             var cand = [] as Array<Number>;
             for (var i = 2; i <= m - 4; i += 2) {
                 cand.add(i);
@@ -500,11 +504,17 @@ module Climb {
         }
     }
 
-    // Shuffled gym colour, never the same twice in a row within the hour (Appendix B.2).
-    function colorIndex(hour as Number, ord as Number) as Number {
-        var i = Rand.hashMod(hour.toLong() * 7919 + 13, 9);
-        for (var k = 1; k <= ord; k++) {
-            i = (i + 1 + Rand.hashMod(hour.toLong() * 61 + k, 8)) % 9;
+    // One gym colour per grade round r of the hour (DESIGN.md §7): a seeded pick, never the
+    // previous round's, so it says nothing about the difficulty (simulator roundColor).
+    function roundColor(hour as Number, r as Number) as Number {
+        var prev = -1;
+        var i = 0;
+        for (var k = 0; k <= r; k++) {
+            i = Rand.hashMod(hour.toLong() * 977 + k * 131 + 17, 9);
+            if (i == prev) {
+                i = (i + 1) % 9;
+            }
+            prev = i;
         }
         return i;
     }
