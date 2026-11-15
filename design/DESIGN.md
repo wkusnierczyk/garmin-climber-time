@@ -1,13 +1,13 @@
-# Second Ascent. Design
+# Climber Time. Design
 
-Status: Design complete, ready to build  
-Version: 1.0  
-Date: 2026-10-15  
+Status: Lite 0.1.0 settled (§14.3)  
+Version: 1.1  
+Date: 2026-11-15  
 Owner: Wacek  
 Platform: Garmin Connect IQ watch face, Monkey C  
-Reference simulator: `second-ascent-simulator.html` (also published at https://claude.ai/artifact/L39yNMssUR76suoq4hqDpG)
+Reference simulator: `climber-time-simulator.html`
 
-"Second Ascent" is a working title (seconds, plus a climber ascending). See [Risks and open questions](#18-risks-and-open-questions) before naming the store listing.
+The product name is **Climber Time**, and `ClimberTime` the internal one (application, `.prg` and `.iq` names). The design's working title until 2026-11-15 was "Second Ascent".
 
 ## Contents
 
@@ -35,11 +35,11 @@ Reference simulator: `second-ascent-simulator.html` (also published at https://c
 
 ## 1. Overview
 
-A watch face with the time as digits on the left and a climbing wall on the right. A miniature climber marks the seconds: one route per minute, climbed hold by hold, one limb move at a time. Each route has its own hold colour, so the colour changes as the minutes go by.
+A watch face with the time as digits on the left and a climbing wall on the right. A miniature climber marks the seconds: one climb per minute, hold by hold, one limb move at a time. With proficiency cycling (§12.4), each grade's route is climbed three times, by a beginner, an intermediate and an expert, in one colour; the next grade brings a new route in a new colour.
 
 On top of that core, the face can tell a small story: routes get harder through the hour, the climber can fall and be caught by the rope, downclimb the route he just climbed, get lowered off at the quarter hours, and take a beer break on the hour.
 
-The design was developed and tuned in a browser simulator (`second-ascent-simulator.html`). It reproduces the face pixel for pixel at each device resolution, ticks at 1 Hz like the watch, and implements every rule in this document. **The rules and constants in this document are authoritative.** The simulator is the behavioural reference: where this document is silent, match the simulator. If the two disagree, fix the simulator.
+The design was developed and tuned in a browser simulator (`climber-time-simulator.html`). It reproduces the face pixel for pixel at each device resolution, ticks at 1 Hz like the watch, and implements every rule in this document. **The rules and constants in this document are authoritative.** The simulator is the behavioural reference: where this document is silent, match the simulator. If the two disagree, fix the simulator.
 
 ### 1.1 Goals
 
@@ -58,13 +58,14 @@ The design was developed and tuned in a browser simulator (`second-ascent-simula
 
 ## 2. Target devices
 
-| Class | Reference resolution | Notes |
-|---|---|---|
-| Round AMOLED | 454 × 454, 416 × 416 | Primary target. Always-on mode with the lit-pixel limit (§13.1). |
-| Round MIP, 64 colours | 280 × 280, 260 × 260 | Colours quantize to the 64-colour palette. Per-second updates in low power go through partial updates (§13.2). |
-| Rectangular AMOLED | 320 × 360 | Layout adapts (§3). Check the target list for current rectangular models. |
+**Screens of at least 360 px in each direction** (owner, 2026-11-15): the holds and the climber need the resolution. Today every such screen is AMOLED:
 
-All geometry is expressed as fractions of the screen width W and height H, so other sizes scale. The device list is fixed in milestone M0.
+| Class | Resolutions | Notes |
+|---|---|---|
+| Round AMOLED | 466, 454, 416, 390, 360 | Always-on with the burn-in limits (§13.1). |
+| Rectangular AMOLED | 448 × 486 | Layout adapts (§3). |
+
+Smaller screens, every MIP screen among them, are out; so are 1-bit and 4-bit screens, which could not show the colours anyway. §13.2 and §13.3 stay for reference. All geometry is expressed as fractions of the screen width W and height H, so other sizes scale. The product list is `manifest.xml`'s (#16).
 
 ## 3. Screen layout
 
@@ -103,9 +104,9 @@ Wall **width** (floating panel only) is a setting from 0.22 to 0.36 of W, defaul
 
 In right-half mode the route region stays where the bezel leaves room on a round screen; the rest of the half is wall and, on a fixed wall, unused holds (§5.4).
 
-**Right half with the time group** (prototype, 2026-11-11; the prototype's default, and the arrangement that read best on the wrist): with the linear time layout, the left half holds a two-line group, the time on one line above the tags on one line, the time centred vertically and the group right-aligned to 0.47 W (the middle less 0.03 W):
+**The time group** (prototype, 2026-11-11, for the right half; since 2026-11-15 also beside the floating panel, which 0.1.0 ships): with the linear time layout, the space left of the wall holds a two-line group, the time on one line above the tags on one line, the time centred vertically and the group right-aligned 0.03 W short of the wall's left edge (0.47 W in the right half; beside the panel, 0.525 W on round screens and 0.53 W on rectangular ones):
 
-- Time: HHMM, no separator, fitted to the width between the bezel's left edge at y = H/2 ± 0.10 H (plus 0.03 W) and 0.47 W, then 1.1 × that size; the four cells end at 0.47 W.
+- Time: HHMM, no separator, fitted to the width between the bezel's left edge at y = H/2 ± 0.10 H (plus 0.03 W) and the group's right edge, then 1.1 × **Size** (§4.1; 0.94 in 0.1.0) × that size; the last cell ends at the group's right edge, with three cells or four.
 - Tags: side by side, sized so that the two boxes and their gap span the minutes' two digit cells, right-aligned with them; boxes hug the widest of 8, B, I and E as in the centre panel (§3.3).
 - Rows: digit height 0.72 fs, a gap of 0.18 fs, then the tag box (0.96 of the tags' size). The digits row is centred on H/2 and the tags hang below it (`Draw.TIME_CENTRED`, the default since 2026-11-11); with it off, the whole group is centred on H/2.
 
@@ -113,10 +114,10 @@ With the linear time layout the centre panel puts the time on one line left of t
 
 ### 3.3 Tags
 
-Two small tags sit at mid-height (y = H/2), centred on the panel's right edge (floating panel), in the strip right of the route ((route right + W)/2, right half), or right of the wall ((wall right + W)/2, centre panel). They sit side by side. The prototype stacks them, grade above proficiency, in the right half. In the centre panel it puts the grade level with the hours row and the proficiency level with the minutes row, both in the digits' font at 0.6 × the digits' size, centred between the wall right + 0.025 W and the bezel (mirroring the digits), in boxes hugging the widest of 8, B, I and E (padding 0.12 fs, corner radius max(2 px, 0.12 fs), outline max(2 px, 0.05 fs)). Two user settings to come: **Tag arrangement** (side by side, stacked, or level with the time rows) and **Tag size** relative to the digits (0.6 in the prototype's centre panel):
+**In the time group** (§3.2, the default and 0.1.0) the tags sit side by side under the minutes, sized there. Otherwise two small tags sit at mid-height (y = H/2), centred on the panel's right edge (floating panel), in the strip right of the route ((route right + W)/2, right half), or right of the wall ((wall right + W)/2, centre panel). They sit side by side. The prototype stacks them, grade above proficiency, in the right half. In the centre panel it puts the grade level with the hours row and the proficiency level with the minutes row, both in the digits' font at 0.6 × the digits' size, centred between the wall right + 0.025 W and the bezel (mirroring the digits), in boxes hugging the widest of 8, B, I and E (padding 0.12 fs, corner radius max(2 px, 0.12 fs), outline max(2 px, 0.05 fs)). Two user settings to come: **Tag arrangement** (side by side, stacked, or level with the time rows) and **Tag size** relative to the digits (0.6 in the prototype's centre panel):
 
 - **Grade tag** (setting **Show grade tag**, default on): filled in the route colour, the grade number cut out in dark (route colour mixed 82 % toward black).
-- **Proficiency tag** (setting **Show proficiency tag**, default on): filled in the wall colour, outlined in the route colour, letter B, I or E in the route colour.
+- **Proficiency tag** (setting **Show proficiency tag**, default on): filled in the wall colour, outlined in its proficiency's colour, letter B, I or E in the same colour. One fixed colour per proficiency (settings **Proficiency tag, beginner / intermediate / expert**): yellow #F7C948, orange #FF8C2B and red #EF4444 by default.
 
 Order is [grade][proficiency], left to right or top to bottom. If one is hidden the other takes the first slot. Sizes in Appendix A.6; the prototype uses fs = 0.085 H, box width 1.05 fs, gap 0.18 fs, outline max(1.5 px, 0.09 fs), after 0.055 H proved barely readable on the wrist. The climber is drawn over the tags.
 
@@ -134,10 +135,10 @@ Setting **Seconds scale**: off, every 10 s (default), every 15 s or every 5 s. T
 
 Setting **Time layout**:
 
-- **Stacked** (default): HH above MM. Font size 0.30 H × size. Hours centred at y = 0.365 H, minutes at 0.635 H.
-- **Linear**: HHMM on one line, **no separator**. Font size 0.19 H × size, centred at y = 0.5 H (in the right half with the time group too, the tags below it, §3.2).
+- **Stacked**: HH above MM. Font size 0.30 H × size. Hours centred at y = 0.365 H, minutes at 0.635 H.
+- **Linear** (default): HHMM on one line, **no separator**. Font size 0.19 H × size, centred at y = 0.5 H; beside the wall it forms the time group, the tags below it (§3.2).
 
-**Size** is a setting from 0.8 to 1.2 (default 1.0). In both layouts the font shrinks if needed so the block fits within 2·min(digits x − 0.03 W, wall x − digits x − 0.03 W), keeping it clear of the bezel and the wall.
+**Size** is a setting from 0.8 to 1.2 (default 0.94). Outside the time group, in both layouts the font shrinks if needed so the block fits within 2·min(digits x − 0.03 W, wall x − digits x − 0.03 W), keeping it clear of the bezel and the wall.
 
 ### 4.2 Fixed cells
 
@@ -145,14 +146,14 @@ Every digit is drawn centred in its own cell of width 1.04 × width("0"), whatev
 
 ### 4.3 Font
 
-Roboto, bold by default. Alternatives offered in the simulator: Roboto Condensed, Rubik, Barlow Semi Condensed; weights bold, medium, regular. Requirement: **zeros without a dot or slash**. On the watch these are custom bitmap fonts with the digits only (§15.4).
+Roboto Condensed, bold by default. Alternatives offered in the simulator: Roboto, Roboto Slab, Ubuntu, Lato, Rubik, Barlow Semi Condensed; weights bold, medium, regular. Requirement: **zeros without a dot or slash**. On the watch these are custom bitmap fonts with the digits only (§15.4).
 
 ### 4.4 Colour and format
 
 | Setting | Values | Default |
 |---|---|---|
-| Hours colour | white (#F6F6F6), grey (#969C99), route colour | white |
-| Minutes colour | route colour, white, grey | route colour |
+| Hours colour | a fixed colour (white #F6F6F6, grey #969C99, amber #FFBC54, or a gym colour) or the route colour | white |
+| Minutes colour | the same choices | grey |
 | 24-hour | on, off (12-hour shows 1 to 12) | on |
 | Leading zero on hours | on, off | on |
 
@@ -191,7 +192,7 @@ Rotation rot is uniform(−0.45, 0.45) rad. Bolt dots are colour mixed 60 % to b
 
 Setting **Wall features**:
 
-- **New holds every minute** (default). Each route generates its own holds (§6.4). Optionally **other routes on the wall** (setting, default on): three colours chosen per day, 11 holds each, scattered over the wall, drawn dim (their colour mixed 62 % toward the wall). Skipped when the colour equals the current route's, or within 1.3 hold sizes of a route hold.
+- **New holds every route** (default): every grade round with proficiency cycling (§6.3), otherwise every minute. Each route generates its own holds (§6.4). Optionally **other routes on the wall** (setting, default on): three colours chosen per day, 11 holds each, scattered over the wall, drawn dim (their colour mixed 62 % toward the wall). Skipped when the colour equals the current route's, or within 1.3 hold sizes of a route hold.
 - **Fixed wall, new path highlighted**. One fixed set of holds (§5.4). Each minute a path is picked through it (§6.5); path holds are drawn in the route colour, all others in a neutral grey (wall mixed 26 % toward white). The other-routes setting is disabled in this mode.
 
 ### 5.4 The fixed wall
@@ -243,9 +244,11 @@ With M moves per route, limb o (0 = LH, 1 = LF, 2 = RH, 3 = RF) makes n(o) = flo
 
 Every random choice is drawn from a seeded generator (mulberry32 over a 32-bit integer hash, Appendix B.1), seeded from the route key (the local minute the route starts, §10) or the day, never from wall-clock randomness. The same minute always produces the same route.
 
-### 6.4 Per-minute holds
+**One route per grade** (owner, 2026-11-15): with proficiency cycling (§12.4), the route's holds, volumes and jumps are seeded from the key of the grade round's first minute, the beginner's, so the intermediate and the expert climb the beginner's route. The attempt plan (falls, missed jumps, Appendix B.6) stays seeded per minute and per proficiency.
 
-Seeded from the route key. With e = (grade − 4)/4 (0 at grade 4, 1 at grade 8), centre cx and half-width h of the route region, a route-level phase and lean:
+### 6.4 Per-route holds
+
+Seeded from the route's seed (§6.3: the route key, or the grade round's first minute with proficiency cycling). With e = (grade − 4)/4 (0 at grade 4, 1 at grade 8), centre cx and half-width h of the route region, a route-level phase and lean:
 
 ```
 x_k = cx + 0.30·h·sin(0.33·k + phase) + 0.18·h·lean·k/Lmax + side_k·h·(0.16 + 0.30·r + 0.08·e)
@@ -281,7 +284,8 @@ One colour per **route**, not per minute: in downclimb mode a route spans two mi
 
 Setting **Colour per route**:
 
-- **Gym colours, shuffled** (default): from the gym palette, never the same twice in a row within the hour (Appendix B.2).
+- **One per grade round, at random** (default): the three climbs of a grade (§12.4) share one gym colour, picked by a seeded hash of the absolute round, never the previous round's, across hours too (Appendix B.2b). The colour says nothing about the difficulty.
+- **Gym colours, shuffled**: from the gym palette, never the same twice in a row within the hour (Appendix B.2).
 - **Gym colours, in order**: cycling through the palette.
 - **Hue wheel**: hue = (route start minute mod 60) × 6°, saturation 85 %, lightness 58 %. The colour itself encodes the minute.
 
@@ -486,7 +490,7 @@ For a climb that must end at T (Appendix B.6):
 
 ### 12.4 Proficiency cycling
 
-Setting **Cycle proficiency on each grade** (default off). When on, each grade is climbed three times, as beginner, intermediate, then expert: 4B, 4I, 4E, 5B, 5I, 5E, … (proficiency = [B, I, E][ordinal mod 3], grade from floor(ordinal/3), §8.3). The single proficiency selector is disabled. In downclimb mode a grade then takes 5 minutes: 4B (1 minute, rope), 4I (up, down), 4E (up, down).
+Setting **Cycle proficiency on each grade** (default on). When on, each grade is climbed three times, as beginner, intermediate, then expert: 4B, 4I, 4E, 5B, 5I, 5E, … (proficiency = [B, I, E][ordinal mod 3], grade from floor(ordinal/3), §8.3). The single proficiency selector is disabled. In downclimb mode a grade then takes 5 minutes: 4B (1 minute, rope), 4I (up, down), 4E (up, down).
 
 ### 12.5 The route tag in the simulator
 
@@ -496,13 +500,15 @@ The simulator's route tag reports the attempt: "no falls · tops out", "1 fall �
 
 ### 13.1 AMOLED always-on
 
-Drawn once per minute:
+**The limits.** The burn-in protector blanks the always-on screen if more than 10 % of the pixels are lit, or if any pixel stays lit for three minutes (measured for Matrix Time on the epix Pro (Gen 2)). Redraws are guaranteed once a minute only: the epix Pro redraws more often, but undocumented, so everything that moves does so once a minute, from the clock. AMOLED gets no per-second partial updates.
 
-- Digits at 55 % brightness (colour scaled toward black).
-- No wall, T-nuts, ticks or tags. The route's holds as dots of radius max(1.2 px, 0.18·size) in the route colour at 60 %.
-- Climber at 50 %, static: start pose (line and up minutes), top pose (down minutes), sitting (beer).
-- Burn-in shift of the whole drawing by ((m mod 3) − 1)·2 px horizontally and ((floor(m/3) mod 3) − 1)·2 px vertically, m = absolute minute.
-- Target: lit pixels within the Connect IQ always-on limit (believed to be 10 %; confirm against current documentation). The simulator measures the lit share (any channel > 10 on a 2× subsampled grid).
+**The scene** (owner, 2026-11-15):
+
+- The time at 55 % brightness (colour scaled toward black), with a **checkerboard** over it: every other pixel black, the other half the next minute, so no pixel of the time is lit two minutes running.
+- The route's holds as dots of radius max(1.2 px, 0.18·size) in the route colour at 60 %, stepping round the corners of a ±4 px square, one corner a minute (corner = minute mod 4). A 2·4 px step clears a dot's diameter; ±3 px fails once a minute (#4).
+- No climber, wall, T-nuts, ticks or tags.
+
+**Measured** in the simulator, every minute of a day in 12 h and 24 h, counting any non-black pixel: at most 2.65 % lit on the screens of §2, no pixel lit three minutes, the longest run 2 minutes (the holds). Simple corner jitter of the time fails below W/12, which pushes the time off the bezel; the figures for the alternatives are on #4. The simulator's *Check always-on burn-in over a day* repeats the check.
 
 ### 13.2 MIP low power
 
@@ -520,15 +526,15 @@ These become Connect IQ properties (§15.5). Keys match the simulator's settings
 
 | Key | Values | Default | Section |
 |---|---|---|---|
-| font | Roboto, Roboto Condensed, Rubik, Barlow Semi Condensed | Roboto | §4.3 |
+| font | Roboto Condensed, Roboto, Roboto Slab, Ubuntu, Lato, Rubik, Barlow Semi Condensed | Roboto Condensed | §4.3 |
 | weight | 700, 500, 400 | 700 | §4.3 |
-| layout | stacked, inline (linear HHMM) | stacked | §4.1 |
-| digitSize | 0.8 to 1.2 | 1.0 | §4.1 |
-| hourColor | white, grey, route | white | §4.4 |
-| minColor | route, white, grey | route | §4.4 |
+| layout | stacked, inline (linear HHMM) | inline | §4.1 |
+| digitSize | 0.8 to 1.2 | 0.94 | §4.1 |
+| hourColor | a fixed colour (§4.4), route | white | §4.4 |
+| minColor | a fixed colour (§4.4), route | grey | §4.4 |
 | hour24 | on, off | on | §4.4 |
 | leadZero | on, off | on | §4.4 |
-| palette | shuffle, cycle, hue | shuffle | §7 |
+| palette | round, shuffle, cycle, hue | round | §7 |
 | moves | 15, 20, 30, 60 | 30 | §6.2 |
 | features | random, fixed | random | §5.3 |
 | wallSeed | integer ≥ 1 | 1 | §5.4 |
@@ -541,6 +547,7 @@ These become Connect IQ properties (§15.5). Keys match the simulator's settings
 | gMax | 4 to 8 | 8 | §8.3 |
 | showGrade | on, off | on | §3.3 |
 | showProf | on, off | on | §3.3 |
+| profB, profI, profE | a fixed colour (§4.4), route | yellow, orange, red | §3.3 |
 | tagLayout | inline, stacked, rows (planned) | per wall area: inline (panel), stacked (half), rows (centre) | §3.3 |
 | tagScale | fraction of the digits' size, rows only (planned) | 0.6 | §3.3 |
 | wallStyle | slate, plywood, none | slate | §5.1 |
@@ -551,7 +558,7 @@ These become Connect IQ properties (§15.5). Keys match the simulator's settings
 | climberColor | white, grey, amber | white | §9.1 |
 | climberScale | 0.8 to 2.0 | 1.0 | §9.1 |
 | prof | expert, intermediate, beginner | expert | §12.1 |
-| profCycle | on, off | off | §12.4 |
+| profCycle | on, off | on | §12.4 |
 | descent | line (rope), wall (downclimb) | line | §10 |
 | lower | 0, 2, 3, 4, 5 s | 3 | §11.3 |
 | topRope | on, off | off | §5.7 |
@@ -565,6 +572,23 @@ Dependencies: wallWidth applies to the floating panel only; otherRoutes to per-m
 Screen, always-on or low-power mode, per-second redraw region overlay, play and pause, speed (1×, 4×, 15×, 60×), seconds motion (1 Hz tick or smooth), now, ±1 minute, jump to :55, second slider, set time, jump to the next route of a grade, generate new wall, copy config JSON, reset.
 
 A partner logo under the time is not part of the design and must not be implemented in the published face; a branded build, if ever made, is a private variant outside this document.
+
+### 14.3 Lite 0.1.0
+
+Lite 0.1.0 ships **no settings** (owner, 2026-11-15): the face is §14.1's defaults, fixed. Which settings ship later, and in which edition, is #12. The owner's picks, made in the 0.1.0 mock and now the simulator's defaults:
+
+| | 0.1.0 |
+|---|---|
+| Wall | floating panel (`wallClip` panel, width 0.30), slate, T-nut grid |
+| Time | linear HHMM in the time group (§3.2), size 0.94, Roboto Condensed bold; hours white, minutes grey |
+| Tags | grade in the route colour, proficiency B yellow, I orange, E red, side by side under the minutes |
+| Routes | new holds every grade round, 30 moves at grade 6, rising difficulty 4 to 8, proficiency cycling, one gym colour per grade round |
+| Descent | lowered on the rope, 3 s |
+| Off | chalk, top rope, quarter ropes, beer break, downclimb |
+| Always-on | §13.1 |
+| 12/24 h | the watch's system setting |
+
+The simulator's always-on burn-in protection selector (row mask, checkerboard, two jitters) and the burn-in check are design tools, not settings.
 
 ## 15. Implementation notes for Connect IQ
 
@@ -587,7 +611,7 @@ The **absolute minute** is local minutes since the Unix epoch: floor((UTC second
 
 ### 15.4 Fonts
 
-- Digits: custom bitmap fonts (digits 0 to 9 only) generated per device at the stacked and linear sizes, Roboto bold by default. Supporting the alternative fonts and weights multiplies resources; consider shipping Roboto only in v1.
+- Digits: custom bitmap fonts generated per resolution with `ttf2bmp` and `garmin-font-scaler`, **Roboto Condensed bold** (owner, 2026-11-15; #17): the digits 0 to 9 for the time, and 4 to 8 with B, I, E for the tags. The alternative typefaces stay in the simulator only.
 - Fixed digit cells (§4.2) are mandatory.
 
 ### 15.5 Settings delivery
@@ -600,7 +624,7 @@ Everything in the simulator maps to `fillEllipse`, `fillRoundedRectangle`, `fill
 
 ## 16. The simulator
 
-`second-ascent-simulator.html` is self-contained (fonts from Google Fonts). Open it in a browser.
+`climber-time-simulator.html` is self-contained (fonts from Google Fonts). Open it in a browser.
 
 - Renders at the device's native resolution, quantizes colours on MIP screens, and ticks at 1 Hz.
 - Settings persist in the browser's local storage.
@@ -641,16 +665,16 @@ Export from the simulator, for fixed settings and minutes: hash and mulberry32 o
 
 | Item | Status | Notes |
 |---|---|---|
-| Name | Open | "Second Ascent" is a working title. Check the store and trademarks. |
+| Name | Settled | Climber Time (owner, 2026-11-15). |
 | Lite and premium | Open | Not decided. If split, follow the private source repository and public lite cut pattern used for other faces. |
 | Beginner rope next to a quarter rope | To tune | With proficiency cycling, a beginner's rope minute can land next to a quarter rope minute (for example :15 then :16). Option: give the quarter minute to the beginner when their turns coincide. |
 | Very slow downclimb | Watch | After an early fall with little climbed, the downclimb may look frozen at 1 Hz. Option: a minimum descent speed, then wait at the bottom. |
 | Pacing at 1× | Validate | Tuned partly at 15×. Judge on the wrist in M2. |
 | Grade 8 hang time | Validate | Up to 4 jumps of about 5 s each: roughly a third of the minute in the air. Tune jump duration if it is too much. |
-| Always-on limit | M0 | Confirm the current Connect IQ rule and the 10 % figure. |
+| Always-on limit | Settled | 10 % lit and no pixel lit 3 minutes; the 0.1.0 scene measured within both (§13.1). |
 | Partial update cost | M0 | Lower-off and fall seconds redraw a tall region. |
 | Memory for a static-layer bitmap | M0 | Decides between blitting and redrawing holds in the clip. |
-| Fonts | M1 | Bitmap font sizes per device; whether to ship the alternative fonts. |
+| Fonts | M1 | Bitmap font sizes per resolution (#17); Roboto Condensed only (§15.4). |
 
 ## 19. Milestones
 
@@ -727,7 +751,7 @@ Distances are fractions of W or H, multiples of the climber size c, or pixels wh
 
 | Name | Value |
 |---|---|
-| Font size fs | 0.055 H, bold |
+| Font size fs | 0.055 H, bold (outside the time group; in it, §3.2) |
 | Box | width 0.95 fs, height ascent + 0.5 fs, gap 0.22 fs |
 | Corner radius | max(1.5 px, 0.18 fs) |
 | Outline width | max(1.2 px, 0.11 fs) |
@@ -736,10 +760,10 @@ Distances are fractions of W or H, multiples of the climber size c, or pixels wh
 
 | Name | Value |
 |---|---|
-| Digits | 55 % |
-| Holds as dots | radius max(1.2 px, 0.18·size), 60 % |
-| Climber | 50 % |
-| Burn-in shift | ±2 px, 3 × 3 cycle by minute |
+| Digits | 55 %, checkerboard alternating each minute |
+| Holds as dots | radius max(1.2 px, 0.18·size), 60 %, ±4 px square, one corner a minute |
+| Climber | not drawn |
+| Lit-pixel limit | 10 %; no pixel lit 3 minutes |
 
 ## 21. Appendix B. Algorithms
 
@@ -770,6 +794,20 @@ colour(index):                  index = hour·60 + ordinal
   repeat k times (j = 1 … k): i = (i + 1 + hash(hour·61 + j) mod (L − 1)) mod L
   return palette[i]             never equal to the previous index's colour
 ```
+
+### B.2b One colour per grade round
+
+```
+round R = hour·n + floor(ordinal/k)      k = 3 with proficiency cycling, else 1; n = the hour's
+                                         rounds, floor(last ordinal/k) + 1 (20 on the rope)
+raw(x)  = hash(x·977 + 17) mod 9         x truncated to its low 32 bits, as everywhere (§15.3)
+colour(R):
+  if R is even: i = raw(R)
+  else:         i = raw(R); while i = raw(R − 1) or i = raw(R + 1): i = (i + 1) mod 9
+  return palette[i]
+```
+
+Even rounds take their own hash; odd rounds avoid both neighbours, so no two consecutive rounds share a colour, across hour boundaries too, with no recursion.
 
 ### B.3 Move counts and levels
 
