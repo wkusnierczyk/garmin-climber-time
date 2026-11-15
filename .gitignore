@@ -7,11 +7,12 @@ export/
 *.prg
 *.prg.*
 
-# monkeyc writes <prg>-settings.json beside a .prg once the app has settings (none in Lite
-# 0.1.0; as in wkusnierczyk/garmin-matrix-time#32).
+# monkeyc writes <prg>-settings.json beside a .prg once the app has settings (none yet; as in
+# wkusnierczyk/garmin-matrix-time#32).
 ClimberTime*-settings.json
 test_build-settings.json
 
+# Safeguards rather than outputs: editor settings, system files and the key.
 # IDE/Editor settings
 .settings/
 .project
@@ -20,10 +21,6 @@ test_build-settings.json
 
 # System files
 .DS_Store
-Thumbs.db
 
 # Developer key (CRITICAL: never commit this)
 developer_key*
-
-# Python bytecode (tools/make-help.py)
-__pycache__/
