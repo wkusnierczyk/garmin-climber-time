@@ -161,7 +161,7 @@ export:
 
 ## Remove build output
 clean:
-	@rm -Rf $(OUTPUT) $(APP)*-settings.json test_build* *.debug.xml bin/ gen/ internal-mir/ external-mir/ $(EXPORT_DIR)/
+	@rm -Rf $(OUTPUT) $(APP)*-settings.json test_build* *.debug.xml gen/ internal-mir/ external-mir/ $(EXPORT_DIR)/
 	@echo "Clean complete."
 
 # The help is the "## " line above each target and ?= variable; tools/make-help.py

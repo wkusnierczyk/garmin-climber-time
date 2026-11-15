@@ -1,9 +1,9 @@
 # Climber Time
 
 A Garmin Connect IQ watch face: the time on the left, a climbing wall on the right, and a
-miniature climber marking the seconds, one route per minute. The design is
+miniature climber marking the seconds, one climb per minute. The design is
 [`design/DESIGN.md`](design/DESIGN.md), whose behavioural reference is the browser simulator
-[`design/second-ascent-simulator.html`](design/second-ascent-simulator.html) (open it in a browser).
+[`design/climber-time-simulator.html`](design/climber-time-simulator.html) (open it in a browser).
 
 ## Status: prototype 0.0.1
 
@@ -11,18 +11,21 @@ A sideloadable prototype, not a release. It shows the correct time and the climb
 simulator, with the settings fixed:
 
 - Difficulty cycles through grades 4 to 8, and each grade is climbed three times, as beginner,
-  intermediate, then expert: 4B 4I 4E 5B ... 8E, then again. One route per minute, so the
-  cycle is 15 minutes and every hour starts at 4B.
-- Each climb ends with a 3 s lower-off on the rope onto the next route's start.
+  intermediate, then expert: 4B 4I 4E 5B ... 8E, then again. One climb per minute, so the
+  cycle is 15 minutes and every hour starts at 4B. The three climbs of a grade are one route
+  in one colour; the next grade brings a new route in a new colour.
+- Each climb ends with a 3 s lower-off on the rope onto the next climb's start: the same route within a grade, a new one after the expert.
 - Beginners fall onto the rope and restart; intermediates may fall once or miss a jump;
   experts top out (DESIGN.md §12).
-- The wall fills the right half of the screen. On the left, the time on one line (HHMM) sits
-  above the grade and proficiency tags on one line, the time centred vertically, the tags below
-  it, and both right-aligned close to the middle; the tags together are as wide as the minutes. Other routes
-  dim on the wall, seconds scale every 10 s.
-- The other arrangements are in the code too (`Draw.LAYOUT`, `Draw.TIME_LINEAR`): a floating
-  panel on the right, and a tall centre panel with the time and tags stacked or in one line on
-  either side. The full face will offer them as settings.
+- The wall is a panel on the right. Left of it, the time on one line (HHMM) sits above the
+  grade and proficiency tags on one line, the time centred vertically, the tags below it, both
+  right-aligned just short of the panel; the tags together are as wide as the minutes. Hours
+  are white, minutes grey; the grade tag takes the route colour, the proficiency tag yellow (B),
+  orange (I) or red (E). Other routes dim on the wall, seconds scale every 10 s.
+- The other arrangements are in the code too (`Draw.LAYOUT`, `Draw.TIME_LINEAR`): the wall
+  filling the right half, the panel with the time stacked (`Draw.TIME_LINEAR` false), and a tall
+  centre panel with the time and tags stacked or in one line on either side. Premium may offer
+  them as settings.
 
 Not in the prototype: settings, an always-on scene (the same face is drawn in every display
 mode) and the custom digit font (the watch's Roboto Condensed Bold vector font stands in).
