@@ -6,11 +6,14 @@ import Toybox.Lang;
 module Draw {
 
     const WALL = 0x24292D;          // slate
-    const LAYOUT = Climb.LAYOUT_HALF;     // which wall area the build draws; see Geom
+    const LAYOUT = Climb.LAYOUT_PANEL;    // which wall area the build draws (DESIGN.md §14.3); the others stay for Premium
     const TIME_LINEAR = true;             // HHMM in one line (centre panel, right half); see Geom
     const TIME_CENTRED = true;            // right half: the digits row on H/2, tags below; see groupRows
     const CLIMBER = 0xF5F5F5;       // white
-    const HOURS = 0xF6F6F6;
+    const HOURS = 0xF6F6F6;         // white
+    const MINUTES = 0x969C99;       // grey (DESIGN.md §14.3)
+    // The proficiency tag's colour per proficiency, B I E: yellow, orange, red (DESIGN.md §3.3).
+    const PROF_COLORS = [0xF7C948, 0xFF8C2B, 0xEF4444] as Array<Number>;
     const ROPE = 0xD6D4C8;
     const ANCHOR = 0x969C98;
     const VECTOR_FACES = ["RobotoCondensedBold", "BionicBold", "Swiss721Bold"] as Array<String>;
@@ -268,7 +271,7 @@ module Draw {
         dc.setPenWidth(1);
 
         tags(dc, g, r, rc, tagFont, tagSize);
-        time(dc, g, 0.0, 0.0, hh, mm, digitFont, HOURS, rc);
+        time(dc, g, 0.0, 0.0, hh, mm, digitFont, HOURS, MINUTES);
     }
 
     // Tag font size, as a fraction of H. The design's 0.055 side by side was hard to
@@ -336,9 +339,10 @@ module Draw {
         dc.setColor(mix(rc, 0, 0.82), Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx1, cy1, font, r.grade.toString(), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
+        var pc = PROF_COLORS[r.prof];
         dc.setColor(WALL, Graphics.COLOR_TRANSPARENT);
         dc.fillRoundedRectangle(cx2 - bw / 2, cy2 - th / 2, bw, th, rad);
-        dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(pc, Graphics.COLOR_TRANSPARENT);
         dc.setPenWidth(lw.toNumber());
         dc.drawRoundedRectangle(cx2 - bw / 2 + lw / 2, cy2 - th / 2 + lw / 2, bw - lw, th - lw, Climb.maxf(1.0, rad - lw / 2));
         dc.setPenWidth(1);
