@@ -2,8 +2,9 @@ using Toybox.Test;
 
 import Toybox.Lang;
 
-// The face's arithmetic against the simulator (ClimbGolden), and the rules of DESIGN.md
-// §8.3, §10, §11.3, §12 and §6.3 that the golden values do not spell out.
+// The face's arithmetic against the simulator (ClimbGolden, from tools/make-golden.py), and
+// the rules of DESIGN.md §6.3, §8.3, §11.3, §12 and §14.3 that the golden values do not spell
+// out.
 (:test)
 class ClimbTest {
 
@@ -44,7 +45,8 @@ class ClimbTest {
         return true;
     }
 
-    // Grade, proficiency, colour, moves, levels, jumps and every hold, route by route.
+    // Every grade and proficiency: the numbers, the jumps, and each hold's position, type and
+    // size, and each volume.
     (:test)
     static function routesMatchTheSimulator(logger as Test.Logger) as Boolean {
         var g = ClimbGolden.geom();
@@ -55,27 +57,35 @@ class ClimbTest {
             var got = [r.grade, r.prof, r.colorIdx, r.m, r.lmax] as Array<Number>;
             for (var f = 0; f < got.size(); f++) {
                 if (got[f] != (want[f + 1] as Number)) {
-                    logger.error("minute +" + at + ": field " + f + " = " + got[f] + ", simulator " + (want[f + 1] as Number));
+                    logger.error("+" + at + ": field " + f + " = " + got[f] + ", simulator " + (want[f + 1] as Number));
                     return false;
                 }
             }
             var dynos = want[6] as Array<Number>;
-            if (r.dynoList.size() != dynos.size()) {
-                logger.error("minute +" + at + ": " + r.dynoList.size() + " jumps, simulator " + dynos.size());
+            if (!sameNumbers(r.dynoList, dynos)) {
+                logger.error("+" + at + ": jumps " + r.dynoList + ", simulator " + dynos);
                 return false;
             }
-            for (var d = 0; d < dynos.size(); d++) {
-                if (r.dynoList[d] != dynos[d]) {
-                    logger.error("minute +" + at + ": jump " + d + " at move " + r.dynoList[d] + ", simulator " + dynos[d]);
-                    return false;
-                }
-            }
-            var xy = ClimbGolden.HOLDS[i];
+            var hs = ClimbGolden.HOLDS[i];
             for (var k = -4; k <= r.lmax; k++) {
                 var h = r.hold(k);
-                var j = 2 * (k + 4);
-                if (!ClimbGolden.near(h.x, xy[j]) || !ClimbGolden.near(h.y, xy[j + 1])) {
-                    logger.error("minute +" + at + " hold " + k + ": (" + h.x + ", " + h.y + "), simulator (" + xy[j] + ", " + xy[j + 1] + ")");
+                var j = 4 * (k + 4);
+                if (!ClimbGolden.near(h.x, hs[j]) || !ClimbGolden.near(h.y, hs[j + 1]) || h.type != hs[j + 2]
+                    || !ClimbGolden.near(h.s, hs[j + 3])) {
+                    logger.error("+" + at + " hold " + k + ": " + h.x + ", " + h.y + ", type " + h.type + ", size " + h.s
+                        + "; simulator " + hs[j] + ", " + hs[j + 1] + ", type " + hs[j + 2] + ", size " + hs[j + 3]);
+                    return false;
+                }
+            }
+            var vs = ClimbGolden.VOLS[i];
+            if (r.vols.size() * 3 != vs.size()) {
+                logger.error("+" + at + ": " + r.vols.size() + " volumes, simulator " + vs.size() / 3);
+                return false;
+            }
+            for (var v = 0; v < r.vols.size(); v++) {
+                var o = r.vols[v];
+                if (!ClimbGolden.near(o.x, vs[3 * v]) || !ClimbGolden.near(o.y, vs[3 * v + 1]) || !ClimbGolden.near(o.r, vs[3 * v + 2])) {
+                    logger.error("+" + at + " volume " + v + ": " + o.x + ", " + o.y + ", " + o.r + "; simulator " + vs[3 * v] + ", " + vs[3 * v + 1] + ", " + vs[3 * v + 2]);
                     return false;
                 }
             }
@@ -83,21 +93,48 @@ class ClimbTest {
         return true;
     }
 
-    // 4B 4I 4E 5B ... 8E, one minute each, from 4B at every hour (DESIGN.md §8.3, §12.4).
+    // Falls, missed jumps, where the climb ends and every segment, against the simulator.
+    (:test)
+    static function plansMatchTheSimulator(logger as Test.Logger) as Boolean {
+        var g = ClimbGolden.geom();
+        for (var i = 0; i < ClimbGolden.ROUTES.size(); i++) {
+            var at = ClimbGolden.ROUTES[i][0] as Number;
+            var want = ClimbGolden.PLANS[i];
+            var pl = new Route(ClimbGolden.BASE + at, g).plan(ClimbGolden.TOP);
+            var segs = want[3] as Array<Float>;
+            if (pl.falls != (want[0] as Number) || pl.nMiss != (want[1] as Number) || !ClimbGolden.near(pl.endM, want[2] as Float)
+                || pl.segs.size() * 2 != segs.size()) {
+                logger.error("+" + at + ": " + pl.falls + " falls, " + pl.nMiss + " misses, ends at " + pl.endM + ", " + pl.segs.size()
+                    + " segments; simulator " + (want[0] as Number) + ", " + (want[1] as Number) + ", " + (want[2] as Float) + ", " + segs.size() / 2);
+                return false;
+            }
+            for (var s = 0; s < pl.segs.size(); s++) {
+                if (!ClimbGolden.near(pl.segs[s].t0, segs[2 * s]) || !ClimbGolden.near(pl.segs[s].t1, segs[2 * s + 1])) {
+                    logger.error("+" + at + " segment " + s + ": " + pl.segs[s].t0 + " to " + pl.segs[s].t1 + "; simulator "
+                        + segs[2 * s] + " to " + segs[2 * s + 1]);
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    // 4B 4I 4E 5B ... 8E, one minute each, from 4B at every hour (§8.3, §12.4).
     (:test)
     static function gradesCycleEveryFifteenMinutes(logger as Test.Logger) as Boolean {
+        var want = [4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8] as Array<Number>;
         var g = ClimbGolden.geom();
-        for (var k = 0; k < 60; k += 7) {
+        for (var k = 0; k < 60; k++) {
             var r = new Route(ClimbGolden.BASE + k, g);
-            if (r.grade != 4 + (k / 3) % 5 || r.prof != k % 3) {
-                logger.error("minute " + k + ": " + r.grade + "/" + r.prof);
+            if (r.grade != want[k % 15] || r.prof != k % 3) {
+                logger.error("minute " + k + ": grade " + r.grade + ", proficiency " + r.prof);
                 return false;
             }
         }
         return true;
     }
 
-    // The three climbs of a grade share holds and colour; the next grade does not (§6.3, §7).
+    // The three climbs of a grade share holds, jumps and colour; the next grade does not (§6.3, §7).
     (:test)
     static function oneRoutePerGradeRound(logger as Test.Logger) as Boolean {
         var g = ClimbGolden.geom();
@@ -110,25 +147,55 @@ class ClimbTest {
                 return false;
             }
         }
-        return b.colorIdx == e.colorIdx && n.colorIdx != e.colorIdx;
+        if (!sameNumbers(b.dynoList, e.dynoList) || b.colorIdx != e.colorIdx) {
+            logger.error("jumps or colour differ within the round");
+            return false;
+        }
+        if (n.colorIdx == e.colorIdx) {
+            logger.error("the next grade keeps the colour");
+            return false;
+        }
+        return true;
     }
 
-    // The plan covers the climb up to :56; the expert tops out, the beginner never does
-    // (§11.3, §12); the last 3 s are the lower-off.
+    // Every minute of an hour: the plan covers 0 to :56 without a gap, the proficiencies keep
+    // their rules (§12.1), and the lower-off takes the last 3 s (§11.3, §14.3).
     (:test)
-    static function plansAndLowerOff(logger as Test.Logger) as Boolean {
+    static function plansFollowTheRules(logger as Test.Logger) as Boolean {
+        if (Climb.LOWER != 3 || ClimbGolden.TOP != 59 - Climb.LOWER) {
+            logger.error("the lower-off is " + Climb.LOWER + " s, not 3");
+            return false;
+        }
         var g = ClimbGolden.geom();
-        var top = 59 - Climb.LOWER;
-        for (var k = 0; k < 15; k++) {
+        var top = ClimbGolden.TOP;
+        for (var k = 0; k < 60; k++) {
             var r = new Route(ClimbGolden.BASE + k, g);
             var rn = new Route(ClimbGolden.BASE + k + 1, g);
             var pl = r.plan(top);
-            if (r.prof == 2 && (pl.falls != 0 || pl.endM < r.m - 0.001)) {
+            var t = 0.0;
+            for (var s = 0; s < pl.segs.size(); s++) {
+                if (!ClimbGolden.near(pl.segs[s].t0, t)) {
+                    logger.error("minute " + k + ": segment " + s + " starts at " + pl.segs[s].t0 + ", not " + t);
+                    return false;
+                }
+                t = pl.segs[s].t1;
+            }
+            if (!ClimbGolden.near(t, top)) {
+                logger.error("minute " + k + ": the plan ends at " + t + ", not " + top);
+                return false;
+            }
+            var topped = pl.endM >= r.m - 0.001;
+            if (r.prof == Climb.EXPERT && (pl.falls != 0 || !topped)) {
                 logger.error("minute " + k + ": the expert falls or stops short");
                 return false;
             }
-            if (r.prof == 0 && pl.endM >= r.m - 0.001) {
-                logger.error("minute " + k + ": the beginner tops out");
+            if (r.prof == Climb.INTERMEDIATE && (pl.falls > 1 || topped != (pl.falls == 0))) {
+                logger.error("minute " + k + ": the intermediate falls " + pl.falls + " times, tops out " + topped);
+                return false;
+            }
+            if (r.prof == Climb.BEGINNER && (topped || pl.falls < 1
+                || (r.dynoList.size() > 0 && pl.endM > r.dynoList[0] + 0.001))) {
+                logger.error("minute " + k + ": the beginner tops out, never falls, or passes his first jump");
                 return false;
             }
             if (Climb.poseAt(r, rn, top).lowering || !Climb.poseAt(r, rn, top + 1).lowering) {
@@ -139,12 +206,38 @@ class ClimbTest {
         return true;
     }
 
-    // On the 416 screen the panel, the route and the time group stay on the screen.
+    // On the 416 round screen the shipped wall, its route and the time group stay inside the bezel.
     (:test)
-    static function geometryOnTheScreen(logger as Test.Logger) as Boolean {
+    static function geometryInsideTheBezel(logger as Test.Logger) as Boolean {
         var g = ClimbGolden.geom();
-        return g.timeGroup && g.x0 > g.groupRight && g.x1 < g.W && g.rx0 > g.x0 && g.rx1 < g.x1
-            && g.ry0 > g.y0 && g.ry1 < g.y1 && g.digitMaxW > 0;
+        var c = g.W / 2;
+        var corners = [[g.x0, g.y0], [g.x1, g.y0], [g.x0, g.y1], [g.x1, g.y1], [g.rx0, g.ry0], [g.rx1, g.ry0],
+                       [g.rx0, g.ry1], [g.rx1, g.ry1], [g.groupRight - g.digitMaxW, g.H / 2 - 0.10 * g.H]] as Array<Array<Float>>;
+        for (var i = 0; i < corners.size(); i++) {
+            var dx = corners[i][0] - c;
+            var dy = corners[i][1] - c;
+            if (dx * dx + dy * dy > c * c) {
+                logger.error("point " + i + " (" + corners[i][0] + ", " + corners[i][1] + ") is outside the bezel");
+                return false;
+            }
+        }
+        if (!g.timeGroup || g.groupRight >= g.x0) {
+            logger.error("the time group is missing or overlaps the wall");
+            return false;
+        }
+        return true;
+    }
+
+    static function sameNumbers(a as Array<Number>, b as Array<Number>) as Boolean {
+        if (a.size() != b.size()) {
+            return false;
+        }
+        for (var i = 0; i < a.size(); i++) {
+            if (a[i] != b[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }
