@@ -504,7 +504,7 @@ The simulator's route tag reports the attempt: "no falls · tops out", "1 fall �
 
 **The scene** (owner, 2026-11-15):
 
-- The time in its own colours, at full brightness (owner, 2026-11-16: 55 % was too dim for daylight; the protector counts lit pixels, not their brightness), with a **checkerboard** over it: every other pixel black, the other half the next minute, so no pixel of the time is lit two minutes running.
+- The time in its own colours, at full brightness (owner, 2026-11-16: 55 % was too dim for daylight; at full brightness the scene stays far below 10 % by either measure, lit pixels or luminance, which Garmin's FAQ gives as the rule since the Venu 2), with a **checkerboard** over it: every other pixel black, the other half the next minute, so no pixel of the time is lit two minutes running.
 - The route's holds as dots of radius max(1.2 px, 0.18·size) in the route colour at 60 %, stepping round the corners of a ±4 px square, one corner a minute (corner = minute mod 4). A 2·4 px step clears a dot's diameter; ±3 px fails once a minute (#4).
 - No climber, wall, T-nuts, ticks or tags.
 
