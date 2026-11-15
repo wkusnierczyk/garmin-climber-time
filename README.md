@@ -11,9 +11,10 @@ A sideloadable prototype, not a release. It shows the correct time and the climb
 simulator, with the settings fixed:
 
 - Difficulty cycles through grades 4 to 8, and each grade is climbed three times, as beginner,
-  intermediate, then expert: 4B 4I 4E 5B ... 8E, then again. One route per minute, so the
-  cycle is 15 minutes and every hour starts at 4B.
-- Each climb ends with a 3 s lower-off on the rope onto the next route's start.
+  intermediate, then expert: 4B 4I 4E 5B ... 8E, then again. One climb per minute, so the
+  cycle is 15 minutes and every hour starts at 4B. The three climbs of a grade are one route
+  in one colour; the next grade brings a new route in a new colour.
+- Each climb ends with a 3 s lower-off on the rope onto the next climb's start: the same route within a grade, a new one after the expert.
 - Beginners fall onto the rope and restart; intermediates may fall once or miss a jump;
   experts top out (DESIGN.md §12).
 - The wall fills the right half of the screen. On the left, the time on one line (HHMM) sits
