@@ -1,0 +1,9 @@
+Climber Time is a watch face with a climbing wall: the time on the left, a wall of holds on the right, and a tiny climber who marks the seconds, one climb per minute.
+
+Every 15 minutes the climber works up through grades 4 to 8. Each grade's route is climbed three times: by a beginner, who falls onto the rope and never reaches the top; by an intermediate, who may fall once or miss a jump; and by an expert, who sends it. Each new grade brings a new route in a new colour. At the end of every minute the climber is lowered off on the rope, ready for the next attempt. The grade and the climber's level (B, I or E) are shown under the time.
+
+In always-on mode the face shows the time and the route's holds, dimmed and moved slightly every minute to protect the screen.
+
+The face has no settings: it is drawn as designed.
+
+Note: watch faces redraw at most once per second, so the climber moves in small steps rather than smoothly.
