@@ -798,7 +798,8 @@ colour(index):                  index = hour·60 + ordinal
 ### B.2b One colour per grade round
 
 ```
-round R = hour·20 + floor(ordinal/3)     with proficiency cycling; else hour·60 + ordinal
+round R = hour·n + floor(ordinal/k)      k = 3 with proficiency cycling, else 1; n = the hour's
+                                         rounds, floor(last ordinal/k) + 1 (20 on the rope)
 raw(x)  = hash(x·977 + 17) mod 9         x truncated to its low 32 bits, as everywhere (§15.3)
 colour(R):
   if R is even: i = raw(R)

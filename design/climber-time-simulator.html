@@ -280,13 +280,15 @@ function kindText(k){return k==='beer'?'beer break':k==='up'?'↑ climb':k==='do
 // One colour per grade round (owner, 2026-11-15): the beginner, the intermediate and the expert
 // climb the same route in the same colour, picked at random from the gym colours, never the
 // previous round's, across hours too. The colour says nothing about the difficulty. Rounds are
-// numbered absolutely, R = hour·20 + floor(ordinal/3) (hour·60 + ordinal without proficiency
-// cycling, one route per round); an even round takes hash(R) mod 9, an odd round the first colour
+// numbered absolutely, R = hour·n + floor(ordinal/3), n the rounds in an hour (20 on the rope;
+// fewer with downclimbing or a beer break), or per route without proficiency cycling; an even round takes hash(R) mod 9, an odd round the first colour
 // from its own hash on that is neither neighbour's, so no recursion is needed (Appendix B.2b).
 function roundIndex(R){const n=GYM.length,raw=x=>hash(x*977+17)%n;
   if(((R%2)+2)%2===0)return raw(R);let i=raw(R);const a=raw(R-1),b=raw(R+1);while(i===a||i===b)i=(i+1)%n;return i}
 function roundColor(absMin){
-  const sl=slotFor(absMin),hr=Math.floor(sl.key/60),R=S.profCycle?hr*20+Math.floor(sl.ord/3):hr*60+sl.ord,i=roundIndex(R);
+  const sl=slotFor(absMin),hr=Math.floor(sl.key/60),k=S.profCycle?3:1;
+  // rounds in an hour, from the hour plan (the same every hour), so that R runs on without gaps
+  const n=Math.floor(Math.max(...hourPlan(hr).map(x=>x.ord??0))/k)+1,R=hr*n+Math.floor(sl.ord/k),i=roundIndex(R);
   return{name:GYM[i][0],rgb:GYM[i][1],idx:i};
 }
 function colorFor(absMin){
