@@ -25,8 +25,23 @@ simulator, with the settings fixed:
   either side. The full face will offer them as settings.
 
 Not in the prototype: settings, an always-on scene (the same face is drawn in every display
-mode), the custom digit font (the watch's Roboto Condensed Bold vector font stands in), and
-every product other than the epix Pro (Gen 2) 47 mm.
+mode) and the custom digit font (the watch's Roboto Condensed Bold vector font stands in).
+
+## Devices
+
+Every Connect IQ watch with a screen of at least 360 px in each direction: 47 products, all
+AMOLED. The holds and the climber need that resolution, and the routes need colour, so smaller
+screens, every MIP screen among them, are left out by size rather than by display type. Watches
+below Connect IQ 5 are left out too (Venu, Venu Mercedes-Benz Collection, D2 Air).
+
+| Screen | Products |
+|---|---|
+| Round 360 | Venu 2S, Forerunner 265S |
+| Round 390 | epix Pro (Gen 2) 42 mm, MARQ (Gen 2) and Aviator, Venu 3S, Venu 4 41 mm, vívoactive 5 and 6, Approach S70 42 mm, Descent G2, Descent Mk3 43 mm, Forerunner 165 and 165 Music, Forerunner 170 and 170 Music, Instinct 3 AMOLED 45 mm |
+| Round 416 | epix (Gen 2), epix Pro (Gen 2) 47 mm, fēnix 8 43 mm, fēnix 9 43 mm and 9 Pro 43 mm, fēnix E, Venu 2 and 2 Plus, Approach S72 43 mm, D2 Air X10, D2 Mach 1, Forerunner 265, Instinct 3 AMOLED 50 mm |
+| Round 454 | epix Pro (Gen 2) 51 mm, fēnix 8 47/51 mm and 8 Pro, fēnix 9 47/51 mm and 9 Pro 47 mm, MARQ (Gen 3), Venu 3, Venu 4 45 mm, Approach S70 47 mm, Approach S72 47 mm, D2 Mach 2 and 2 Pro, Descent Mk3i 51 mm, Forerunner 965, Forerunner 970 |
+| Round 466 | fēnix 9 Pro 51 mm |
+| Rectangular 448 × 486 | Venu X1 |
 
 ## Build and sideload
 
