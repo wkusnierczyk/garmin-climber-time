@@ -122,6 +122,37 @@ module Draw {
         digits(dc, mm.format("%02d"), g.dcx + dx, g.H * ROW_MINUTES + dy, font, mc);
     }
 
+    // Always-on (DESIGN.md §13.1): the time in its own colours, under a checkerboard that swaps its black
+    // and clear pixels every minute, so no pixel of the time is lit two minutes running; and the
+    // route's holds as dots at 60 %, stepping round a +/-HOLD_JIT px square, one corner a minute.
+    // Nothing else: the burn-in protector blanks the screen past 10 % lit or a pixel lit 3 min.
+    const HOLD_JIT = 4;
+
+    function lowPower(dc as Graphics.Dc, g as Geom, r as Route, rc as Number, hh as Number, mm as Number,
+                      absMin as Number, font as Graphics.FontType, checker as Graphics.BitmapType) as Void {
+        aa(dc);
+        time(dc, g, 0.0, 0.0, hh, mm, font, HOURS, MINUTES);
+
+        // The checker over the time's box: its cells, plus the glyphs' overhang.
+        var cw = 1.04 * dc.getTextWidthInPixels("0", font);
+        var y = groupRows(g)[0];
+        var x0 = (g.groupRight - 4 * cw - 2).toNumber();
+        var x1 = (g.groupRight + 2).toNumber();
+        var half = (0.5 * g.digitSize).toNumber() + 2;
+        dc.setClip(x0, (y - half).toNumber(), x1 - x0, 2 * half);
+        dc.drawBitmap(x0 - Climb.posMod(absMin, 2), (y - half).toNumber(), checker);
+        dc.clearClip();
+
+        var k = Climb.posMod(absMin, 4);
+        var dx = (k == 1 || k == 2) ? HOLD_JIT : -HOLD_JIT;
+        var dy = k >= 2 ? HOLD_JIT : -HOLD_JIT;
+        dc.setColor(mix(0, rc, 0.6), Graphics.COLOR_TRANSPARENT);
+        for (var i = -4; i <= r.lmax; i++) {
+            var h = r.hold(i);
+            dc.fillCircle(h.x + dx, h.y + dy, Climb.maxf(1.2, h.s * 0.18));
+        }
+    }
+
     function aa(dc as Graphics.Dc) as Void {
         if (dc has :setAntiAlias) {
             dc.setAntiAlias(true);

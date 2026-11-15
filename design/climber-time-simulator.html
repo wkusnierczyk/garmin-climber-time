@@ -807,7 +807,7 @@ function renderFace(ctx,devId,t){
     // Always-on: the time, with the burn-in protection S.aodGuard picks (aodShift, aodMask), and
     // the route's holds as dots, jittered on their own (aodHolds). No climber, wall or tags.
     ctx.save();const J=aodShift(t.absMin,W);ctx.translate(J.x,J.y);
-    drawDigits(ctx,G,t,rc,.55);
+    drawDigits(ctx,G,t,rc,1);
     ctx.restore();aodMask(ctx,W,H,t.absMin);
     aodHolds(ctx,R,rc,t);
     ctx.restore();return{R,col,P:null,G,aod,kind:sl.kind};
