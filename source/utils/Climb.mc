@@ -277,7 +277,7 @@ class Route {
         ord = Climb.posMod(key, 60);
         grade = 4 + (ord / 3) % 5;
         prof = ord % 3;
-        colorIdx = Climb.roundColor(Climb.floorDiv(key, 60), ord / 3);
+        colorIdx = Climb.roundColor(Climb.floorDiv(key, 60) * 20 + ord / 3);
         // One route per grade round (DESIGN.md §6.3): the beginner's minute seeds the holds
         // and the jumps, and the intermediate and the expert climb the same route.
         var seed = key.toLong() - prof;
@@ -504,19 +504,25 @@ module Climb {
         }
     }
 
-    // One gym colour per grade round r of the hour (DESIGN.md §7): a seeded pick, never the
-    // previous round's, so it says nothing about the difficulty (simulator roundColor).
-    function roundColor(hour as Number, r as Number) as Number {
-        var prev = -1;
-        var i = 0;
-        for (var k = 0; k <= r; k++) {
-            i = Rand.hashMod(hour.toLong() * 977 + k * 131 + 17, 9);
-            if (i == prev) {
-                i = (i + 1) % 9;
-            }
-            prev = i;
+    // One gym colour per grade round (DESIGN.md §7, Appendix B.2b), R = hour·20 + round of the
+    // hour: an even round takes its hash, an odd round the first colour from its own hash on that
+    // is neither neighbour's, so no two consecutive rounds share one, across hours too. It says
+    // nothing about the difficulty (simulator roundIndex).
+    function roundColor(r as Number) as Number {
+        var i = roundRaw(r);
+        if (posMod(r, 2) == 0) {
+            return i;
+        }
+        var a = roundRaw(r - 1);
+        var b = roundRaw(r + 1);
+        while (i == a || i == b) {
+            i = (i + 1) % 9;
         }
         return i;
+    }
+
+    function roundRaw(r as Number) as Number {
+        return Rand.hashMod(r.toLong() * 977 + 17, 9);
     }
 
     // Three other routes on the wall, per day (DESIGN.md §5.3).
@@ -889,8 +895,8 @@ module Climb {
         return pose(r, 0.0, false, -1.0);
     }
 
-    // Every minute is a "line" minute: climb until :56, lowered on the rope to the next
-    // route's start over the last 3 s (DESIGN.md §10, §11.3).
+    // Every minute is a "line" minute: climb until :56, lowered on the rope over the last 3 s
+    // to the next minute's start, the same route's within a grade round (DESIGN.md §10, §11.3).
     function poseAt(r as Route, rn as Route, s as Number) as Pose {
         var top = 59 - LOWER;
         if (s > top) {
