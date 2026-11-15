@@ -1,7 +1,7 @@
 # Climber Time
 
 A Garmin Connect IQ watch face: the time on the left, a climbing wall on the right, and a
-miniature climber marking the seconds, one route per minute. The design is
+miniature climber marking the seconds, one climb per minute. The design is
 [`design/DESIGN.md`](design/DESIGN.md), whose behavioural reference is the browser simulator
 [`design/climber-time-simulator.html`](design/climber-time-simulator.html) (open it in a browser).
 

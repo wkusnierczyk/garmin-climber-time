@@ -155,7 +155,7 @@ textarea{width:100%;box-sizing:border-box;font-family:var(--font-data);font-size
 
     <fieldset>
       <legend>Route</legend>
-      <div class="row"><label for="palette">Colour per minute</label><select id="palette" data-key="palette"><option value="round">Gym colours, one per grade round, at random</option><option value="shuffle">Gym colours, shuffled</option><option value="cycle">Gym colours, in order</option><option value="hue">Hue wheel (6° per minute)</option></select></div>
+      <div class="row"><label for="palette">Colour per route</label><select id="palette" data-key="palette"><option value="round">Gym colours, one per grade round, at random</option><option value="shuffle">Gym colours, shuffled</option><option value="cycle">Gym colours, in order</option><option value="hue">Hue wheel (6° per minute)</option></select></div>
       <div class="row"><label for="moves">Moves per minute</label><select id="moves" data-key="moves"><option value="15">15</option><option value="20">20</option><option value="30">30</option><option value="60">60</option></select></div>
       <div class="row"><label for="features">Wall features</label><select id="features" data-key="features"><option value="random">New holds every minute</option><option value="fixed">Fixed wall, new path highlighted</option></select></div>
       <div class="row"><label for="grades">Rising difficulty</label><input type="checkbox" id="grades" data-key="grades"></div>
@@ -214,7 +214,7 @@ const DEVICES={   // the screen classes 0.1.0 can support: at least 360 px each 
   r360:{w:360,h:360,shape:'round',tech:'amoled',label:'Round 360 · AMOLED · venu 2S, fr265S'},
   q448:{w:448,h:486,shape:'rect',tech:'amoled',label:'Rect 448×486 · AMOLED · venu X1'}
 };
-const FONTS=['Roboto','Roboto Condensed','Rubik','Barlow Semi Condensed'];
+const FONTS=['Roboto Condensed','Roboto','Roboto Slab','Ubuntu','Lato','Rubik','Barlow Semi Condensed'];
 const DEF={device:'r454',speed:1,tick:'tick',aod:false,showBBox:false,font:'Roboto Condensed',weight:700,layout:'inline',digitSize:0.94,
   hourColor:'white',minColor:'grey',profB:'yellow',profI:'orange',profE:'red',aodGuard:'checker',hour24:true,leadZero:true,palette:'round',moves:30,holdStyle:'mixed',volumes:true,otherRoutes:true,
   chalk:false,wallStyle:'slate',wallClip:'panel',wallWidth:0.30,tnut:true,scale:'10',climberColor:'white',climberScale:1,lower:3,topRope:false,descent:'line',features:'random',wallSeed:1,grades:true,gMin:4,gMax:8,showGrade:true,quarters:false,beer:false,prof:'expert',showProf:true,profCycle:true};
@@ -224,7 +224,6 @@ try{const j=JSON.parse(localStorage.getItem(STORE)||'null');if(j)S={...DEF,...j}
 if(!DEVICES[S.device])S.device=DEF.device;
 if(!FONTS.includes(S.font))S.font=DEF.font;
 if(S.wallClip!=='panel'&&S.wallClip!=='half')S.wallClip='panel';
-if(!DEVICES[S.device])S.device=DEF.device;
 const save=()=>{try{localStorage.setItem(STORE,JSON.stringify(S))}catch(e){}};
 
 /* ---------- utils ---------- */
@@ -280,10 +279,14 @@ function MARK(absMin){const k=slotFor(absMin).kind;return k==='beer'?'🍺':S.de
 function kindText(k){return k==='beer'?'beer break':k==='up'?'↑ climb':k==='down'?'↓ downclimb, no jumps':S.lower?'↑ climb, lowered from :'+(60-S.lower):'↑ climb'}
 // One colour per grade round (owner, 2026-11-15): the beginner, the intermediate and the expert
 // climb the same route in the same colour, picked at random from the gym colours, never the
-// previous round's. The colour says nothing about the difficulty.
+// previous round's, across hours too. The colour says nothing about the difficulty. Rounds are
+// numbered absolutely, R = hour·20 + floor(ordinal/3) (hour·60 + ordinal without proficiency
+// cycling, one route per round); an even round takes hash(R) mod 9, an odd round the first colour
+// from its own hash on that is neither neighbour's, so no recursion is needed (Appendix B.2b).
+function roundIndex(R){const n=GYM.length,raw=x=>hash(x*977+17)%n;
+  if(((R%2)+2)%2===0)return raw(R);let i=raw(R);const a=raw(R-1),b=raw(R+1);while(i===a||i===b)i=(i+1)%n;return i}
 function roundColor(absMin){
-  const sl=slotFor(absMin),hr=Math.floor(sl.key/60),r=Math.floor(sl.ord/3),n=GYM.length;let prev=-1,i=0;
-  for(let k=0;k<=r;k++){i=hash(hr*977+k*131+17)%n;if(i===prev)i=(i+1)%n;prev=i}
+  const sl=slotFor(absMin),hr=Math.floor(sl.key/60),R=S.profCycle?hr*20+Math.floor(sl.ord/3):hr*60+sl.ord,i=roundIndex(R);
   return{name:GYM[i][0],rgb:GYM[i][1],idx:i};
 }
 function colorFor(absMin){
@@ -684,9 +687,9 @@ function cellText(ctx,str,cx,cy,fs,cols,maxW){
   const n=str.length-1,lw=ctx.measureText(str[n]).width;
   return{x0:xs+ws[0]/2-ctx.measureText(str[0]).width/2,x1:x-ws[n]/2+lw/2,cy,asc};   // glyph edges, for aligning things under the time
 }
-// Route tags on the wall edge (or in the free strip right of the route), side by side:
+// Route tags on the wall edge (or in the free strip right of the route), side by side, or under the minutes in the time group:
 // [grade] filled in the route colour with the number cut out, [B/I/E] wall-coloured with a route-colour outline and letter.
-// The right half's two-line group (prototype Draw.groupRows, View.onLayout): HHMM fitted
+// The time group beside the wall, half or panel (prototype Draw.groupRows, View.onLayout): HHMM fitted
 // between the bezel and groupRight, then 1.1×; the tags sized so that their two boxes and
 // gap span the minutes' two cells; the digits row on H/2, the tags below it.
 function fontOf(fs,w){return `${w} ${fs}px "${S.font}", Roboto, system-ui, sans-serif`}
@@ -723,8 +726,9 @@ function drawTags(ctx,G,R,rc,wallRGB){
   const tot=items.length*bw+(items.length-1)*gap,y=G.H/2;let x=(G.full?(G.rx1+G.W)/2:G.x1)-tot/2;
   for(const it of items){
     if(it.filled){ctx.fillStyle=css(rc);rrPath(ctx,x,y-th/2,bw,th,rad);ctx.fill();ctx.fillStyle=css(mix(rc,BLACK,.82))}
-    else{ctx.fillStyle=css(wallRGB);rrPath(ctx,x,y-th/2,bw,th,rad);ctx.fill();
-      ctx.strokeStyle=css(rc);ctx.lineWidth=lw;rrPath(ctx,x+lw/2,y-th/2+lw/2,bw-lw,th-lw,Math.max(1,rad-lw/2));ctx.stroke();ctx.fillStyle=css(rc)}
+    else{const pc=digitColor(S[{beginner:'profB',intermediate:'profI',expert:'profE'}[R.prof||S.prof]],rc);
+      ctx.fillStyle=css(wallRGB);rrPath(ctx,x,y-th/2,bw,th,rad);ctx.fill();
+      ctx.strokeStyle=css(pc);ctx.lineWidth=lw;rrPath(ctx,x+lw/2,y-th/2+lw/2,bw-lw,th-lw,Math.max(1,rad-lw/2));ctx.stroke();ctx.fillStyle=css(pc)}
     ctx.fillText(it.t,x+bw/2,y+asc/2);x+=bw+gap;
   }
 }
@@ -733,8 +737,8 @@ function drawDigits(ctx,G,t,rc,dim=1){
   const hh=S.leadZero?String(h).padStart(2,'0'):String(h),mm=String(t.m).padStart(2,'0');
   const d=c=>dim<1?mix(BLACK,c,dim):c;
   const hc=d(digitColor(S.hourColor,rc)),mc=d(digitColor(S.minColor,rc));
-  if(G.timeGroup){const L=groupLayout(ctx,G),str=hh+mm;   // the four cells end at groupRight
-    return cellText(ctx,str,G.groupRight-2*L.cw,L.yTime,L.fs,[...str].map((ch,i)=>i<hh.length?hc:mc))}
+  if(G.timeGroup){const L=groupLayout(ctx,G),str=hh+mm;   // the last cell ends at groupRight
+    return cellText(ctx,str,G.groupRight-str.length*L.cw/2,L.yTime,L.fs,[...str].map((ch,i)=>i<hh.length?hc:mc))}
   const mg=G.W*.03,maxW=2*Math.min(G.dcx-mg,G.x0-G.dcx-mg);   // keep digits clear of the bezel and the wall
   if(S.layout==='stacked'){
     const fs=G.H*.30*S.digitSize;
@@ -753,7 +757,7 @@ function drawDigits(ctx,G,t,rc,dim=1){
 //   rows    every other pixel row blanked, the other rows in the next minute: no pixel is lit two
 //           minutes running (on the watch: a black drawLine per row over the drawing's boxes)
 //   checker the same with a checkerboard, finer to the eye, harder to draw on the watch
-//   jitterS / jitterL  the whole drawing moved to the next corner of a square every minute,
+//   jitterS / jitterL  the time moved to the next corner of a square every minute,
 //           W/32 or W/12 each way from centre
 const AOD_GUARDS={rows:'Alternate pixel rows each minute',checker:'Checkerboard, alternating each minute',jitterS:'Corner jitter, W/32 (14 px)',jitterL:'Corner jitter, W/12 (38 px)'};
 function aodShift(absMin,W){const g=S.aodGuard;if(g!=='jitterS'&&g!=='jitterL')return{x:0,y:0};
@@ -777,13 +781,14 @@ function burnIn(h24,step=60,n=1442){
   const run=new Uint16Array(W*H),stuck=new Uint8Array(W*H);let area=0;
   for(let y=0;y<H;y++)for(let i=0;i<W;i++){const dx=i+.5-W/2,dy=y+.5-H/2;if(dev.shape!=='round'||dx*dx+dy*dy<=W*W/4)area++}
   const d0=new Date(simMs);d0.setHours(0,0,0,0);let maxLit=0,worst=0,nStuck=0;
+  try{
   const lim=Math.ceil(180/step);
   for(let m=0;m<n;m++){
     renderFace(x,S.device,timeAt(d0.getTime()+m*step*1000));const d=x.getImageData(0,0,W,H).data;let lit=0;
     for(let i=0,j=0;i<run.length;i++,j+=4){
       if(d[j]|d[j+1]|d[j+2]){lit++;if(++run[i]>worst)worst=run[i];if(run[i]>=lim&&!stuck[i]){stuck[i]=1;nStuck++}}else run[i]=0}
     if(lit>maxLit)maxLit=lit}
-  S.aod=keep.aod;S.hour24=keep.hour24;
+  }finally{S.aod=keep.aod;S.hour24=keep.hour24}
   return{maxLit:maxLit/area,worst:Math.round(worst*step/60*10)/10,nStuck};
 }
 function renderFace(ctx,devId,t){
@@ -870,7 +875,7 @@ function litFraction(ctx,W,H,round){
   const d=ctx.getImageData(0,0,W,H).data;let lit=0,tot=0;
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){   // every pixel: a row or checkerboard mask defeats subsampling
     if(round){const dx=x-W/2,dy=y-H/2;if(dx*dx+dy*dy>W*W/4)continue}
-    tot++;const i=(y*W+x)*4;if(d[i]>10||d[i+1]>10||d[i+2]>10)lit++}
+    tot++;const i=(y*W+x)*4;if(d[i]|d[i+1]|d[i+2])lit++}
   return lit/tot;
 }
 
@@ -1006,7 +1011,7 @@ document.getElementById('copy').onclick=async()=>{
   const out={face:'Climber Time',settings:S,device:{id:S.device,...dev},
     geometry:{wall:{x0:f(G.x0/G.W),x1:f(G.x1/G.W),y0:f(G.y0/G.H),y1:f(G.y1/G.H)},routeRegion:{x0:f(G.rx0/G.W),x1:f(G.rx1/G.W),y0:f(G.ry0/G.H),y1:f(G.ry1/G.H)},
       digitsCenterX:f(G.dcx/G.W),levels:{from:-4,to:R.Lmax,spacingPx:f(R.dy)},climberPx:f(R.c),holdPx:f(R.hs),
-      timing:{descent:S.descent,wallDescent:'even minute climbs, odd minute downclimbs the same route in the same colour (moves reversed); colour changes every 2 minutes; all routes share start holds',climbSec:[0,59-S.lower],topOutSec:59-S.lower,lowerOffSec:S.lower?[60-S.lower,59]:null,lowerOffRoute:'current minute',rope:'anchor→harness during lower-off'},limbOrder:['LH','LF','RH','RF'],limbStartLevel:START,segments:{arm:.19,leg:.22,torso:.30,head:.085,unit:'climberPx'}},
+      timing:{descent:S.descent,wallDescent:'even minute climbs, odd minute downclimbs the same route in the same colour (moves reversed); colour as the palette setting gives; all routes share start holds',climbSec:[0,59-S.lower],topOutSec:59-S.lower,lowerOffSec:S.lower?[60-S.lower,59]:null,lowerOffRoute:'current minute',rope:'anchor→harness during lower-off'},limbOrder:['LH','LF','RH','RF'],limbStartLevel:START,segments:{arm:.19,leg:.22,torso:.30,head:.085,unit:'climberPx'}},
     palette:GYM.map(([n,c])=>({name:n,hex:hex(c)})),grades:GRADE,mipQuantize:'each channel → {0x00,0x55,0xAA,0xFF}'};
   const txt=JSON.stringify(out,null,2),ta=document.getElementById('out');ta.value=txt;
   const btn=document.getElementById('copy');

@@ -104,9 +104,9 @@ Wall **width** (floating panel only) is a setting from 0.22 to 0.36 of W, defaul
 
 In right-half mode the route region stays where the bezel leaves room on a round screen; the rest of the half is wall and, on a fixed wall, unused holds (§5.4).
 
-**The time group** (prototype, 2026-11-11, for the right half; since 2026-11-15 also beside the floating panel, which 0.1.0 ships): with the linear time layout, the space left of the wall holds a two-line group, the time on one line above the tags on one line, the time centred vertically and the group right-aligned 0.03 W short of the wall's left edge (0.47 W in the right half, 0.525 W beside the panel):
+**The time group** (prototype, 2026-11-11, for the right half; since 2026-11-15 also beside the floating panel, which 0.1.0 ships): with the linear time layout, the space left of the wall holds a two-line group, the time on one line above the tags on one line, the time centred vertically and the group right-aligned 0.03 W short of the wall's left edge (0.47 W in the right half; beside the panel, 0.525 W on round screens and 0.53 W on rectangular ones):
 
-- Time: HHMM, no separator, fitted to the width between the bezel's left edge at y = H/2 ± 0.10 H (plus 0.03 W) and the group's right edge, then 1.1 × **Size** (§4.1; 0.94 in 0.1.0) × that size; the four cells end at the group's right edge.
+- Time: HHMM, no separator, fitted to the width between the bezel's left edge at y = H/2 ± 0.10 H (plus 0.03 W) and the group's right edge, then 1.1 × **Size** (§4.1; 0.94 in 0.1.0) × that size; the last cell ends at the group's right edge, with three cells or four.
 - Tags: side by side, sized so that the two boxes and their gap span the minutes' two digit cells, right-aligned with them; boxes hug the widest of 8, B, I and E as in the centre panel (§3.3).
 - Rows: digit height 0.72 fs, a gap of 0.18 fs, then the tag box (0.96 of the tags' size). The digits row is centred on H/2 and the tags hang below it (`Draw.TIME_CENTRED`, the default since 2026-11-11); with it off, the whole group is centred on H/2.
 
@@ -114,7 +114,7 @@ With the linear time layout the centre panel puts the time on one line left of t
 
 ### 3.3 Tags
 
-Two small tags sit at mid-height (y = H/2), centred on the panel's right edge (floating panel), in the strip right of the route ((route right + W)/2, right half), or right of the wall ((wall right + W)/2, centre panel). They sit side by side. The prototype stacks them, grade above proficiency, in the right half. In the centre panel it puts the grade level with the hours row and the proficiency level with the minutes row, both in the digits' font at 0.6 × the digits' size, centred between the wall right + 0.025 W and the bezel (mirroring the digits), in boxes hugging the widest of 8, B, I and E (padding 0.12 fs, corner radius max(2 px, 0.12 fs), outline max(2 px, 0.05 fs)). Two user settings to come: **Tag arrangement** (side by side, stacked, or level with the time rows) and **Tag size** relative to the digits (0.6 in the prototype's centre panel):
+**In the time group** (§3.2, the default and 0.1.0) the tags sit side by side under the minutes, sized there. Otherwise two small tags sit at mid-height (y = H/2), centred on the panel's right edge (floating panel), in the strip right of the route ((route right + W)/2, right half), or right of the wall ((wall right + W)/2, centre panel). They sit side by side. The prototype stacks them, grade above proficiency, in the right half. In the centre panel it puts the grade level with the hours row and the proficiency level with the minutes row, both in the digits' font at 0.6 × the digits' size, centred between the wall right + 0.025 W and the bezel (mirroring the digits), in boxes hugging the widest of 8, B, I and E (padding 0.12 fs, corner radius max(2 px, 0.12 fs), outline max(2 px, 0.05 fs)). Two user settings to come: **Tag arrangement** (side by side, stacked, or level with the time rows) and **Tag size** relative to the digits (0.6 in the prototype's centre panel):
 
 - **Grade tag** (setting **Show grade tag**, default on): filled in the route colour, the grade number cut out in dark (route colour mixed 82 % toward black).
 - **Proficiency tag** (setting **Show proficiency tag**, default on): filled in the wall colour, outlined in its proficiency's colour, letter B, I or E in the same colour. One fixed colour per proficiency (settings **Proficiency tag, beginner / intermediate / expert**): yellow #F7C948, orange #FF8C2B and red #EF4444 by default.
@@ -135,10 +135,10 @@ Setting **Seconds scale**: off, every 10 s (default), every 15 s or every 5 s. T
 
 Setting **Time layout**:
 
-- **Stacked** (default): HH above MM. Font size 0.30 H × size. Hours centred at y = 0.365 H, minutes at 0.635 H.
-- **Linear**: HHMM on one line, **no separator**. Font size 0.19 H × size, centred at y = 0.5 H (in the right half with the time group too, the tags below it, §3.2).
+- **Stacked**: HH above MM. Font size 0.30 H × size. Hours centred at y = 0.365 H, minutes at 0.635 H.
+- **Linear** (default): HHMM on one line, **no separator**. Font size 0.19 H × size, centred at y = 0.5 H; beside the wall it forms the time group, the tags below it (§3.2).
 
-**Size** is a setting from 0.8 to 1.2 (default 1.0). In both layouts the font shrinks if needed so the block fits within 2·min(digits x − 0.03 W, wall x − digits x − 0.03 W), keeping it clear of the bezel and the wall.
+**Size** is a setting from 0.8 to 1.2 (default 0.94). Outside the time group, in both layouts the font shrinks if needed so the block fits within 2·min(digits x − 0.03 W, wall x − digits x − 0.03 W), keeping it clear of the bezel and the wall.
 
 ### 4.2 Fixed cells
 
@@ -146,13 +146,13 @@ Every digit is drawn centred in its own cell of width 1.04 × width("0"), whatev
 
 ### 4.3 Font
 
-Roboto, bold by default. Alternatives offered in the simulator: Roboto Condensed, Rubik, Barlow Semi Condensed; weights bold, medium, regular. Requirement: **zeros without a dot or slash**. On the watch these are custom bitmap fonts with the digits only (§15.4).
+Roboto Condensed, bold by default. Alternatives offered in the simulator: Roboto, Roboto Slab, Ubuntu, Lato, Rubik, Barlow Semi Condensed; weights bold, medium, regular. Requirement: **zeros without a dot or slash**. On the watch these are custom bitmap fonts with the digits only (§15.4).
 
 ### 4.4 Colour and format
 
 | Setting | Values | Default |
 |---|---|---|
-| Hours colour | a fixed colour (white #F6F6F6, grey #969C99, or a gym colour) or the route colour | white |
+| Hours colour | a fixed colour (white #F6F6F6, grey #969C99, amber #FFBC54, or a gym colour) or the route colour | white |
 | Minutes colour | the same choices | grey |
 | 24-hour | on, off (12-hour shows 1 to 12) | on |
 | Leading zero on hours | on, off | on |
@@ -192,7 +192,7 @@ Rotation rot is uniform(−0.45, 0.45) rad. Bolt dots are colour mixed 60 % to b
 
 Setting **Wall features**:
 
-- **New holds every minute** (default). Each route generates its own holds (§6.4). Optionally **other routes on the wall** (setting, default on): three colours chosen per day, 11 holds each, scattered over the wall, drawn dim (their colour mixed 62 % toward the wall). Skipped when the colour equals the current route's, or within 1.3 hold sizes of a route hold.
+- **New holds every route** (default): every grade round with proficiency cycling (§6.3), otherwise every minute. Each route generates its own holds (§6.4). Optionally **other routes on the wall** (setting, default on): three colours chosen per day, 11 holds each, scattered over the wall, drawn dim (their colour mixed 62 % toward the wall). Skipped when the colour equals the current route's, or within 1.3 hold sizes of a route hold.
 - **Fixed wall, new path highlighted**. One fixed set of holds (§5.4). Each minute a path is picked through it (§6.5); path holds are drawn in the route colour, all others in a neutral grey (wall mixed 26 % toward white). The other-routes setting is disabled in this mode.
 
 ### 5.4 The fixed wall
@@ -246,9 +246,9 @@ Every random choice is drawn from a seeded generator (mulberry32 over a 32-bit i
 
 **One route per grade** (owner, 2026-11-15): with proficiency cycling (§12.4), the route's holds, volumes and jumps are seeded from the key of the grade round's first minute, the beginner's, so the intermediate and the expert climb the beginner's route. The attempt plan (falls, missed jumps, Appendix B.6) stays seeded per minute and per proficiency.
 
-### 6.4 Per-minute holds
+### 6.4 Per-route holds
 
-Seeded from the route key. With e = (grade − 4)/4 (0 at grade 4, 1 at grade 8), centre cx and half-width h of the route region, a route-level phase and lean:
+Seeded from the route's seed (§6.3: the route key, or the grade round's first minute with proficiency cycling). With e = (grade − 4)/4 (0 at grade 4, 1 at grade 8), centre cx and half-width h of the route region, a route-level phase and lean:
 
 ```
 x_k = cx + 0.30·h·sin(0.33·k + phase) + 0.18·h·lean·k/Lmax + side_k·h·(0.16 + 0.30·r + 0.08·e)
@@ -284,7 +284,7 @@ One colour per **route**, not per minute: in downclimb mode a route spans two mi
 
 Setting **Colour per route**:
 
-- **One per grade round, at random** (default): the three climbs of a grade (§12.4) share one gym colour, picked by a seeded hash of the hour and the round, never the previous round's. The colour says nothing about the difficulty.
+- **One per grade round, at random** (default): the three climbs of a grade (§12.4) share one gym colour, picked by a seeded hash of the absolute round, never the previous round's, across hours too (Appendix B.2b). The colour says nothing about the difficulty.
 - **Gym colours, shuffled**: from the gym palette, never the same twice in a row within the hour (Appendix B.2).
 - **Gym colours, in order**: cycling through the palette.
 - **Hue wheel**: hue = (route start minute mod 60) × 6°, saturation 85 %, lightness 58 %. The colour itself encodes the minute.
@@ -529,9 +529,9 @@ These become Connect IQ properties (§15.5). Keys match the simulator's settings
 | font | Roboto Condensed, Roboto, Roboto Slab, Ubuntu, Lato, Rubik, Barlow Semi Condensed | Roboto Condensed | §4.3 |
 | weight | 700, 500, 400 | 700 | §4.3 |
 | layout | stacked, inline (linear HHMM) | inline | §4.1 |
-| digitSize | 0.7 to 1.3 | 0.94 | §4.1 |
-| hourColor | white, grey, a gym colour, route | white | §4.4 |
-| minColor | white, grey, a gym colour, route | grey | §4.4 |
+| digitSize | 0.8 to 1.2 | 0.94 | §4.1 |
+| hourColor | a fixed colour (§4.4), route | white | §4.4 |
+| minColor | a fixed colour (§4.4), route | grey | §4.4 |
 | hour24 | on, off | on | §4.4 |
 | leadZero | on, off | on | §4.4 |
 | palette | round, shuffle, cycle, hue | round | §7 |
@@ -547,7 +547,7 @@ These become Connect IQ properties (§15.5). Keys match the simulator's settings
 | gMax | 4 to 8 | 8 | §8.3 |
 | showGrade | on, off | on | §3.3 |
 | showProf | on, off | on | §3.3 |
-| profB, profI, profE | white, grey, a gym colour, route | yellow, orange, red | §3.3 |
+| profB, profI, profE | a fixed colour (§4.4), route | yellow, orange, red | §3.3 |
 | tagLayout | inline, stacked, rows (planned) | per wall area: inline (panel), stacked (half), rows (centre) | §3.3 |
 | tagScale | fraction of the digits' size, rows only (planned) | 0.6 | §3.3 |
 | wallStyle | slate, plywood, none | slate | §5.1 |
@@ -671,10 +671,10 @@ Export from the simulator, for fixed settings and minutes: hash and mulberry32 o
 | Very slow downclimb | Watch | After an early fall with little climbed, the downclimb may look frozen at 1 Hz. Option: a minimum descent speed, then wait at the bottom. |
 | Pacing at 1× | Validate | Tuned partly at 15×. Judge on the wrist in M2. |
 | Grade 8 hang time | Validate | Up to 4 jumps of about 5 s each: roughly a third of the minute in the air. Tune jump duration if it is too much. |
-| Always-on limit | M0 | Confirm the current Connect IQ rule and the 10 % figure. |
+| Always-on limit | Settled | 10 % lit and no pixel lit 3 minutes; the 0.1.0 scene measured within both (§13.1). |
 | Partial update cost | M0 | Lower-off and fall seconds redraw a tall region. |
 | Memory for a static-layer bitmap | M0 | Decides between blitting and redrawing holds in the clip. |
-| Fonts | M1 | Bitmap font sizes per device; whether to ship the alternative fonts. |
+| Fonts | M1 | Bitmap font sizes per resolution (#17); Roboto Condensed only (§15.4). |
 
 ## 19. Milestones
 
@@ -751,7 +751,7 @@ Distances are fractions of W or H, multiples of the climber size c, or pixels wh
 
 | Name | Value |
 |---|---|
-| Font size fs | 0.055 H, bold |
+| Font size fs | 0.055 H, bold (outside the time group; in it, §3.2) |
 | Box | width 0.95 fs, height ascent + 0.5 fs, gap 0.22 fs |
 | Corner radius | max(1.5 px, 0.18 fs) |
 | Outline width | max(1.2 px, 0.11 fs) |
@@ -794,6 +794,19 @@ colour(index):                  index = hour·60 + ordinal
   repeat k times (j = 1 … k): i = (i + 1 + hash(hour·61 + j) mod (L − 1)) mod L
   return palette[i]             never equal to the previous index's colour
 ```
+
+### B.2b One colour per grade round
+
+```
+round R = hour·20 + floor(ordinal/3)     with proficiency cycling; else hour·60 + ordinal
+raw(x)  = hash(x·977 + 17) mod 9         x truncated to its low 32 bits, as everywhere (§15.3)
+colour(R):
+  if R is even: i = raw(R)
+  else:         i = raw(R); while i = raw(R − 1) or i = raw(R + 1): i = (i + 1) mod 9
+  return palette[i]
+```
+
+Even rounds take their own hash; odd rounds avoid both neighbours, so no two consecutive rounds share a colour, across hour boundaries too, with no recursion.
 
 ### B.3 Move counts and levels
 
