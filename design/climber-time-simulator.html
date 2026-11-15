@@ -344,7 +344,7 @@ const START=[0,-4,1,-3];               // limb order per cycle: LH, LF, RH, RF; 
 const nMoves=(M,o)=>Math.floor((M-o+3)/4);
 const routeCache=new Map();
 // One route per grade: the beginner's minute sets it, and the intermediate and expert climb
-// the same holds; only the colour changes with the minute.
+// the same holds, in the same colour (roundColor).
 function routeSeed(sl){
   if(!S.profCycle)return sl.key;
   const hr=Math.floor(sl.key/60),o0=sl.ord-sl.ord%3;
