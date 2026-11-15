@@ -6,11 +6,14 @@ import Toybox.Lang;
 module Draw {
 
     const WALL = 0x24292D;          // slate
-    const LAYOUT = Climb.LAYOUT_HALF;     // which wall area the build draws; see Geom
-    const TIME_LINEAR = true;             // HHMM in one line (centre panel, right half); see Geom
-    const TIME_CENTRED = true;            // right half: the digits row on H/2, tags below; see groupRows
+    const LAYOUT = Climb.LAYOUT_PANEL;    // which wall area the build draws (DESIGN.md §14.3); the others stay for Premium
+    const TIME_LINEAR = true;             // HHMM in one line (time group beside the panel or right half, centre panel); see Geom
+    const TIME_CENTRED = true;            // time group: the digits row on H/2, tags below; see groupRows
     const CLIMBER = 0xF5F5F5;       // white
-    const HOURS = 0xF6F6F6;
+    const HOURS = 0xF6F6F6;         // white
+    const MINUTES = 0x969C99;       // grey (DESIGN.md §14.3)
+    // The proficiency tag's colour per proficiency, B I E: yellow, orange, red (DESIGN.md §3.3).
+    const PROF_COLORS = [0xF7C948, 0xFF8C2B, 0xEF4444] as Array<Number>;
     const ROPE = 0xD6D4C8;
     const ANCHOR = 0x969C98;
     const VECTOR_FACES = ["RobotoCondensedBold", "BionicBold", "Swiss721Bold"] as Array<String>;
@@ -27,9 +30,15 @@ module Draw {
         return out;
     }
 
-    function vectorFont(size as Number, fallback as Graphics.FontType) as Graphics.FontType {
+    // getVectorFont's :size is the font's line height, ascent plus descent, where the design and
+    // the simulator size fonts by the em (CSS font-size). For Roboto that line is 1.172 em
+    // (ascender 1900, descender 500, 2048 units): measured on epix2pro47mm, size 81 gives
+    // getFontAscent 64 and getFontHeight 81. Every size here is in em and converted at the call.
+    const VECTOR_EM = 1.172;
+
+    function vectorFont(em as Numeric, fallback as Graphics.FontType) as Graphics.FontType {
         if (Graphics has :getVectorFont) {
-            var f = Graphics.getVectorFont({ :face => VECTOR_FACES, :size => size });
+            var f = Graphics.getVectorFont({ :face => VECTOR_FACES, :size => (em * VECTOR_EM + 0.5).toNumber() });
             if (f != null) {
                 return f;
             }
@@ -37,8 +46,9 @@ module Draw {
         return fallback;
     }
 
-    // Stacked digits' font size: 0.30 H, shrunk to fit between the bezel and the wall
-    // (DESIGN.md §4.1), then scaled by the layout's digitScale.
+    // The digits' font size in em: 0.30 H stacked, 0.19 H linear, shrunk to fit between the bezel
+    // and the wall (DESIGN.md §4.1), then scaled by the layout's digitScale (in the time group,
+    // 1.1 × Climb.TIME_SIZE). Outside the group the size setting is not applied yet (Premium).
     function digitSize(dc as Graphics.Dc, g as Geom) as Number {
         var fs = g.H * (g.timeLinear ? 0.19 : 0.30);
         var f = vectorFont(fs.toNumber(), Graphics.FONT_NUMBER_THAI_HOT);
@@ -81,7 +91,7 @@ module Draw {
         return w > 0 ? guess * width / w : guess;
     }
 
-    // The right half's two-line group: [digits row y, tags row y]. The group is centred
+    // The time group's two lines beside the wall: [digits row y, tags row y]. The group is centred
     // vertically, or with TIME_CENTRED moved down so that the digits row is on H/2.
     // A digit is about 0.72 of its font size tall, a tag box 0.96 of the tags' size.
     function groupRows(g as Geom) as Array<Float> {
@@ -268,7 +278,7 @@ module Draw {
         dc.setPenWidth(1);
 
         tags(dc, g, r, rc, tagFont, tagSize);
-        time(dc, g, 0.0, 0.0, hh, mm, digitFont, HOURS, rc);
+        time(dc, g, 0.0, 0.0, hh, mm, digitFont, HOURS, MINUTES);
     }
 
     // Tag font size, as a fraction of H. The design's 0.055 side by side was hard to
@@ -336,9 +346,10 @@ module Draw {
         dc.setColor(mix(rc, 0, 0.82), Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx1, cy1, font, r.grade.toString(), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
+        var pc = PROF_COLORS[r.prof];
         dc.setColor(WALL, Graphics.COLOR_TRANSPARENT);
         dc.fillRoundedRectangle(cx2 - bw / 2, cy2 - th / 2, bw, th, rad);
-        dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(pc, Graphics.COLOR_TRANSPARENT);
         dc.setPenWidth(lw.toNumber());
         dc.drawRoundedRectangle(cx2 - bw / 2 + lw / 2, cy2 - th / 2 + lw / 2, bw - lw, th - lw, Climb.maxf(1.0, rad - lw / 2));
         dc.setPenWidth(1);
