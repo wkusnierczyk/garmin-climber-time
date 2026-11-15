@@ -71,7 +71,7 @@ class Geom {
     public var digitScale as Float;       // applied after the digits are fitted
     public var timeLinear as Boolean;     // HHMM on one line at mid-height, not stacked
     public var tagHug as Boolean;         // tags sized from the digits, boxes hugging the glyph
-    public var timeGroup as Boolean;      // right half: time over tags, right-aligned to groupRight
+    public var timeGroup as Boolean;      // beside the panel or the right half: time over tags, right-aligned to groupRight
     public var groupRight as Float;
     public var digitSize as Float = 0.0;  // set by the view once the fonts are fitted
     public var tagSize as Float = 0.0;
@@ -87,11 +87,11 @@ class Geom {
         self.round = round;
         self.layout = layout;
         full = layout == Climb.LAYOUT_HALF;
-        // Linear time in the centre panel or the right half, for now; its tags then sit
-        // in a line too. In the right half, time and tags form a two-line group left of
-        // the wall, right-aligned to it and centred vertically.
-        self.timeLinear = timeLinear && layout != Climb.LAYOUT_PANEL;
-        timeGroup = self.timeLinear && full;
+        // Linear time: beside the floating panel or the right half, time and tags form a
+        // two-line group left of the wall, right-aligned to it and centred vertically
+        // (DESIGN.md §3.2); in the centre panel the tags sit in a line right of the wall.
+        self.timeLinear = timeLinear;
+        timeGroup = timeLinear && layout != Climb.LAYOUT_CENTRE;
         groupRight = 0.0;
         tagHug = layout == Climb.LAYOUT_CENTRE || timeGroup;
         if (timeGroup) {
@@ -103,7 +103,7 @@ class Geom {
         }
         digitScale = layout == Climb.LAYOUT_CENTRE ? 0.9 : 1.0;
         if (timeGroup) {
-            digitScale = 1.1;
+            digitScale = 1.1 * Climb.TIME_SIZE;
         }
         digitMaxW = 0.0;
         tagX = 0.0;
@@ -160,14 +160,7 @@ class Geom {
             digitMaxW = 2 * Climb.minf(dcx - 0.03 * W, x0 - dcx - 0.03 * W);
             tagX = (rx1 + W) / 2;
             if (timeGroup) {
-                groupRight = x0 - 0.03 * W;
-                // The bezel's left edge beside the time's row, a little above mid-height.
-                var lb = 0.03 * W;
-                if (round) {
-                    var dy = 0.10 * H;
-                    lb = W / 2 - Math.sqrt(W * W / 4 - dy * dy).toFloat() + 0.03 * W;
-                }
-                digitMaxW = groupRight - lb;
+                fitGroup();
             }
             return;
         }
@@ -193,6 +186,21 @@ class Geom {
         ay = y0 + Climb.maxf(3.0, H * 0.012);
         digitMaxW = 2 * Climb.minf(dcx - 0.03 * W, x0 - dcx - 0.03 * W);
         tagX = x1;
+        if (timeGroup) {
+            fitGroup();
+        }
+    }
+
+    // The time group's right edge, 0.03 W short of the wall, and the width the time fits in,
+    // from the bezel's left edge beside the time's row, a little above mid-height.
+    private function fitGroup() as Void {
+        groupRight = x0 - 0.03 * W;
+        var lb = 0.03 * W;
+        if (round) {
+            var dy = 0.10 * H;
+            lb = W / 2 - Math.sqrt(W * W / 4 - dy * dy).toFloat() + 0.03 * W;
+        }
+        digitMaxW = groupRight - lb;
     }
 }
 
@@ -424,6 +432,7 @@ module Climb {
 
     enum { LAYOUT_PANEL, LAYOUT_HALF, LAYOUT_CENTRE }
     const CENTRE_WIDTH = 0.36;     // the centre panel's width, as a fraction of W
+    const TIME_SIZE = 0.94;        // the time group's size setting (DESIGN.md §4.1, §14.3)
     // The tags: side by side, stacked, or stacked level with the hours and minutes rows.
     enum { TAGS_INLINE, TAGS_STACKED, TAGS_ROWS }
 
