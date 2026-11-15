@@ -1,26 +1,16 @@
-# Compiled binaries
-bin/
-mir/
+# Build output: make build and make test write the .prg files, their .prg.debug.xml and
+# monkeyc's gen/ and *-mir/ folders; make export writes export/. make clean removes all of it.
 gen/
-deploy/
-export/
-
-# Debug files
-debug.xml
 internal-mir/
 external-mir/
-
-# Node files
-node_modules/
-package-lock.json
-package.json
-test_build-settings.json
-
-# Build artifacts
+export/
 *.prg
 *.prg.*
-# monkeyc writes one beside the .prg once an app has settings (Premium, #32)
+
+# monkeyc writes <prg>-settings.json beside a .prg once the app has settings (none in Lite
+# 0.1.0; as in wkusnierczyk/garmin-matrix-time#32).
 ClimberTime*-settings.json
+test_build-settings.json
 
 # IDE/Editor settings
 .settings/
@@ -32,17 +22,8 @@ ClimberTime*-settings.json
 .DS_Store
 Thumbs.db
 
-# Developer Key (CRITICAL: Never commit this)
+# Developer key (CRITICAL: never commit this)
 developer_key*
-# Python bytecode
+
+# Python bytecode (tools/make-help.py)
 __pycache__/
-
-# make preview's contact sheets, for review and never committed (#140)
-/.dev/scratchpad/preview/
-
-# make graphics' full-size captures and make hero's candidates, inputs to a manual step
-# and never committed (#188)
-/.dev/scratchpad/hero/
-
-# The version and commit make writes before every Premium build, for its About entry (#181)
-/premium/resources-stamp/
