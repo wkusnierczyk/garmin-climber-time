@@ -7,8 +7,8 @@ module Draw {
 
     const WALL = 0x24292D;          // slate
     const LAYOUT = Climb.LAYOUT_PANEL;    // which wall area the build draws (DESIGN.md §14.3); the others stay for Premium
-    const TIME_LINEAR = true;             // HHMM in one line (centre panel, right half); see Geom
-    const TIME_CENTRED = true;            // right half: the digits row on H/2, tags below; see groupRows
+    const TIME_LINEAR = true;             // HHMM in one line (time group beside the panel or right half, centre panel); see Geom
+    const TIME_CENTRED = true;            // time group: the digits row on H/2, tags below; see groupRows
     const CLIMBER = 0xF5F5F5;       // white
     const HOURS = 0xF6F6F6;         // white
     const MINUTES = 0x969C99;       // grey (DESIGN.md §14.3)
@@ -30,9 +30,15 @@ module Draw {
         return out;
     }
 
-    function vectorFont(size as Number, fallback as Graphics.FontType) as Graphics.FontType {
+    // getVectorFont's :size is the font's line height, ascent plus descent, where the design and
+    // the simulator size fonts by the em (CSS font-size). For Roboto that line is 1.172 em
+    // (ascender 1900, descender 500, 2048 units): measured on epix2pro47mm, size 81 gives
+    // getFontAscent 64 and getFontHeight 81. Every size here is in em and converted at the call.
+    const VECTOR_EM = 1.172;
+
+    function vectorFont(em as Numeric, fallback as Graphics.FontType) as Graphics.FontType {
         if (Graphics has :getVectorFont) {
-            var f = Graphics.getVectorFont({ :face => VECTOR_FACES, :size => size });
+            var f = Graphics.getVectorFont({ :face => VECTOR_FACES, :size => (em * VECTOR_EM + 0.5).toNumber() });
             if (f != null) {
                 return f;
             }
@@ -40,8 +46,9 @@ module Draw {
         return fallback;
     }
 
-    // Stacked digits' font size: 0.30 H, shrunk to fit between the bezel and the wall
-    // (DESIGN.md §4.1), then scaled by the layout's digitScale.
+    // The digits' font size in em: 0.30 H stacked, 0.19 H linear, shrunk to fit between the bezel
+    // and the wall (DESIGN.md §4.1), then scaled by the layout's digitScale (in the time group,
+    // 1.1 × Climb.TIME_SIZE). Outside the group the size setting is not applied yet (Premium).
     function digitSize(dc as Graphics.Dc, g as Geom) as Number {
         var fs = g.H * (g.timeLinear ? 0.19 : 0.30);
         var f = vectorFont(fs.toNumber(), Graphics.FONT_NUMBER_THAI_HOT);
@@ -84,7 +91,7 @@ module Draw {
         return w > 0 ? guess * width / w : guess;
     }
 
-    // The right half's two-line group: [digits row y, tags row y]. The group is centred
+    // The time group's two lines beside the wall: [digits row y, tags row y]. The group is centred
     // vertically, or with TIME_CENTRED moved down so that the digits row is on H/2.
     // A digit is about 0.72 of its font size tall, a tag box 0.96 of the tags' size.
     function groupRows(g as Geom) as Array<Float> {

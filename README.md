@@ -22,8 +22,9 @@ simulator, with the settings fixed:
   are white, minutes grey; the grade tag takes the route colour, the proficiency tag yellow (B),
   orange (I) or red (E). Other routes dim on the wall, seconds scale every 10 s.
 - The other arrangements are in the code too (`Draw.LAYOUT`, `Draw.TIME_LINEAR`): the wall
-  filling the right half, and a tall centre panel with the time and tags stacked or in one line
-  on either side. Premium may offer them as settings.
+  filling the right half, the panel with the time stacked (`Draw.TIME_LINEAR` false), and a tall
+  centre panel with the time and tags stacked or in one line on either side. Premium may offer
+  them as settings.
 
 Not in the prototype: settings, an always-on scene (the same face is drawn in every display
 mode), the custom digit font (the watch's Roboto Condensed Bold vector font stands in), and

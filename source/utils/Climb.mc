@@ -70,7 +70,7 @@ class Geom {
     public var digitScale as Float;       // applied after the digits are fitted
     public var timeLinear as Boolean;     // HHMM on one line at mid-height, not stacked
     public var tagHug as Boolean;         // tags sized from the digits, boxes hugging the glyph
-    public var timeGroup as Boolean;      // right half: time over tags, right-aligned to groupRight
+    public var timeGroup as Boolean;      // beside the panel or the right half: time over tags, right-aligned to groupRight
     public var groupRight as Float;
     public var digitSize as Float = 0.0;  // set by the view once the fonts are fitted
     public var tagSize as Float = 0.0;
