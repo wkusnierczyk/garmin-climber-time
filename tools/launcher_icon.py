@@ -68,7 +68,8 @@ COVER_LIMIT = 300 * 1000
 # The cover only (the owner's pick C on #54): six small holds of the face's gym colours
 # (source/utils/Climb.mc, GYM) scattered on the wall around the climber, none in his
 # hands. Each is (shape, x, y, size, colour, rotation in degrees), in box units, drawn
-# under the climber; the shapes are the mock-up's, as the face draws its holds.
+# under the climber; the shapes are the mock-up's simplified versions of the face's holds,
+# as the owner approved them: do not replace them with Draw.mc's.
 COVER_HOLDS = (
     ('jug', 14, 16, 5, (0xF7, 0xC9, 0x48), 15),       # yellow, top left
     ('crimp', 86, 42, 5, (0x22, 0xC3, 0xC3), -20),    # teal, right

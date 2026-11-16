@@ -6,11 +6,12 @@ generated, never edited by hand, except the hero, which an image model composes.
 
 ## Launcher icon
 
-A white climber in a high step, on black: one foot rocked up beside the hip, one hand low and one reaching up.
-The launcher icon's size is set per device, from 38 x 38 to 70 x 70, and not per screen, so each
-size is drawn on its own by `tools/launcher_icon.py` (never scaled from one image) into
-`resources-icon-<size>/`, and `monkey.jungle` maps each product to its own. The store cover,
-`store/lite/graphics/ClimberTimeCover.png`, is the same drawing at 500 x 500, with six small holds in the gym's colours scattered around the climber (#54); the icons have none. `make icons`
+A white climber in a high step, on black: one foot rocked up beside the hip, one hand low and one
+reaching up. The launcher icon's size is set per device, from 38 x 38 to 70 x 70, and not per
+screen, so each size is drawn on its own by `tools/launcher_icon.py` (never scaled from one image)
+into `resources-icon-<size>/`, and `monkey.jungle` maps each product to its own. The store cover,
+`store/lite/graphics/ClimberTimeCover.png`, is the same drawing at 500 x 500, with six small holds
+in the gym's colours scattered around the climber (#54); the icons have none. `make icons`
 regenerates all of it, this table included, after a change to the devices or the drawing, and
 `make check-icons` checks it with no SDK (in CI too). Both need
 [`garmin-graphics-generator`](https://github.com/wkusnierczyk/garmin-graphics-generator) 0.8.1 or
