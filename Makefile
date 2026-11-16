@@ -75,7 +75,7 @@ EXPORT_FLAGS := -e -r -w -y "$(DEV_KEY)" -f monkey.jungle
 
 .PHONY: all build sim run test golden sideload export fonts check-fonts check-ttf2bmp install-ttf2bmp \
   check-garmin-font-scaler install-garmin-font-scaler check-garmin-graphics-generator \
-  graphics preview icons check-icons clean help check-help
+  install-garmin-graphics-generator graphics preview icons check-icons clean help check-help
 
 ## The default: build [DEVICE DEV_KEY]
 all: build
@@ -259,22 +259,28 @@ check-garmin-font-scaler:
 # A working environment is moved aside, not deleted, and put back if the new one fails or the
 # run is interrupted; an environment left aside by an interrupted run stays the backup. The
 # environment's path is made absolute, so the link into BIN_DIR resolves from anywhere.
+# make_venv is that shell, shared with install-garmin-graphics-generator (#39): $(1) the
+# environment, $(2) the Python to build it on (empty tries /usr/bin/python3, then python3),
+# $(3) that Python's variable. It leaves $$venv made, with pip, and the traps set; restore
+# puts the previous one back. After the install is checked: trap - INT TERM; rm -rf "$$old".
+make_venv = venv="$(1)"; case $$venv in /*) ;; *) venv="$$PWD/$$venv" ;; esac; old="$$venv.old"; \
+  nodev=; if test "$$(uname -s)" = Darwin && ! xcode-select -p >/dev/null 2>&1; then nodev=1; fi; \
+  if test -e "$$venv"; then rm -rf "$$old" && mv "$$venv" "$$old" || exit 1; fi; \
+  restore() { rm -rf "$$venv"; if test -e "$$old"; then mv "$$old" "$$venv"; echo "Kept the previous $$venv."; fi; }; \
+  trap 'restore; exit 1' INT TERM; \
+  try() { p=$$(command -v "$$1") || { echo "No $$1."; return 1; }; \
+    if test -n "$$nodev" && test "$$p" = /usr/bin/python3; then \
+      echo "Skipping $$p: without the developer tools it opens their install dialog."; return 1; fi; \
+    echo "Making $$venv with $$p ($$("$$p" --version 2>&1))..."; \
+    if "$$p" -m venv "$$venv" && "$$venv/bin/python" -m pip --version >/dev/null; then return 0; fi; \
+    echo "$$p cannot make a virtual environment with pip."; rm -rf "$$venv"; return 1; }; \
+  if test -n "$(2)"; then try "$(2)"; \
+  else try /usr/bin/python3 || try python3; fi || { \
+    echo "No Python made one; pick one with $(3)=/path/to/python3."; restore; exit 1; }
+
 ## Install garmin-font-scaler in its own environment, linked into BIN_DIR [BIN_DIR FONT_SCALER_VENV FONT_SCALER_PYTHON]
 install-garmin-font-scaler:
-	@venv="$(FONT_SCALER_VENV)"; case $$venv in /*) ;; *) venv="$$PWD/$$venv" ;; esac; old="$$venv.old"; \
-	nodev=; if test "$$(uname -s)" = Darwin && ! xcode-select -p >/dev/null 2>&1; then nodev=1; fi; \
-	if test -e "$$venv"; then rm -rf "$$old" && mv "$$venv" "$$old" || exit 1; fi; \
-	restore() { rm -rf "$$venv"; if test -e "$$old"; then mv "$$old" "$$venv"; echo "Kept the previous $$venv."; fi; }; \
-	trap 'restore; exit 1' INT TERM; \
-	try() { p=$$(command -v "$$1") || { echo "No $$1."; return 1; }; \
-	  if test -n "$$nodev" && test "$$p" = /usr/bin/python3; then \
-	    echo "Skipping $$p: without the developer tools it opens their install dialog."; return 1; fi; \
-	  echo "Making $$venv with $$p ($$("$$p" --version 2>&1))..."; \
-	  if "$$p" -m venv "$$venv" && "$$venv/bin/python" -m pip --version >/dev/null; then return 0; fi; \
-	  echo "$$p cannot make a virtual environment with pip."; rm -rf "$$venv"; return 1; }; \
-	if test -n "$(FONT_SCALER_PYTHON)"; then try "$(FONT_SCALER_PYTHON)"; \
-	else try /usr/bin/python3 || try python3; fi || { \
-	  echo "No Python made one; pick one with FONT_SCALER_PYTHON=/path/to/python3."; restore; exit 1; }; \
+	@$(call make_venv,$(FONT_SCALER_VENV),$(FONT_SCALER_PYTHON),FONT_SCALER_PYTHON); \
 	echo "Installing garmin-font-scaler $(FONT_SCALER_VERSION) from $(FONT_SCALER_REPO)..."; \
 	"$$venv/bin/python" -m pip install --quiet --disable-pip-version-check \
 	  "git+$(FONT_SCALER_REPO)@v$(FONT_SCALER_VERSION)" || { echo "pip install failed."; restore; exit 1; }; \
@@ -324,14 +330,26 @@ check-fonts:
 # stale. They are deterministic, the same face drawing the same images, but for the hero's
 # placement, which is random: look at the draft and run again if it is poor.
 #
-# The tool runs in GRAPHICS_PYTHON, which must have it installed. It is not on PyPI:
-#   python3 -m pip install 'garmin-graphics-generator @ git+https://github.com/wkusnierczyk/garmin-graphics-generator@v0.8.1'
+# The tool runs in GRAPHICS_PYTHON, which must have it installed. It is not on PyPI, so
+# install-garmin-graphics-generator (#39) installs it from its tag, in a virtual environment
+# of its own, GRAPHICS_VENV, and GRAPHICS_PYTHON is that environment's Python once it exists.
 # 0.8.1 is the release the targets were written and run against (tools/make-graphics.py).
-## The Python graphics and preview run in, with garmin-graphics-generator installed
-GRAPHICS_PYTHON ?= python3
+# Pillow is pinned to GRAPHICS_PILLOW_VERSION, the one the icons were drawn with and CI's
+# (.github/workflows/build.yml): check-icons compares pixels, which only one Pillow reproduces.
+## The generator's virtual environment, which install-garmin-graphics-generator replaces
+GRAPHICS_VENV ?= $(HOME)/.local/share/venvs/garmin-graphics-generator
+## The Python graphics, preview, icons and check-icons run in: GRAPHICS_VENV's, else python3
+GRAPHICS_PYTHON ?= $(if $(wildcard $(GRAPHICS_VENV)/bin/python),$(GRAPHICS_VENV)/bin/python,python3)
+# The same choice as the scaler's environment (FONT_SCALER_PYTHON, above), for the same reason.
+## The Python to build the generator's environment on; empty tries /usr/bin/python3, then python3
+GRAPHICS_VENV_PYTHON ?=
 ## The container platform for graphics and preview; the tester image is amd64 only
 PLATFORM ?= linux/amd64
 GRAPHICS_TOOL_VERSION := 0.8.1
+GRAPHICS_TOOL_REPO := https://github.com/wkusnierczyk/garmin-graphics-generator
+GRAPHICS_PILLOW_VERSION := 11.3.0
+# Prints the generator's version in $(1), a Python, or nothing.
+graphics_tool_version = "$(1)" -c 'from importlib.metadata import version; print(version("garmin_graphics_generator"))' 2>/dev/null
 
 define require_graphics_tool
 @"$(GRAPHICS_PYTHON)" -c 'import sys; from importlib.metadata import version; \
@@ -339,14 +357,32 @@ define require_graphics_tool
   raise SystemExit(number(version("garmin_graphics_generator")) < number(sys.argv[1]))' \
   '$(GRAPHICS_TOOL_VERSION)' 2>/dev/null || { \
   echo "make $@ needs garmin-graphics-generator $(GRAPHICS_TOOL_VERSION) or newer, installed for"; \
-  echo "GRAPHICS_PYTHON ($(GRAPHICS_PYTHON)); see README.md."; exit 1; }
+  echo "GRAPHICS_PYTHON ($(GRAPHICS_PYTHON)). Install it into GRAPHICS_VENV with:"; \
+  echo "  make install-garmin-graphics-generator"; exit 1; }
 endef
 
 ## Check that GRAPHICS_PYTHON has garmin-graphics-generator, new enough for the images [GRAPHICS_PYTHON]
 check-garmin-graphics-generator:
 	$(require_graphics_tool)
-	@"$(GRAPHICS_PYTHON)" -c 'from importlib.metadata import version; \
-	  print("garmin-graphics-generator", version("garmin_graphics_generator"))'
+	@echo "garmin-graphics-generator $$($(call graphics_tool_version,$(GRAPHICS_PYTHON))) for $(GRAPHICS_PYTHON)."
+
+# The package with its dependencies (rembg, for the hero, among them) and Pillow at
+# GRAPHICS_PILLOW_VERSION, in one resolve; then checked for the version, and for that Pillow.
+## Install garmin-graphics-generator in its own environment, GRAPHICS_VENV [GRAPHICS_VENV GRAPHICS_VENV_PYTHON]
+install-garmin-graphics-generator:
+	@$(call make_venv,$(GRAPHICS_VENV),$(GRAPHICS_VENV_PYTHON),GRAPHICS_VENV_PYTHON); \
+	echo "Installing garmin-graphics-generator $(GRAPHICS_TOOL_VERSION) and Pillow $(GRAPHICS_PILLOW_VERSION)..."; \
+	"$$venv/bin/python" -m pip install --quiet --disable-pip-version-check \
+	  "garmin-graphics-generator @ git+$(GRAPHICS_TOOL_REPO)@v$(GRAPHICS_TOOL_VERSION)" \
+	  "Pillow==$(GRAPHICS_PILLOW_VERSION)" || { echo "pip install failed."; restore; exit 1; }; \
+	got=$$($(call graphics_tool_version,$$venv/bin/python)); \
+	$(call version_at_least,$$got,$(GRAPHICS_TOOL_VERSION)) || { \
+	  echo "The installed garmin-graphics-generator is not $(GRAPHICS_TOOL_VERSION) or newer."; restore; exit 1; }; \
+	pil=$$("$$venv/bin/python" -c 'import PIL; print(PIL.__version__)' 2>/dev/null); \
+	test "$$pil" = "$(GRAPHICS_PILLOW_VERSION)" || { \
+	  echo "The environment has Pillow $${pil:-none}, not $(GRAPHICS_PILLOW_VERSION)."; restore; exit 1; }; \
+	trap - INT TERM; rm -rf "$$old"; \
+	echo "Installed garmin-graphics-generator $$got, with Pillow $$pil, in $$venv."
 
 # On the reference product, epix2pro47mm, whatever DEVICE says: the images show what CI
 # builds and tests. Writes store/lite/graphics/: ClimberTimeCapture.png, the raw screen;
