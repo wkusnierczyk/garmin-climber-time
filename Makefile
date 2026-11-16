@@ -299,9 +299,9 @@ install-garmin-font-scaler:
 # resources/fonts/ (fonts.xml, charsets.json, resolutions.json), and fonts.md. It does not
 # refresh resources/fonts/'s own bitmaps, which the compiler reads for a product with no
 # directory of its own, so they are copied from the reference resolution's; the reference is
-# read from resolutions.json. The README's size table is copied from fonts.md, and the
+# read from resolutions.json. docs/fonts.md's size table is copied from fonts.md, and the
 # typeface's and the bitmaps' SHA-256 recorded in fonts.sha256; then all of it is checked.
-## Regenerate the bitmap fonts, fonts.md, fonts.sha256 and the README's size table (needs ttf2bmp and garmin-font-scaler)
+## Regenerate the bitmap fonts, fonts.md, fonts.sha256 and docs/fonts.md's size table (needs ttf2bmp and garmin-font-scaler)
 fonts:
 	$(require_ttf2bmp)
 	$(require_font_scaler)
@@ -313,7 +313,7 @@ fonts:
 	@python3 tools/check-font-config.py --write
 
 # Pure Python, no SDK and no font tools, so it runs in CI's consistency checks.
-## Check that the fonts agree with their configuration, the design's sizes and the README
+## Check that the fonts agree with their configuration, the design's sizes and docs/fonts.md
 check-fonts:
 	@echo "Checking the fonts..."
 	@python3 tools/check-font-config.py
@@ -417,8 +417,8 @@ preview:
 # icons command with the renderer tools/launcher_icon.py: a white climber in a high
 # step, on black, drawn at each size. The command writes resources-icon-<size>/, the
 # fallback resources/drawables/launcher_icon.png (the largest size), the block between
-# the markers in monkey.jungle, and the size table in README.md that follows
-# ICONS_README. The store cover, store/lite/graphics/ClimberTimeCover.png, is the same
+# the markers in monkey.jungle, and the size table in docs/graphics.md that follows the
+# sentence in ICONS_README. The store cover, store/lite/graphics/ClimberTimeCover.png, is the same
 # drawing at 500 x 500; the command knows nothing about it, so the renderer, run as a
 # script, writes and checks it. --check needs no SDK: it cross-checks the mapping with
 # the device definitions when they are there, and skips that when not (CI).
@@ -429,9 +429,9 @@ preview:
 # "Regenerate with:" line, so every machine writes that line the same way.
 ICONS_TOOL = "$(GRAPHICS_PYTHON)" -c 'import sys; from garmin_graphics_generator.cli import main; \
   sys.argv[0] = "garmin-graphics-generator"; sys.exit(main())'
-ICONS_README := --readme-anchor 'Each supported product is mapped to the icon its device asks for'
+ICONS_README := --readme docs/graphics.md --readme-anchor 'Each supported product is mapped to the icon its device asks for'
 
-## Regenerate the launcher icons, their mapping in monkey.jungle, the README table and the store cover [GRAPHICS_PYTHON]
+## Regenerate the launcher icons, their mapping in monkey.jungle, docs/graphics.md's table and the store cover [GRAPHICS_PYTHON]
 icons:
 	$(require_graphics_tool)
 	@echo "Generating the launcher icons..."
@@ -439,7 +439,7 @@ icons:
 	@echo "Generating the store cover..."
 	@"$(GRAPHICS_PYTHON)" tools/launcher_icon.py cover
 
-## Check the launcher icons, their mapping, the README table and the store cover [GRAPHICS_PYTHON]
+## Check the launcher icons, their mapping, docs/graphics.md's table and the store cover [GRAPHICS_PYTHON]
 check-icons:
 	$(require_graphics_tool)
 	@echo "Checking the launcher icons..."

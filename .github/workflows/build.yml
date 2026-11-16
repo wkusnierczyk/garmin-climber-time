@@ -78,7 +78,7 @@ jobs:
           make check-help
           make help
 
-      # The bitmap fonts against their configuration, the design's sizes, the README's table
+      # The bitmap fonts against their configuration, the design's sizes, docs/fonts.md's table
       # and fonts.sha256 (tools/check-font-config.py, #17). Pure Python: no SDK, no font
       # tools. The .png and .ttf files it hashes are LFS objects, hence the lfs: true above.
       # There are no device definitions here, so it skips the check that every product has
@@ -86,7 +86,7 @@ jobs:
       - name: Fonts
         run: make check-fonts
 
-      # check-icons checks the launcher icons, their mapping, the README table and the
+      # check-icons checks the launcher icons, their mapping, docs/graphics.md's table and the
       # store cover (#19) with garmin-graphics-generator, which is not on PyPI, so it
       # is installed from GitHub. Only its icons command runs here, and that imports
       # Pillow and nothing else, so the package goes in without its dependencies:

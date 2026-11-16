@@ -13,7 +13,7 @@ base.sourcePath = source
 
 # BEGIN generated launcher icon mapping -- garmin-graphics-generator
 # Launcher icon size is per device, not per device family.
-# Regenerate with: garmin-graphics-generator icons -R tools/launcher_icon.py --readme-anchor 'Each supported product is mapped to the icon its device asks for'
+# Regenerate with: garmin-graphics-generator icons -R tools/launcher_icon.py --readme docs/graphics.md --readme-anchor 'Each supported product is mapped to the icon its device asks for'
 approachs50.resourcePath = $(approachs50.resourcePath);resources-icon-56
 approachs7042mm.resourcePath = $(approachs7042mm.resourcePath);resources-icon-60
 approachs7047mm.resourcePath = $(approachs7047mm.resourcePath);resources-icon-70
