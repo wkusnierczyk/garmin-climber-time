@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check that the bitmap fonts agree with their configuration, the design and the README (#17).
+"""Check that the bitmap fonts agree with their configuration, the design and docs/fonts.md (#17).
 
     python3 tools/check-font-config.py                  (make check-fonts)
     python3 tools/check-font-config.py --write          (make fonts: record the hashes, copy fonts.md's table in)
@@ -8,7 +8,7 @@ Adapted from Matrix Time's. The sources of truth are resources/fonts/resolutions
 reference resolution and the targets), resources/fonts/fonts.xml (each font's size at the
 reference, in its .fnt filename) and resources/fonts/charsets.json (each font's glyphs).
 garmin-font-scaler derives everything else: the resources-<family>/fonts directories and
-fonts.md, whose size table the README copies. This script derives what those must be and
+fonts.md, whose size table docs/fonts.md copies. This script derives what those must be and
 checks them, never the reverse. It also repeats the design's sizing of the digits and the
 tags (DESIGN.md §4.1, the simulator's groupLayout, Geom), which the face no longer computes at
 run time, and checks every generated size against it. It holds the typeface and every bitmap to
@@ -339,23 +339,24 @@ fonts_md = read('fonts.md')
 table = resolution_table(fonts_md)
 check_rows(table, 'fonts.md')
 
-readme = read('README.md')
+PAGE = 'docs/fonts.md'   # the fonts page, which copies fonts.md's size table (#10)
+page = read(PAGE)
 START, END = '<!-- fonts.md: start -->', '<!-- fonts.md: end -->'
 if WRITE:
-    if START in readme and END in readme:
-        head, rest = readme.split(START, 1)
-        readme = head + START + '\n' + '\n'.join(table) + '\n' + END + rest.split(END, 1)[1]
-        with open('README.md', 'w', encoding='utf-8') as f:
-            f.write(readme)
-        print("  wrote fonts.md's table into README.md")
+    if START in page and END in page:
+        head, rest = page.split(START, 1)
+        page = head + START + '\n' + '\n'.join(table) + '\n' + END + rest.split(END, 1)[1]
+        with open(PAGE, 'w', encoding='utf-8') as f:
+            f.write(page)
+        print(f"  wrote fonts.md's table into {PAGE}")
     else:
-        ok(False, f"README.md has no {START} ... {END} block to write the table into")
-block = readme.split(START, 1)[1].split(END, 1)[0].strip().splitlines() if START in readme and END in readme else []
-ok(block == table, "README.md's size table is fonts.md's, line for line (make fonts copies it)")
-paragraphs = [' '.join(b.split()) for b in re.split(r'\n\s*\n', readme)]
+        ok(False, f"{PAGE} has no {START} ... {END} block to write the table into")
+block = page.split(START, 1)[1].split(END, 1)[0].strip().splitlines() if START in page and END in page else []
+ok(block == table, f"{PAGE}'s size table is fonts.md's, line for line (make fonts copies it)")
+paragraphs = [' '.join(b.split()) for b in re.split(r'\n\s*\n', page)]
 prose = [b for b in paragraphs if 'reference resolution' in b.lower()]
 ok(any(re.search(rf'\b{rw}\s*[x×]\s*{rh}\b', b) and 'resolutions.json' in b for b in prose),
-   f"README.md names the reference resolution, {rw}x{rh}, and resolutions.json, in one paragraph")
+   f"{PAGE} names the reference resolution, {rw}x{rh}, and resolutions.json, in one paragraph")
 
 print()
 if fail:

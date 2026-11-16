@@ -31,7 +31,7 @@
 #   - who can push a v* tag, which is now exactly who can sign a release.
 #     wkusnierczyk is the only account with write access to this repository, and
 #     a fork cannot push a tag here. Before adding a collaborator, add a tag
-#     ruleset restricting v* (README.md, "Releases").
+#     ruleset restricting v* (docs/development.md, "Releases").
 #
 # .gitignore guards developer_key* as a second line of defence, not the mechanism.
 #
@@ -153,7 +153,7 @@ jobs:
           DEVELOPER_KEY: ${{ secrets.DEVELOPER_KEY }}
         run: |
           test -n "$DEVELOPER_KEY" || {
-            echo "::error::DEVELOPER_KEY is empty. See \"Releases\" in README.md."; exit 1; }
+            echo "::error::DEVELOPER_KEY is empty. See \"Releases\" in docs/development.md."; exit 1; }
           printf '%s' "$DEVELOPER_KEY" | base64 -d > /tmp/developer_key
           chmod 600 /tmp/developer_key
           openssl pkcs8 -inform DER -nocrypt -in /tmp/developer_key -out /dev/null || {

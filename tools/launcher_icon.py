@@ -3,7 +3,8 @@
 
 As a module, this is the renderer garmin-graphics-generator draws the icons with. `make
 icons` runs the shared icons command with it (#19), and with ICONS_README from the
-Makefile, which names the README sentence the size table follows. The command writes
+Makefile, which names the page, docs/graphics.md, and the sentence there that the size
+table follows. The command writes
 resources-icon-<size>/, the fallback in resources/drawables/, the mapping block in
 monkey.jungle and that table. The launcher icon size is a per-device property, not a
 per-family one, which is why the mapping is per product.
