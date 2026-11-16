@@ -16,6 +16,9 @@ test_build-settings.json
 # image model from make preview's renders, with tools/hero-prompt.txt (#8).
 store/lite/graphics/*-draft*.png
 
+# Python's bytecode caches, from running the tools.
+__pycache__/
+
 # Safeguards rather than outputs: editor settings, system files and the key.
 # IDE/Editor settings
 .settings/
