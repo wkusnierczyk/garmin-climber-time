@@ -75,7 +75,7 @@ make help       # every target and variable, with the values they have now
 
 ## CI
 
-Every push to `main` and every pull request runs [`.github/workflows/build.yml`](.github/workflows/build.yml):
+Every push to `main` or a release branch (`dev-*`) and every pull request runs [`.github/workflows/build.yml`](.github/workflows/build.yml):
 
 - **consistency checks**: `make check-help` and `make help`, with no SDK;
 - **build and export**: `make build` for one product per screen family (`tools/ci-devices.py`), then

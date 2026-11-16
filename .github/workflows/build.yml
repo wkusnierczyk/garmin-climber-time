@@ -1,6 +1,6 @@
 # Build, package and test verification (#5), copied from Matrix Time's build.yml
 # (wkusnierczyk/garmin-matrix-time#41, #102, #109) and cut down to one edition:
-# Lite, from manifest.xml. Every push to main and every pull request runs the
+# Lite, from manifest.xml. Every push to main or a dev-* release branch, and every pull request, runs the
 # checks that need no SDK, compiles the face for one product per deviceFamily,
 # exports the store bundle -- which builds every product manifest.xml names -- and
 # runs the unit tests in the simulator under a virtual display.
@@ -44,7 +44,7 @@ name: build
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'dev-*']
   pull_request:
 
 # Read the repository, and pull the private tester image; nothing else.
