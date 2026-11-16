@@ -374,12 +374,14 @@ module Draw {
         dc.setColor(mix(rc, 0, 0.82), Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx1, cy1, font, r.grade.toString(), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
-        // The outline as two fills, the box in the route colour and the inside in the wall's,
+        // The outline as two fills, the box in the route colour and the inside in the background,
         // so its outer edge is the grade box's by construction: a thick pen's stroke does not
         // land where a fill's edge does, and drew this box 3 px short (#41).
         dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
         dc.fillRoundedRectangle(x2, y2, w, h, rr);
-        dc.setColor(WALL, Graphics.COLOR_TRANSPARENT);
+        // The inside shows the background behind the tag: the wall only where the tags sit on
+        // it (Geom.tagsOnWall), black everywhere else (#45).
+        dc.setColor(g.tagsOnWall ? WALL : Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
         dc.fillRoundedRectangle(x2 + ring, y2 + ring, w - 2 * ring, h - 2 * ring, rr > ring + 1 ? rr - ring : 1);
         dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx2, cy2, font, letters[r.prof], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);

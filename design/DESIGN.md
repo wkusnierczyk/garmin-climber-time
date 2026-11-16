@@ -72,7 +72,7 @@ Smaller screens, every MIP screen among them, are out; so are 1-bit and 4-bit sc
 ### 3.1 Zones
 
 - **Time zone** on the left: the digits (§4).
-- **Wall zone** on the right: the wall, its holds, the climber, the rope, the scale ticks and the tags.
+- **Wall zone** on the right: the wall, its holds, the climber, the rope and the scale ticks; the tags too, except in the time group (§3.2), where they sit in the time zone under the minutes.
 
 ### 3.2 Wall area
 
@@ -117,7 +117,7 @@ With the linear time layout the centre panel puts the time on one line left of t
 **In the time group** (§3.2, the default and 0.1.0) the tags sit side by side under the minutes, sized there. Otherwise two small tags sit at mid-height (y = H/2), centred on the panel's right edge (floating panel), in the strip right of the route ((route right + W)/2, right half), or right of the wall ((wall right + W)/2, centre panel). They sit side by side. The prototype stacks them, grade above proficiency, in the right half. In the centre panel it puts the grade level with the hours row and the proficiency level with the minutes row, both in the digits' font at 0.6 × the digits' size, centred between the wall right + 0.025 W and the bezel (mirroring the digits), in boxes hugging the widest of 8, B, I and E (padding 0.12 fs, corner radius max(2 px, 0.12 fs), outline max(2 px, 0.05 fs)). Two user settings to come: **Tag arrangement** (side by side, stacked, or level with the time rows) and **Tag size** relative to the digits (0.6 in the prototype's centre panel):
 
 - **Grade tag** (setting **Show grade tag**, default on): filled in the route colour, the grade number cut out in dark (route colour mixed 82 % toward black).
-- **Proficiency tag** (setting **Show proficiency tag**, default on): filled in the wall colour, outlined in its proficiency's colour, letter B, I or E in the same colour. Its colour per proficiency (settings **Proficiency tag, beginner / intermediate / expert**): a fixed colour (yellow #F7C948, orange #FF8C2B, red #EF4444 suggested) or the route colour, the default (owner, 2026-11-16).
+- **Proficiency tag** (setting **Show proficiency tag**, default on): filled with the background behind it (owner, 2026-11-16, #45): the wall colour only where the tags sit on the wall (the right half with the time stacked), black everywhere else, including the time group and the centre panel's tags right of the wall, and tags straddling the floating panel's edge, outlined in its proficiency's colour, letter B, I or E in the same colour. Its colour per proficiency (settings **Proficiency tag, beginner / intermediate / expert**): a fixed colour (yellow #F7C948, orange #FF8C2B, red #EF4444 suggested) or the route colour, the default (owner, 2026-11-16).
 
 Order is [grade][proficiency], left to right or top to bottom. If one is hidden the other takes the first slot. Sizes in Appendix A.6; the prototype uses fs = 0.085 H, box width 1.05 fs, gap 0.18 fs, outline max(1.5 px, 0.09 fs), after 0.055 H proved barely readable on the wrist. The climber is drawn over the tags.
 

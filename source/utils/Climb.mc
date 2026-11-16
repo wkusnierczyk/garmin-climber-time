@@ -75,6 +75,7 @@ class Geom {
     public var timeLinear as Boolean;     // HHMM on one line at mid-height, not stacked
     public var tagHug as Boolean;         // tags sized from the digits, boxes hugging the glyph
     public var timeGroup as Boolean;      // beside the panel or the right half: time over tags, right-aligned to groupRight
+    public var tagsOnWall as Boolean;     // the tags sit on the wall (right half, stacked time), not on black
     public var groupRight as Float;
     public var digitSize as Float = 0.0;  // the digit font's em, set by the view once it loads the fonts
     public var tagSize as Float = 0.0;
@@ -95,6 +96,7 @@ class Geom {
         // (DESIGN.md §3.2); in the centre panel the tags sit in a line right of the wall.
         self.timeLinear = timeLinear;
         timeGroup = timeLinear && layout != Climb.LAYOUT_CENTRE;
+        tagsOnWall = full && !timeGroup;
         groupRight = 0.0;
         tagHug = layout == Climb.LAYOUT_CENTRE || timeGroup;
         if (timeGroup) {
