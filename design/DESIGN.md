@@ -508,7 +508,7 @@ The simulator's route tag reports the attempt: "no falls · tops out", "1 fall �
 - The route's holds as dots of radius max(1.2 px, 0.18·size) in the route colour at 60 %, stepping round the corners of a ±4 px square, one corner a minute (corner = minute mod 4). A 2·4 px step clears a dot's diameter; ±3 px fails once a minute (#4).
 - No climber, wall, T-nuts, ticks or tags.
 
-**Measured** in the simulator, every minute of a day in 12 h and 24 h, counting any non-black pixel: at most 2.72 % lit on the screens of §2 (2026-11-16, the time at full brightness), no pixel lit three minutes, the longest run 2 minutes (the holds). Simple corner jitter of the time fails below W/12, which pushes the time off the bezel; the figures for the alternatives are on #4. The simulator's *Check always-on burn-in over a day* repeats the check.
+**Measured** in the simulator, every minute of a day in 12 h and 24 h, counting any non-black pixel: at most 2.35 % lit on the screens of §2 with the right-half wall (2.72 % with the floating panel; 2026-11-16, the time at full brightness, the minutes in the route colour), no pixel lit three minutes, the longest run 2 minutes (the holds). Simple corner jitter of the time fails below W/12, which pushes the time off the bezel; the figures for the alternatives are on #4. The simulator's *Check always-on burn-in over a day* repeats the check.
 
 ### 13.2 MIP low power
 
@@ -548,7 +548,7 @@ These become Connect IQ properties (§15.5). Keys match the simulator's settings
 | showGrade | on, off | on | §3.3 |
 | showProf | on, off | on | §3.3 |
 | profB, profI, profE | a fixed colour (§4.4), route | route | §3.3 |
-| tagLayout | inline, stacked, rows (planned) | per wall area: inline (panel), stacked (half), rows (centre) | §3.3 |
+| tagLayout | inline, stacked, rows (planned) | in the time group (linear time, the default): inline, side by side under the minutes; otherwise per wall area: inline (panel), stacked (half), rows (centre) | §3.3 |
 | tagScale | fraction of the digits' size, rows only (planned) | 0.6 | §3.3 |
 | wallStyle | slate, plywood, none | slate | §5.1 |
 | wallClip | panel, half, centre | half | §3.2 |
@@ -760,7 +760,7 @@ Distances are fractions of W or H, multiples of the climber size c, or pixels wh
 
 | Name | Value |
 |---|---|
-| Digits | 55 %, checkerboard alternating each minute |
+| Digits | full brightness, checkerboard alternating each minute |
 | Holds as dots | radius max(1.2 px, 0.18·size), 60 %, ±4 px square, one corner a minute |
 | Climber | not drawn |
 | Lit-pixel limit | 10 %; no pixel lit 3 minutes |

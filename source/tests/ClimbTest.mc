@@ -8,6 +8,18 @@ import Toybox.Lang;
 (:test)
 class ClimbTest {
 
+    // The golden values were made with the simulator's default wall and time layout; if the
+    // face draws another, every coordinate test fails, and this one says why.
+    (:test)
+    static function goldensMadeForTheFacesLayout(logger as Test.Logger) as Boolean {
+        if (ClimbGolden.LAYOUT != Draw.LAYOUT || ClimbGolden.TIME_LINEAR != Draw.TIME_LINEAR) {
+            logger.error("golden layout " + ClimbGolden.LAYOUT + "/" + ClimbGolden.TIME_LINEAR + ", face " + Draw.LAYOUT + "/"
+                + Draw.TIME_LINEAR + ": make the face and the simulator's defaults agree (DESIGN.md §14.3), then make golden");
+            return false;
+        }
+        return true;
+    }
+
     (:test)
     static function hashMatchesTheSimulator(logger as Test.Logger) as Boolean {
         for (var i = 0; i < ClimbGolden.HASH_IN.size(); i++) {
