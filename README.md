@@ -97,3 +97,41 @@ Every push to `main` or a release branch (`dev-*`) and every pull request runs [
 The two SDK jobs run in our own tester image, `ghcr.io/wkusnierczyk/connectiq-tester` (SDK 9.3.0
 and the device definitions), pinned by digest. It is a private package, so for a pull request from a
 fork the two SDK jobs are skipped and only the consistency checks run. CI signs with a throwaway key, never the developer key.
+
+## Releases
+
+A `v*` tag is a release of the repository: one tag, one draft GitHub release, one `CHANGELOG.md`
+section. The face's version is the one in `manifest.xml`. Every release goes through a release branch
+`dev-<version>`; its last PR, `[DOCS] Release as X.Y.Z`, sets the manifest's version, adds the
+`CHANGELOG.md` section headed `## X.Y.Z -- YYYY-MM-DD` (the date the tag is pushed) and the store's
+*What's New*, `store/lite/whats-new-<version>.txt`. Once `main` has been fast-forwarded to the branch:
+
+```sh
+git switch main && git pull --ff-only
+git tag vX.Y.Z && git push origin vX.Y.Z
+```
+
+The push runs [`.github/workflows/release.yml`](.github/workflows/release.yml):
+
+| Job | What it does |
+| :-- | :-- |
+| `version check` | refuses a tag that is not on `main`; then [`tools/release-notes.py`](tools/release-notes.py), with no SDK: refuses the tag unless it is `v` plus a version `manifest.xml` is not ahead of, `CHANGELOG.md` has a dated, non-empty section for it, and `store/lite/` has a non-empty `description.txt` and, when the tag is the manifest's version, `whats-new-<version>.txt`. Run it locally before tagging: `tools/release-notes.py vX.Y.Z`. |
+| `signed bundle` | `make export` in the CI image, signed with the real developer key: `ClimberTime-<version>.iq`, checked against the manifest's version. |
+| `draft release` | a **draft** release for the tag, with that `CHANGELOG.md` section and the bundle. |
+
+Publishing the draft and uploading the bundle to the store stay manual: the store publishes on upload,
+and its version field is free text, so type the manifest's version exactly and paste the *What's New*.
+The store texts in [`store/`](store/) are plain text, since the store renders no Markdown.
+
+The key is a secret of the `release` environment, `DEVELOPER_KEY`, the DER key base64-encoded, and
+never a repository secret. The environment's only deployment rule admits `v*` tags, so GitHub refuses
+the secret to any job on any other ref; no branch rule goes beside it. Who can push a `v*` tag can
+sign a release: before adding a collaborator, add a tag ruleset restricting `v*`. Set the key once:
+
+```sh
+base64 < ../garmin-keys/developer_key | gh secret set DEVELOPER_KEY --env release
+gh secret list --env release   # names DEVELOPER_KEY
+gh secret list                 # stays empty
+```
+
+The DER file, `developer_key`, not the PEM: the workflow checks which one it got and says so.
