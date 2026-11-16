@@ -1,0 +1,246 @@
+#!/usr/bin/env python3
+"""Check a release tag against the repository, and print that release's notes.
+
+Copied from Matrix Time's (wkusnierczyk/garmin-matrix-time#110,
+wkusnierczyk/garmin-matrix-time#223, wkusnierczyk/garmin-matrix-time#240) and
+cut down to one edition, Lite, from manifest.xml (#6). A Premium edition, if the
+face gets one, is one more entry in MANIFESTS, APPS and NAMES.
+
+A tag push is the whole trigger for the release workflow (see
+.github/workflows/release.yml), and a tag is just a name someone typed. Nothing
+about `git tag v0.1.0` consults the manifest or CHANGELOG.md, so a mistyped or
+stale tag would otherwise make a release that no manifest and no release notes
+back -- and a version number, once used in the Connect IQ store, cannot be used
+again. It is worth failing a minute into a release rather than after it.
+
+Four things have to agree before anything is built:
+
+  - the tag, which must be "v" followed by the version and nothing else;
+  - the manifest, manifest.xml, carrying the face's version;
+  - CHANGELOG.md, which must already carry a section for that version;
+  - the store's texts in store/<edition>/: a What's New,
+    whats-new-<version>.txt, when the edition has a new version at the tag, and
+    the listing's description, description.txt, always.
+
+A tag is a code release of the repository. The manifest may not be ahead of
+the tag -- that is a bump made for a later release, or a typo -- but it need not
+equal it: a release that changes only the tooling leaves the version where it
+was, and still carries the bundle at that version. A mistyped tag is still
+caught, by the dated CHANGELOG section it needs. The notes end with a list of
+the bundles saying whether each carries a new version at this tag or carries
+its version over, since a 0.1.0 bundle on a 0.1.1 release would otherwise read
+as a mistake. Uploading a bundle to the store is the owner's, and outside the
+repository.
+
+The CHANGELOG section is not pedantry. A release whose notes are written
+afterwards is how Matrix Time's 0.2.1 came to exist: the store took 0.2.0 from
+the first of two upload steps and left the 0.1.0 notes standing, and the number
+could not be used again. Requiring the section before the tag puts the notes
+ahead of the irreversible step rather than behind it.
+
+The store's What's New is held to the same rule, for the same reason: it is the
+text that step actually publishes, since an upload publishes at once. So an
+edition with a new version at the tag needs a non-empty
+store/<edition>/whats-new-<version>.txt; one that carries its version over needs
+none, since its bundle is not uploaded. The description is pasted at an
+edition's next upload, whichever release that is, so every edition needs a
+non-empty store/<edition>/description.txt at every tag.
+
+On success the section's body -- the heading itself stripped, since the release
+page supplies its own title -- followed by the Bundles list goes to stdout, which
+is what becomes the draft release's notes. On any disagreement the reason goes to
+stderr and the exit status is 1.
+
+Usage:
+  tools/release-notes.py v0.1.0              check, and print the notes
+  tools/release-notes.py v0.1.0 -o F         ... and write them to F instead
+  tools/release-notes.py v0.1.0 -b F         ... and write every edition's bundle
+                                             to F, as a JSON list of
+                                             {edition, app, version, new}
+
+Needs nothing but Python. It reads only what is committed, so it runs on a bare
+runner, before the container the bundle is built in is even pulled.
+"""
+import argparse
+import json
+import re
+import sys
+
+# Edition to manifest, in the order the editions are reported: MANIFEST in the
+# Makefile. One edition today; a Premium edition would add its entry to all three.
+MANIFESTS = {'lite': 'manifest.xml'}
+# Edition to the name its bundle starts with: APP in the Makefile, which names the
+# bundle <app>-<version>.iq.
+APPS = {'lite': 'ClimberTime'}
+NAMES = {'lite': 'Lite'}
+CHANGELOG = 'CHANGELOG.md'
+# The store's texts, one directory per edition.
+STORE = 'store'
+
+# A version is three dot-separated numbers, compared as numbers: 0.10.0 is ahead
+# of 0.9.0. No leading zeros, as semver requires, so that two spellings of one
+# version cannot exist. Anything else is refused rather than compared as text.
+VERSION = re.compile(r'^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$')
+
+# The application version, not the manifest format version on the line above it
+# nor the XML declaration's above that -- all three are spelled version="...".
+# Anchored on iq:application so it can only match the one that ships.
+APP_VERSION = re.compile(r'<iq:application\b[^>]*\bversion="([^"]+)"')
+
+# "## 0.2.1 -- 2026-09-21". The date is spelled out as YYYY-MM-DD rather than
+# matched as "some token", because a section still being written is the state
+# this check exists to catch and "## 0.3.0 -- TBD" is exactly what that looks
+# like. Anything looser lets the placeholder through and the gate passes on a
+# heading that was put there to say it is not ready. The shape is checked, not
+# the calendar: a typo'd but well-formed date is a different mistake, and one no
+# amount of parsing here would catch.
+SECTION = re.compile(r'^##\s+(\S+)\s+--\s+(\d{4}-\d{2}-\d{2})\s*$')
+
+
+def fail(message):
+    print(f'{sys.argv[0]}: {message}', file=sys.stderr)
+    raise SystemExit(1)
+
+
+def read(path):
+    try:
+        with open(path, encoding='utf-8') as handle:
+            return handle.read()
+    except OSError as error:
+        fail(f'cannot read {path}: {error}')
+
+
+def manifest_version(manifest):
+    match = APP_VERSION.search(read(manifest))
+    if not match:
+        fail(f'no iq:application version found in {manifest}')
+    return match.group(1)
+
+
+def parse(version, where):
+    match = VERSION.match(version)
+    if not match:
+        fail(f'{where} version {version!r} is not MAJOR.MINOR.PATCH')
+    return tuple(int(part) for part in match.groups())
+
+
+def released_editions(version):
+    """Return the editions with a new version at `version`, which may be none,
+    refusing a manifest ahead of it."""
+    tagged = parse(version, 'tag')
+    released = []
+    for edition, manifest in MANIFESTS.items():
+        declared = manifest_version(manifest)
+        if parse(declared, manifest) > tagged:
+            fail(f'{manifest} ({declared}) is ahead of the tag ({version}); tag '
+                 f'v{declared}, or change the manifest first')
+        if declared == version:
+            released.append(edition)
+    return released
+
+
+def bundles(version):
+    """Every edition's bundle for the release `version`: its edition, app name, the
+    version its manifest gives it, and whether that version is new at this tag."""
+    return [{'edition': edition, 'app': APPS[edition],
+             'version': manifest_version(manifest),
+             'new': manifest_version(manifest) == version}
+            for edition, manifest in MANIFESTS.items()]
+
+
+def bundle_notes(version):
+    """The notes' closing list: each bundle, and whether its version is new at this tag."""
+    lines = ['### Bundles', '']
+    for b in bundles(version):
+        name = f"`{b['app']}-{b['version']}.iq`"
+        edition = NAMES[b['edition']]
+        if b['new']:
+            lines.append(f"- {name}: {edition} {b['version']}, a new version in this release.")
+        else:
+            lines.append(f"- {name}: {edition} {b['version']}, carried over: this release does "
+                         f"not change {edition}'s version.")
+    return lines
+
+
+def changelog_section(version):
+    """Return the body of the CHANGELOG section for `version`, heading stripped."""
+    lines = read(CHANGELOG).splitlines()
+    start = None
+    for index, line in enumerate(lines):
+        match = SECTION.match(line)
+        if not match:
+            continue
+        if start is not None:
+            # The next dated section closes the one being collected.
+            return lines[start:index]
+        if match.group(1) == version:
+            start = index + 1
+    if start is None:
+        fail(f'{CHANGELOG} has no section for {version} dated YYYY-MM-DD; write '
+             f'the release notes, and date the heading, before tagging')
+    return lines[start:]
+
+
+def store_texts(version, editions):
+    """Refuse unless every edition has its store description, and each edition in
+    `editions`, those with a new version at `version`, its What's New."""
+    required = [(f'{STORE}/{edition}/description.txt',
+                 f"{NAMES[edition]}'s store description")
+                for edition in MANIFESTS]
+    required += [(f'{STORE}/{edition}/whats-new-{version}.txt',
+                  f"{NAMES[edition]} {version}'s What's New")
+                 for edition in editions]
+    problems = []
+    for path, what in required:
+        try:
+            with open(path, encoding='utf-8') as handle:
+                text = handle.read()
+        except FileNotFoundError:
+            problems.append(f'{path} ({what}) does not exist')
+            continue
+        except OSError as error:
+            problems.append(f'cannot read {path}: {error}')
+            continue
+        if not text.strip():
+            problems.append(f'{path} ({what}) is empty')
+    if problems:
+        fail('; '.join(problems) + '; write the store texts before tagging, since a '
+             'store upload publishes at once')
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Check a release tag against the manifests, CHANGELOG.md and '
+                    'the store texts, and print that release\'s notes.')
+    parser.add_argument('tag', help='the tag being released, e.g. v0.3.0')
+    parser.add_argument('-o', '--output', metavar='FILE',
+                        help='write the notes to FILE rather than to stdout')
+    parser.add_argument('-b', '--bundles', metavar='FILE',
+                        help="write every edition's bundle to FILE, as a JSON list")
+    arguments = parser.parse_args()
+
+    tag = arguments.tag
+    if not tag.startswith('v'):
+        fail(f'tag {tag!r} does not start with "v"')
+    version = tag[1:]
+
+    editions = released_editions(version)
+    section = changelog_section(version)
+    store_texts(version, editions)
+
+    notes = ('\n'.join(section).strip() + '\n\n'
+             + '\n'.join(bundle_notes(version)) + '\n')
+    if arguments.bundles:
+        with open(arguments.bundles, 'w', encoding='utf-8') as handle:
+            json.dump(bundles(version), handle)
+    if arguments.output:
+        with open(arguments.output, 'w', encoding='utf-8') as handle:
+            handle.write(notes)
+        print(f'{tag}: new versions of {", ".join(editions) or "no edition"}; '
+              f'notes written to {arguments.output}', file=sys.stderr)
+    else:
+        sys.stdout.write(notes)
+
+
+if __name__ == '__main__':
+    main()
