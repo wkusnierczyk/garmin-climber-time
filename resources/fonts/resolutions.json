@@ -1,0 +1,53 @@
+{
+    "reference": {
+        "resolution": [
+            448,
+            486
+        ],
+        "shape": "rectangle"
+    },
+    "targets": [
+        {
+            "resolution": [
+                360,
+                360
+            ],
+            "shape": "round"
+        },
+        {
+            "resolution": [
+                390,
+                390
+            ],
+            "shape": "round"
+        },
+        {
+            "resolution": [
+                416,
+                416
+            ],
+            "shape": "round"
+        },
+        {
+            "resolution": [
+                454,
+                454
+            ],
+            "shape": "round"
+        },
+        {
+            "resolution": [
+                466,
+                466
+            ],
+            "shape": "round"
+        },
+        {
+            "resolution": [
+                448,
+                486
+            ],
+            "shape": "rectangle"
+        }
+    ]
+}

@@ -1,4 +1,7 @@
+using Toybox.Graphics;
+using Toybox.System;
 using Toybox.Test;
+using Toybox.WatchUi;
 
 import Toybox.Lang;
 
@@ -241,6 +244,48 @@ class ClimbTest {
         }
         if (!g.timeGroup || g.groupRight >= g.x0) {
             logger.error("the time group is missing or overlaps the wall");
+            return false;
+        }
+        return true;
+    }
+
+    // On the test device's own screen, with the bitmap fonts its resolution loads (#17): the digits
+    // keep one advance (fixed cells, DESIGN.md §4.2), the time group's four cells start inside the
+    // bezel at the digits' top and bottom, and the two tags span the minutes' two cells to within
+    // the fonts' whole-pixel advances.
+    (:test)
+    static function bitmapTimeFitsTheScreen(logger as Test.Logger) as Boolean {
+        var ds = System.getDeviceSettings();
+        var g = new Geom(ds.screenWidth, ds.screenHeight, ds.screenShape == System.SCREEN_SHAPE_ROUND, Draw.LAYOUT, Draw.TIME_LINEAR);
+        var bmp = Graphics.createBufferedBitmap({ :width => 8, :height => 8 }).get() as Graphics.BufferedBitmap;
+        var dc = bmp.getDc();
+        var df = WatchUi.loadResource(Rez.Fonts.Time) as Graphics.FontType;
+        var tf = WatchUi.loadResource(Rez.Fonts.Tag) as Graphics.FontType;
+        g.digitSize = Draw.em(dc, df);
+        g.tagSize = Draw.em(dc, tf);
+        var w0 = dc.getTextWidthInPixels("0", df);
+        for (var d = 1; d <= 9; d++) {
+            if (dc.getTextWidthInPixels(d.toString(), df) != w0) {
+                logger.error("digit " + d + " is " + dc.getTextWidthInPixels(d.toString(), df) + " px wide, 0 is " + w0);
+                return false;
+            }
+        }
+        var cw = 1.04 * w0;
+        var x0 = g.groupRight - 4 * cw;
+        var y = Draw.groupRows(g)[0];
+        var half = 0.36 * g.digitSize;
+        var c = g.W / 2;
+        for (var k = -1; k <= 1; k += 2) {
+            var dx = x0 - c;
+            var dy = y + k * half - g.H / 2;
+            if (x0 < 0 || (g.round && dx * dx + dy * dy > c * c)) {
+                logger.error("the time starts at (" + x0 + ", " + (y + k * half) + "), outside the screen");
+                return false;
+            }
+        }
+        var tags = 2 * (Draw.tagGlyphWidth(dc, tf) + 0.24 * g.tagSize) + 0.18 * g.tagSize;
+        if ((tags - 2 * cw).abs() > 3) {
+            logger.error("the tags span " + tags + " px, the minutes' cells " + 2 * cw);
             return false;
         }
         return true;

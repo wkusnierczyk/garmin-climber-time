@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+    <fonts>
+        <font id="Time" filename="RobotoCondensed-Bold-91.fnt" antialias="true" />
+        <font id="Tag" filename="RobotoCondensed-Bold-54.fnt" antialias="true" />
+    </fonts>
+</resources>
