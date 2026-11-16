@@ -58,7 +58,8 @@ tag with `pip`, in a virtual environment of its own (`~/.local/share/venvs/garmi
 `FONT_SCALER_VENV`), linked into `~/.local/bin` (`BIN_DIR`), which must be on `PATH`;
 `make check-garmin-font-scaler` checks it. It needs `git`, and a Python 3 that can make a virtual
 environment with `pip`: it tries `/usr/bin/python3`, then `python3` (Homebrew's cannot on some Macs);
-pick another with `FONT_SCALER_PYTHON=/path/to/python3`. On Ubuntu that takes `python3-venv`.
+pick another with `FONT_SCALER_PYTHON=/path/to/python3`. On Ubuntu that takes `python3-venv`; on a
+Mac, Apple's Python and `git` need the Xcode command-line tools (`xcode-select --install`).
 
 `make sideload` waits up to 5 minutes for the watch to appear, then retries detection and
 installation with doubling gaps; a watch just plugged in or restarted can take a while to offer
