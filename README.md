@@ -195,6 +195,13 @@ icons' pixels, which only the Pillow they were drawn with reproduces.
 Run `make graphics` again whenever what the face draws changes: nothing reports the images stale.
 The hero's placement is random, so look at the draft and run it again if it is poor.
 
+The published hero, `store/lite/graphics/ClimberTimeHero.png` (exactly 1440 x 720, as the store
+requires), is not the draft: an image model composed it from the four gallery watches, rendered full
+size by `make preview`, with the prompt in [`tools/hero-prompt.txt`](tools/hero-prompt.txt), so that
+they read as real watches at different angles. The output, trimmed to 2:1, is scaled to the hero and
+to the 900 x 450 `ClimberTimeHero-small.png`. `make graphics` never overwrites either. Compose it
+again whenever the gallery changes.
+
 ## Launcher icon
 
 A white climber in a high step, on black: one foot rocked up beside the hip, one hand low and one reaching up.

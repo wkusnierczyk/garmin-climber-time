@@ -118,21 +118,22 @@ class Shot(NamedTuple):
     hero: bool
 
 
-# The gallery, in the order the files are numbered: across a minute (start, mid-climb, a
-# fall, the lower-off), across the grades (4B, 6I, 8E), and the always-on scene. The
+# The gallery, in the order the files are numbered: two climbs and a fall across the grades
+# (6I, 4B, 8E), and the always-on scene (the owner's picks, #8; the start and the lower-off
+# were dropped). Other moments are AT on make preview. The
 # minute sets the grade and the proficiency: grade 4 + (minute / 3) mod 5, proficiency
 # minute mod 3 (DESIGN.md §8.3), so :00 is 4B, :07 6I and :14 8E, whatever the hour.
 # The beginner falls on every attempt that leaves time for another (§12), so 4B has a
 # fall. The climb runs to :56, and the last 3 s are the lower-off (§11.3).
 #
-# Six images for the gallery; the hero takes four, as every extra watch shrinks them all
-# (playbook, reference/graphics.md). Change the hour, the moments or the picks here.
+# Four images for the gallery, all four in the hero draft, as every extra watch shrinks
+# them all (playbook, reference/graphics.md). The published hero, ClimberTimeHero.png, was
+# composed from these by an image model with tools/hero-prompt.txt (#8). Change the hour,
+# the moments or the picks here.
 SHOTS = (
     Shot("6I mid-climb", Moment(10, 7, 24), hero=True),
     Shot("4B fall", Moment(10, 0, fall=True), hero=True),
     Shot("8E mid-climb", Moment(10, 14, 40), hero=True),
-    Shot("6I start", Moment(10, 7, 0), hero=False),
-    Shot("6I lower-off", Moment(10, 7, 58), hero=False),
     Shot("always-on", Moment(10, 7, always_on=True), hero=True),
 )
 
