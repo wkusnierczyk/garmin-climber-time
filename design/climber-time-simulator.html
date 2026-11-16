@@ -713,7 +713,7 @@ function drawGroupTags(ctx,G,R,rc,wallRGB){
   const glyph=(t,x)=>{const a=ctx.measureText(t).actualBoundingBoxAscent||asc;ctx.fillText(t,x,cy+a/2)};
   if(S.showGrade){ctx.fillStyle=css(rc);rrPath(ctx,cx1-bw/2,cy-th/2,bw,th,rad);ctx.fill();ctx.fillStyle=css(mix(rc,BLACK,.82));glyph(String(R.grade),cx1)}
   const pf=R.prof||S.prof,pc=digitColor(S[{beginner:'profB',intermediate:'profI',expert:'profE'}[pf]],rc);
-  if(S.showProf){ctx.fillStyle=css(wallRGB);rrPath(ctx,cx2-bw/2,cy-th/2,bw,th,rad);ctx.fill();
+  if(S.showProf){ctx.fillStyle=css(BLACK);rrPath(ctx,cx2-bw/2,cy-th/2,bw,th,rad);ctx.fill();   // the time group sits on black, not the wall (#45)
     ctx.strokeStyle=css(pc);ctx.lineWidth=lw;rrPath(ctx,cx2-bw/2+lw/2,cy-th/2+lw/2,bw-lw,th-lw,Math.max(1,rad-lw/2));ctx.stroke();
     ctx.fillStyle=css(pc);glyph({beginner:'B',intermediate:'I',expert:'E'}[pf]||'E',cx2)}
 }
