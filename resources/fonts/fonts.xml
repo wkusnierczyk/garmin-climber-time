@@ -1,0 +1,13 @@
+<resources>
+
+    <!-- Sizes at the reference resolution, 448x486 (resolutions.json); garmin-font-scaler
+         derives the others. See README.md, Fonts, and tools/check-font-config.py. -->
+    <fonts>
+        <font id="Time" filename="RobotoCondensed-Bold-95.fnt" antialias="true" />
+        <font id="Tag" filename="RobotoCondensed-Bold-56.fnt" antialias="true" />
+    </fonts>
+
+    <jsonData id="FontCharsets" filename="charsets.json"/>
+    <jsonData id="ScreenResolutions" filename="resolutions.json" />
+
+</resources>

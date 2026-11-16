@@ -65,6 +65,9 @@ class Geom {
 
     public var layout as Number;
     public var full as Boolean;           // the wall is the right half
+    // digitMaxW and digitScale are the design's sizing of the digits (DESIGN.md §4.1). The face
+    // draws bitmap fonts generated at the sizes they give, per resolution, and does not compute
+    // a size at run time; tools/check-font-config.py repeats this arithmetic to check the fonts.
     public var digitMaxW as Float;        // the widest the two-digit block may be
     public var tagX as Float;             // the tags' centre x
     public var tagMode as Number;         // Climb.TAGS_INLINE, TAGS_STACKED or TAGS_ROWS
@@ -73,7 +76,7 @@ class Geom {
     public var tagHug as Boolean;         // tags sized from the digits, boxes hugging the glyph
     public var timeGroup as Boolean;      // beside the panel or the right half: time over tags, right-aligned to groupRight
     public var groupRight as Float;
-    public var digitSize as Float = 0.0;  // set by the view once the fonts are fitted
+    public var digitSize as Float = 0.0;  // the digit font's em, set by the view once it loads the fonts
     public var tagSize as Float = 0.0;
 
     // Wall area (DESIGN.md §3.2, plus the prototype's centre panel):

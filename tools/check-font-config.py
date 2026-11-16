@@ -1,0 +1,286 @@
+#!/usr/bin/env python3
+"""Check that the bitmap fonts agree with their configuration, the design and the README (#17).
+
+    python3 tools/check-font-config.py                  (make check-fonts)
+    python3 tools/check-font-config.py --write-readme   (make fonts: copy fonts.md's table in)
+
+Adapted from Matrix Time's. The sources of truth are resources/fonts/resolutions.json (the
+reference resolution and the targets), resources/fonts/fonts.xml (each font's size at the
+reference, in its .fnt filename) and resources/fonts/charsets.json (each font's glyphs).
+garmin-font-scaler derives everything else: the resources-<family>/fonts directories and
+fonts.md, whose size table the README copies. This script derives what those must be and
+checks them, never the reverse. It also repeats the design's sizing of the digits and the
+tags (DESIGN.md §4.1, the simulator's groupLayout, Geom), which the face no longer computes at
+run time, and checks every generated size against it. Pure Python, no SDK, no font tools.
+"""
+import hashlib
+import json
+import math
+import os
+import re
+import sys
+
+FONT_RE = re.compile(r'<font\s+id="(\w+)"\s+filename="([^"]+)"')
+FONT_IDS = {'Time', 'Tag'}
+# The glyphs each font draws: the time is %02d hours and minutes; the tags are the grade, 4 to 8
+# (Climb.mc, Route: grade = 4 + ... % 5), and the proficiency, B, I or E (Draw.tags).
+CHARSETS = {'Time': '0123456789', 'Tag': '45678BEI'}
+# Connect IQ's deviceFamily shapes; any other spelling makes a directory the compiler never
+# selects, silently (wkusnierczyk/garmin-matrix-time#39).
+CIQ_SHAPES = {'round', 'semiround', 'rectangle', 'semioctagon'}
+
+# Roboto Condensed Bold, in font units (resources/fonts/RobotoCondensed-Bold.ttf): the digits'
+# common advance, B's (the widest tag glyph), and the line, ascender plus descender, that
+# ttf2bmp writes as lineHeight, rounded up (Draw.LINE_EM).
+UPM = 2048
+DIGIT_ADVANCE = 1035
+B_ADVANCE = 1149
+LINE = 1900 + 500
+
+fail = []
+
+
+def ok(cond, msg):
+    print(f"  {'OK  ' if cond else 'FAIL'}  {msg}")
+    if not cond:
+        fail.append(msg)
+
+
+def sha(path):
+    with open(path, 'rb') as f:
+        return hashlib.sha256(f.read()).hexdigest()
+
+
+def read(path):
+    with open(path, encoding='utf-8') as f:
+        return f.read()
+
+
+def fnt(path):
+    """lineHeight, and {char: xadvance}, from an AngelCode .fnt."""
+    text = read(path)
+    line = int(re.search(r'lineHeight=(\d+)', text).group(1))
+    adv = {chr(int(i)): int(a) for i, a in re.findall(r'^char id=(\d+)\s.*?xadvance=(-?\d+)', text, re.M)}
+    return line, adv
+
+
+# ---------------------------------------------------------------- sources of truth
+res = json.loads(read('resources/fonts/resolutions.json'))
+ref = res['reference']
+rw, rh = ref['resolution']
+targets = [(t['resolution'][0], t['resolution'][1], t['shape']) for t in res['targets']]
+print("\nSOURCE OF TRUTH")
+print(f"  resolutions.json  reference = {rw}x{rh} {ref['shape']}, {len(targets)} targets")
+
+refsize = {}
+for fid, fn in FONT_RE.findall(read('resources/fonts/fonts.xml')):
+    m = re.match(r'(.+)-(\d+)\.fnt$', fn)
+    if not m:
+        ok(False, f"fonts.xml {fid}: filename {fn!r} is not <name>-<size>.fnt")
+        continue
+    refsize[fid] = (m.group(1), int(m.group(2)))
+    print(f"  fonts.xml         {fid:5} -> {fn}  (reference size {m.group(2)})")
+
+
+def k(w, h):
+    return min(w / rw, h / rh)
+
+
+def size_at(fid, w, h):
+    """The scaler's rule: round(reference size x k), k the constraining dimension's ratio."""
+    return round(refsize[fid][1] * k(w, h))
+
+
+print("\nCHAIN")
+ok(set(refsize) == FONT_IDS, f"fonts.xml declares exactly {sorted(FONT_IDS)} (found {sorted(refsize)})")
+ok(len({stem for stem, _ in refsize.values()}) == 1 and
+   len({size for _, size in refsize.values()}) == len(refsize),
+   "every font is one typeface at a size of its own: the scaler names a bitmap by face and size, "
+   "so two fonts at one size overwrite each other")
+ok((rw, rh, ref['shape']) in targets, f"reference {rw}x{rh} {ref['shape']} is one of the targets")
+for shape in sorted({ref['shape']} | {s for _, _, s in targets}):
+    ok(shape in CIQ_SHAPES, f"shape {shape!r} is a Connect IQ deviceFamily shape")
+for stem in sorted({stem for stem, _ in refsize.values()}):
+    ok(os.path.exists(f'resources/fonts/{stem}.ttf'), f"resources/fonts/{stem}.ttf is there")
+ok(os.path.exists('resources/fonts/OFL-RobotoCondensed.txt'), "the typeface's licence is beside it")
+
+dirs = sorted(d for d in os.listdir('.') if re.match(r'resources-(round|semiround|rectangle|semioctagon)-\d+x\d+$', d))
+want_dirs = sorted(f"resources-{s}-{w}x{h}" for w, h, s in targets)
+ok(dirs == want_dirs, f"the resources-<family> directories are exactly the targets ({len(want_dirs)})"
+   + ("" if dirs == want_dirs else f": found {dirs}"))
+
+bad = 0
+for w, h, shape in targets:
+    d = f"resources-{shape}-{w}x{h}/fonts"
+    if not os.path.exists(f'{d}/fonts.xml'):
+        ok(False, f"{d}/fonts.xml is missing"); bad += 1
+        continue
+    got = dict(FONT_RE.findall(read(f'{d}/fonts.xml')))
+    if set(got) != set(refsize):
+        ok(False, f"{d}: declares {sorted(got)}, resources/fonts declares {sorted(refsize)}"); bad += 1
+    for fid in sorted(set(got) & set(refsize)):
+        want = f"{refsize[fid][0]}-{size_at(fid, w, h)}.fnt"
+        if got[fid] != want:
+            ok(False, f"{d} {fid}: {got[fid]}, expected {want}"); bad += 1
+        elif not all(os.path.exists(f"{d}/{want[:-4]}.{e}") for e in ('fnt', 'png')):
+            ok(False, f"{d} {fid}: {want} or its .png is missing"); bad += 1
+if not bad:
+    ok(True, f"every target declares each font at round(reference x k), and its files are there")
+
+orphans = []
+for d in ['resources/fonts'] + [f"{x}/fonts" for x in dirs]:
+    if not os.path.exists(f'{d}/fonts.xml'):
+        continue
+    keep = set(dict(FONT_RE.findall(read(f'{d}/fonts.xml'))).values())
+    keep |= {f[:-4] + '.png' for f in keep}
+    orphans += [f"{d}/{f}" for f in os.listdir(d) if f.endswith(('.fnt', '.png')) and f not in keep]
+ok(not orphans, "no bitmap that no fonts.xml declares" + (f" (found {orphans[:3]})" if orphans else ""))
+
+# The scaler does not refresh resources/fonts/, which the compiler reads for any product without
+# a directory of its own: those copies must be the reference resolution's, byte for byte.
+refdir = f"resources-{ref['shape']}-{rw}x{rh}/fonts"
+for fid, (stem, size) in sorted(refsize.items()):
+    for ext in ('fnt', 'png'):
+        b, r = f'resources/fonts/{stem}-{size}.{ext}', f'{refdir}/{stem}-{size}.{ext}'
+        ok(os.path.exists(b) and os.path.exists(r) and sha(b) == sha(r),
+           f"resources/fonts/{stem}-{size}.{ext} is {refdir}'s, byte for byte")
+
+# ---------------------------------------------------------------------- glyphs
+print("\nGLYPHS")
+charsets = {c['fontId']: c['fontCharset'] for c in json.loads(read('resources/fonts/charsets.json'))}
+for fid, chars in sorted(CHARSETS.items()):
+    ok(sorted(charsets.get(fid, '')) == sorted(chars),
+       f"charsets.json {fid} holds exactly {chars!r} (found {charsets.get(fid)!r})")
+
+# Every character the code measures must be in the font it measures: a missing glyph is
+# measured at a fallback width without a word (playbook, fonts.md).
+draw = read('source/Draw.mc')
+m = re.search(r'function tagGlyphWidth.*?var chars = \[([^\]]*)\]', draw, re.S)
+measured = re.findall(r'"(.)"', m.group(1)) if m else []
+ok(bool(measured) and all(c in CHARSETS['Tag'] for c in measured),
+   f"Draw.tagGlyphWidth measures only Tag glyphs ({''.join(measured) or 'none found'})")
+ok(re.findall(r'getTextWidthInPixels\("(.)"', draw) and
+   all(c in CHARSETS['Time'] for c in re.findall(r'getTextWidthInPixels\("(.)"', draw)),
+   "every literal Draw measures with getTextWidthInPixels is a Time glyph")
+
+bad = 0
+for w, h, shape in targets:
+    d = f"resources-{shape}-{w}x{h}/fonts"
+    for fid, (stem, _) in sorted(refsize.items()):
+        size = size_at(fid, w, h)
+        path = f"{d}/{stem}-{size}.fnt"
+        if not os.path.exists(path):
+            continue
+        line, adv = fnt(path)
+        if sorted(adv) != sorted(CHARSETS[fid]):
+            ok(False, f"{path}: holds {''.join(sorted(adv))!r}, not {CHARSETS[fid]!r}"); bad += 1
+        if fid == 'Time' and len({adv.get(c) for c in '0123456789'}) != 1:
+            ok(False, f"{path}: the digits' advances differ ({sorted(set(adv.values()))}): cells need one"); bad += 1
+        if math.floor(line * UPM / LINE) != size:
+            ok(False, f"{path}: lineHeight {line} does not give back size {size} (Draw.em)"); bad += 1
+        # ttf2bmp rounds an advance up, so a whole pixel either way is the font's own.
+        units = {'8': DIGIT_ADVANCE, '0': DIGIT_ADVANCE, 'B': B_ADVANCE}
+        if any(abs(adv[c] - u / UPM * size) > 1 for c, u in units.items() if c in adv):
+            ok(False, f"{path}: the advances are not the units above at size {size}"); bad += 1
+if not bad:
+    ok(True, "every bitmap holds its charset, the digits one advance, and its size in its line height")
+
+# ---------------------------------------------------------------------- design
+# The design's sizes (DESIGN.md §4.1; the simulator's groupLayout; Geom.fitGroup), for the time
+# group beside the right-half wall: the digits 0.19 H, shrunk so four cells of 1.04 x width("0")
+# fit between the bezel and the group's right edge, then x 1.1 x TIME_SIZE and truncated, as the
+# vector-font face did; the tags so that two boxes hugging B (padded 0.12 of their size each
+# side) and their gap of 0.18 span the minutes' two cells, rounded.
+print("\nDESIGN")
+climb = read('source/utils/Climb.mc')
+time_size = float(re.search(r'const TIME_SIZE = ([\d.]+);', climb).group(1))
+layout = re.search(r'const LAYOUT = (Climb\.\w+);', draw).group(1)
+linear = re.search(r'const TIME_LINEAR = (\w+);', draw).group(1)
+ok(layout == 'Climb.LAYOUT_HALF' and linear == 'true',
+   f"the face draws the layout this sizing is for, the right half and HHMM in one line ({layout}, {linear})")
+
+
+def design(w, h, shape):
+    W, H = float(w), float(h)
+    right = 0.5 * W - 0.03 * W
+    lb = 0.03 * W
+    if shape == 'round':
+        dy = 0.10 * H
+        lb = W / 2 - math.sqrt(W * W / 4 - dy * dy) + 0.03 * W
+    fs = 0.19 * H
+    tot = 4 * 1.04 * DIGIT_ADVANCE / UPM * fs
+    if tot > right - lb:
+        fs *= (right - lb) / tot
+    digits = math.floor(fs * 1.1 * time_size)
+    tag = 2 * 1.04 * DIGIT_ADVANCE / UPM * digits / (2 * (B_ADVANCE / UPM + 0.24) + 0.18)
+    return digits, tag
+
+
+rows = []
+bad = 0
+for w, h, shape in targets:
+    digits, tag = design(w, h, shape)
+    got_t, got_g = size_at('Time', w, h), size_at('Tag', w, h)
+    rows.append(f"{w}x{h} Time {got_t} (design {digits}), Tag {got_g} (design {tag:.2f})")
+    if got_t != digits or abs(got_g - tag) > 1:
+        bad += 1
+for r in rows:
+    print(f"        {r}")
+ok(not bad, "every target's Time is the design's size, and its Tag within 1 of it")
+
+# ------------------------------------------------------------------- the tables
+print("\nTABLES")
+ROW_RE = re.compile(r'^\|\s*(\d+)\s*x\s*(\d+)\s*\|\s*(\w+)\s*\|\s*(\w+)\s*\|\s*([\w ]+?)\s*\|\s*(\d+)\s*\|$')
+HEAD = '# Font sizes by resolution'
+
+
+def resolution_table(text):
+    """The lines of the first table after HEAD, or of the table holding a 'Resolution' header."""
+    lines = text.split(HEAD, 1)[1].splitlines() if HEAD in text else text.splitlines()
+    out = []
+    for line in lines:
+        if line.startswith('| Resolution |') or (out and line.startswith('|')):
+            out.append(line)
+        elif out:
+            break
+    return out
+
+
+def check_rows(lines, label):
+    got = {}
+    for line in lines:
+        m = ROW_RE.match(line.strip())
+        if m:
+            got[(int(m.group(1)), int(m.group(2)), m.group(3), m.group(4))] = int(m.group(6))
+    want = {(w, h, s, fid): size_at(fid, w, h) for w, h, s in targets for fid in refsize}
+    ok(got == want, f"{label}: one row per target and font, at round(reference x k)"
+       + ("" if got == want else f" (differs at {sorted(set(got.items()) ^ set(want.items()))[:3]})"))
+
+
+fonts_md = read('fonts.md')
+table = resolution_table(fonts_md)
+check_rows(table, 'fonts.md')
+
+readme = read('README.md')
+START, END = '<!-- fonts.md: start -->', '<!-- fonts.md: end -->'
+if '--write-readme' in sys.argv[1:]:
+    if START in readme and END in readme:
+        head, rest = readme.split(START, 1)
+        readme = head + START + '\n' + '\n'.join(table) + '\n' + END + rest.split(END, 1)[1]
+        with open('README.md', 'w', encoding='utf-8') as f:
+            f.write(readme)
+        print("  wrote fonts.md's table into README.md")
+    else:
+        ok(False, f"README.md has no {START} ... {END} block to write the table into")
+block = readme.split(START, 1)[1].split(END, 1)[0].strip().splitlines() if START in readme and END in readme else []
+ok(block == table, "README.md's size table is fonts.md's, line for line (make fonts copies it)")
+paragraphs = [' '.join(b.split()) for b in re.split(r'\n\s*\n', readme)]
+prose = [b for b in paragraphs if 'reference resolution' in b.lower()]
+ok(any(re.search(rf'\b{rw}\s*[x×]\s*{rh}\b', b) and 'resolutions.json' in b for b in prose),
+   f"README.md names the reference resolution, {rw}x{rh}, and resolutions.json, in one paragraph")
+
+print()
+if fail:
+    print(f"{len(fail)} check(s) failed.")
+    sys.exit(1)
+print("Font configuration is consistent.")

@@ -14,7 +14,6 @@ module Draw {
     const AOD_MINUTES = 0x969C99;   // grey: always-on keeps the route colour for the holds only (§13.1)
     const ROPE = 0xD6D4C8;
     const ANCHOR = 0x969C98;
-    const VECTOR_FACES = ["RobotoCondensedBold", "BionicBold", "Swiss721Bold"] as Array<String>;
 
     // Channel-wise a + (b - a)·t.
     function mix(a as Number, b as Number, t as Float) as Number {
@@ -28,34 +27,22 @@ module Draw {
         return out;
     }
 
-    // getVectorFont's :size is the font's line height, ascent plus descent, where the design and
-    // the simulator size fonts by the em (CSS font-size). For Roboto that line is 1.172 em
-    // (ascender 1900, descender 500, 2048 units): measured on epix2pro47mm, size 81 gives
-    // getFontAscent 64 and getFontHeight 81. Every size here is in em and converted at the call.
-    const VECTOR_EM = 1.172;
+    // The bitmap fonts' em, from their line height. ttf2bmp writes the line as the face's ascender
+    // plus descender, rounded up: 2400/2048 em for Roboto Condensed (1900 + 500 units), so a size
+    // 81 font has lineHeight 95 and getFontHeight 95. Every font size here is in em, as in the
+    // design and the simulator (CSS font-size), and floor(height / LINE_EM) gives back the size
+    // the font was generated at (tools/check-font-config.py holds every generated font to it).
+    const LINE_EM = 2400.0 / 2048.0;
 
-    function vectorFont(em as Numeric, fallback as Graphics.FontType) as Graphics.FontType {
-        if (Graphics has :getVectorFont) {
-            var f = Graphics.getVectorFont({ :face => VECTOR_FACES, :size => (em * VECTOR_EM + 0.5).toNumber() });
-            if (f != null) {
-                return f;
-            }
-        }
-        return fallback;
+    function em(dc as Graphics.Dc, f as Graphics.FontType) as Float {
+        return Math.floor(dc.getFontHeight(f) / LINE_EM).toFloat();
     }
 
-    // The digits' font size in em: 0.30 H stacked, 0.19 H linear, shrunk to fit between the bezel
-    // and the wall (DESIGN.md §4.1), then scaled by the layout's digitScale (in the time group,
-    // 1.1 × Climb.TIME_SIZE). Outside the group the size setting is not applied yet (Premium).
-    function digitSize(dc as Graphics.Dc, g as Geom) as Number {
-        var fs = g.H * (g.timeLinear ? 0.19 : 0.30);
-        var f = vectorFont(fs.toNumber(), Graphics.FONT_NUMBER_THAI_HOT);
-        var tot = (g.timeLinear ? 4 : 2) * 1.04 * dc.getTextWidthInPixels("0", f);
-        if (tot > g.digitMaxW) {
-            fs = fs * g.digitMaxW / tot;
-        }
-        return (fs * g.digitScale).toNumber();
-    }
+    // The digits and the tags are bitmap fonts, Roboto Condensed Bold, one size per screen
+    // resolution (resources/fonts/fonts.xml, README.md: Fonts). The sizes are what the design's
+    // formula gives on each screen, which is no longer computed here: the digits 0.19 H, shrunk to
+    // fit Geom.digitMaxW, times Geom.digitScale (DESIGN.md §4.1); the tags so that their two boxes
+    // and gap span the minutes' two cells. tools/check-font-config.py checks the sizes against it.
 
     // Each digit centred in its own cell 1.04 × width("0") (DESIGN.md §4.2).
     function digits(dc as Graphics.Dc, str as String, cx as Float, cy as Float, font as Graphics.FontType, color as Number) as Void {
@@ -79,14 +66,6 @@ module Draw {
             }
         }
         return cw;
-    }
-
-    // The tags' font size at which two hugging boxes and their gap span `width`: measured
-    // at `guess` and scaled, as vector fonts scale linearly.
-    function tagSizeForWidth(dc as Graphics.Dc, guess as Float, width as Float) as Float {
-        var f = vectorFont(guess.toNumber(), Graphics.FONT_NUMBER_MILD);
-        var w = 2 * (tagGlyphWidth(dc, f) + 0.24 * guess) + 0.18 * guess;
-        return w > 0 ? guess * width / w : guess;
     }
 
     // The time group's two lines beside the wall: [digits row y, tags row y]. The group is centred
@@ -135,8 +114,7 @@ module Draw {
         time(dc, g, 0.0, 0.0, hh, mm, font, HOURS, AOD_MINUTES);
 
         // The checker over the time's box: its cells, plus the glyphs' overhang, sized from the
-        // font drawn, which is the system's number font on products without the vector faces
-        // (#29). The bitmap is tiled over the box; its sides are even, so every tile keeps the
+        // font drawn. The bitmap is tiled over the box; its sides are even, so every tile keeps the
         // phase. The simulator blacks the pixels with x + y = absMin (mod 2); the bitmap blacks
         // those with even x + y from its origin, so the origin is moved by 0 or 1 to match.
         var cw = 1.04 * dc.getTextWidthInPixels("0", font);
@@ -323,18 +301,15 @@ module Draw {
         time(dc, g, 0.0, 0.0, hh, mm, digitFont, HOURS, rc);
     }
 
-    // Tag font size, as a fraction of H. The design's 0.055 side by side was hard to
-    // read on the wrist; the prototype stacks them larger.
-    const TAG_FS = 0.085;
-    const TAG_ROW_SCALE = 0.6;      // centre panel: the tags' font size as a fraction of the digits'
     const ROW_HOURS = 0.365;        // stacked time rows' centres, as fractions of H
     const ROW_MINUTES = 0.635;
 
     // [grade] and [B/I/E] (DESIGN.md §3.3, enlarged for the prototype), by g.tagMode:
     //   TAGS_INLINE   side by side at mid-height
     //   TAGS_STACKED  grade above proficiency, about mid-height
-    //   TAGS_ROWS     grade level with the hours, proficiency level with the minutes,
-    //                 at TAG_ROW_SCALE of the digits' size
+    //   TAGS_ROWS     grade level with the hours, proficiency level with the minutes
+    // Only the time group ships; the other modes draw with the time group's tag font, which is
+    // sized for it (fs is that font's em). A layout that ships them needs fonts of its own.
     function tags(dc as Graphics.Dc, g as Geom, r as Route, rc as Number, font as Graphics.FontType, fs as Float) as Void {
         var asc = fs * 0.72;
         var bw;

@@ -1,7 +1,7 @@
 # Build, package and test verification (#5), copied from Matrix Time's build.yml
 # (wkusnierczyk/garmin-matrix-time#41, #102, #109) and cut down to one edition:
 # Lite, from manifest.xml. Every push to main or a dev-* release branch, and every pull request, runs the
-# checks that need no SDK, compiles the face for one product per deviceFamily,
+# checks that need no SDK (the help, the fonts), compiles the face for one product per deviceFamily,
 # exports the store bundle -- which builds every product manifest.xml names -- and
 # runs the unit tests in the simulator under a virtual display.
 #
@@ -77,6 +77,13 @@ jobs:
         run: |
           make check-help
           make help
+
+      # The bitmap fonts against their configuration, the design's sizes and the README's
+      # table (tools/check-font-config.py, #17). Pure Python: no SDK, no font tools. It reads
+      # the .fnt files only, which are not LFS objects; the .png and .ttf ones it checks by
+      # hash need the lfs: true above.
+      - name: Fonts
+        run: make check-fonts
 
   build:
     name: build and export

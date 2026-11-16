@@ -24,9 +24,8 @@ class View extends WatchUi.WatchFace {
     private var _othersDay as Number = -1;
     private var _static as Graphics.BufferedBitmapReference?;
     private var _staticMin as Number = -1;
-    private var _digitFont as Graphics.FontType = Graphics.FONT_NUMBER_THAI_HOT;
-    private var _tagFont as Graphics.FontType = Graphics.FONT_XTINY;
-    private var _tagSize as Float = 0.0;
+    private var _digitFont as Graphics.FontType?;
+    private var _tagFont as Graphics.FontType?;
 
     function initialize() {
         WatchFace.initialize();
@@ -38,22 +37,13 @@ class View extends WatchUi.WatchFace {
         var shape = System.getDeviceSettings().screenShape;
         var g = new Geom(w, h, shape == System.SCREEN_SHAPE_ROUND, Draw.LAYOUT, Draw.TIME_LINEAR);
         _geom = g;
-        var ds = Draw.digitSize(dc, g);
-        g.digitSize = ds.toFloat();
-        _digitFont = Draw.vectorFont(ds, Graphics.FONT_NUMBER_THAI_HOT);
-        if (g.timeGroup) {
-            // The two tags together as wide as the minutes' two digit cells.
-            var target = 2 * 1.04 * dc.getTextWidthInPixels("0", _digitFont);
-            _tagSize = Draw.tagSizeForWidth(dc, ds * Draw.TAG_ROW_SCALE, target);
-            _tagFont = Draw.vectorFont(_tagSize.toNumber(), Graphics.FONT_NUMBER_MILD);
-        } else if (g.tagHug) {
-            _tagSize = ds * Draw.TAG_ROW_SCALE;
-            _tagFont = Draw.vectorFont(_tagSize.toNumber(), Graphics.FONT_NUMBER_MILD);
-        } else {
-            _tagSize = g.H * Draw.TAG_FS;
-            _tagFont = Draw.vectorFont(_tagSize.toNumber(), Graphics.FONT_XTINY);
-        }
-        g.tagSize = _tagSize;
+        // The bitmap fonts for this screen's resolution (resources-<family>/fonts), and their sizes.
+        var df = WatchUi.loadResource(Rez.Fonts.Time) as Graphics.FontType;
+        var tf = WatchUi.loadResource(Rez.Fonts.Tag) as Graphics.FontType;
+        _digitFont = df;
+        _tagFont = tf;
+        g.digitSize = Draw.em(dc, df);
+        g.tagSize = Draw.em(dc, tf);
         if (Graphics has :createBufferedBitmap) {
             _static = Graphics.createBufferedBitmap({ :width => w, :height => h });
         }
@@ -95,7 +85,9 @@ class View extends WatchUi.WatchFace {
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
         dc.clear();
         var g = _geom;
-        if (g == null) {
+        var df = _digitFont;
+        var tf = _tagFont;
+        if (g == null || df == null || tf == null) {
             return;
         }
         if (System.getDisplayMode() == System.DISPLAY_MODE_OFF) {
@@ -119,7 +111,7 @@ class View extends WatchUi.WatchFace {
                 ck = WatchUi.loadResource(Rez.Drawables.Checker) as Graphics.BitmapType;
                 _checker = ck;
             }
-            Draw.lowPower(dc, g, r, rc, hh, ct.min, absMin, _digitFont, ck);
+            Draw.lowPower(dc, g, r, rc, hh, ct.min, absMin, df, ck);
             return;
         }
 
@@ -138,12 +130,12 @@ class View extends WatchUi.WatchFace {
                 var bdc = (bmp as Graphics.BufferedBitmap).getDc();
                 bdc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
                 bdc.clear();
-                Draw.staticLayer(bdc, g, r, rc, others, hh, ct.min, _digitFont, _tagFont, _tagSize);
+                Draw.staticLayer(bdc, g, r, rc, others, hh, ct.min, df, tf, g.tagSize);
                 _staticMin = absMin;
             }
             dc.drawBitmap(0, 0, bmp as Graphics.BufferedBitmap);
         } else {
-            Draw.staticLayer(dc, g, r, rc, others, hh, ct.min, _digitFont, _tagFont, _tagSize);
+            Draw.staticLayer(dc, g, r, rc, others, hh, ct.min, df, tf, g.tagSize);
         }
 
         var rn = nextRoute(absMin, g);
