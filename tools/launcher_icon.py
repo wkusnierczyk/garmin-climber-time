@@ -23,7 +23,8 @@ mock-up's numbers exactly, so the icon is what the owner approved.
 
 Every icon is drawn at its own size, supersampled and averaged down, rather than scaled
 from one master: the strokes are a few pixels wide at 38 x 38, where resampling a large
-master blurs them unevenly. The cover is the same drawing at the store's 500 x 500.
+master blurs them unevenly. The cover is the same drawing at the store's 500 x 500, with a
+few coloured holds on the wall around him (#54); the icons have none.
 
 Rendering needs Pillow; `check` needs nothing but Python.
 """
@@ -64,11 +65,44 @@ FALLBACK = os.path.join(ROOT, 'resources/drawables/launcher_icon.png')
 COVER_SIZE = 500
 COVER_LIMIT = 300 * 1000
 
+# The cover only (the owner's pick C on #54): six small holds of the face's gym colours
+# (source/utils/Climb.mc, GYM) scattered on the wall around the climber, none in his
+# hands. Each is (shape, x, y, size, colour, rotation in degrees), in box units, drawn
+# under the climber; the shapes are the mock-up's simplified versions of the face's holds,
+# as the owner approved them: do not replace them with Draw.mc's.
+COVER_HOLDS = (
+    ('jug', 14, 16, 5, (0xF7, 0xC9, 0x48), 15),       # yellow, top left
+    ('crimp', 86, 42, 5, (0x22, 0xC3, 0xC3), -20),    # teal, right
+    ('sloper', 18, 72, 6, (0xFF, 0x8C, 0x2B), 0),     # orange, lower left
+    ('pinch', 84, 80, 5, (0xA0, 0x6C, 0xF0), 12),     # purple, lower right
+    ('jug', 64, 8, 5, (0x34, 0xC4, 0x6A), -8),        # green, top
+    ('crimp', 30, 92, 5, (0xEF, 0x44, 0x44), 10),     # red, bottom
+)
+
 
 # ------------------------------------------------------------------------ rendering
 
-def render(size):
-    """The climber, `size` pixels square."""
+def hold_outline(shape, r):
+    """A hold's outline about its centre, in box units: points of its closed path."""
+    def quad(p0, p1, p2, steps=24):
+        return [((1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0],
+                 (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * p1[1] + t * t * p2[1])
+                for t in (i / steps for i in range(steps + 1))]
+    if shape == 'jug':          # a bucket: two curves down and round, one back across the lip
+        a, b, c = (-r, -0.35 * r), (0, 0.75 * r), (r, -0.35 * r)
+        return quad(a, (-r, 0.75 * r), b) + quad(b, (r, 0.75 * r), c) + quad(c, (0, 0.05 * r), a)
+    if shape == 'crimp':        # a thin bar with round ends
+        h = 0.28 * r
+        ends = [(r - h + h * math.cos(math.radians(a)), h * math.sin(math.radians(a))) for a in range(-90, 91, 10)]
+        return ends + [(-x, -y) for x, y in ends]
+    if shape == 'sloper':       # a low dome on a flat base
+        return quad((-r, 0.4 * r), (0, -1.1 * r), (r, 0.4 * r))
+    return [(0.45 * r * math.cos(math.radians(a)), 0.8 * r * math.sin(math.radians(a)))
+            for a in range(0, 360, 10)]  # pinch: an upright oval
+
+
+def render(size, holds=False):
+    """The climber, `size` pixels square; with `holds`, the cover's holds under him."""
     from PIL import Image, ImageDraw
 
     big = size * SUPERSAMPLE
@@ -83,6 +117,11 @@ def render(size):
     image = Image.new('RGB', (big, big), BACKGROUND)
     draw = ImageDraw.Draw(image)
     half = STROKE * SCALE * unit / 2
+
+    for shape, x, y, r, colour, degrees in (COVER_HOLDS if holds else ()):
+        cos, sin = math.cos(math.radians(degrees)), math.sin(math.radians(degrees))
+        draw.polygon([point((x + cos * px - sin * py, y + sin * px + cos * py))
+                      for px, py in hold_outline(shape, r)], fill=colour)
 
     # A round-capped, round-joined polyline is the union of a disc at every vertex and
     # a rectangle along every segment, each as wide as the stroke.
@@ -112,18 +151,18 @@ def png_size(path):
 
 def write_cover(path=COVER):
     os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
-    render(COVER_SIZE).save(path, optimize=True)
+    render(COVER_SIZE, holds=True).save(path, optimize=True)
     print(f"  {COVER_SIZE}x{COVER_SIZE}  {path}  ({os.path.getsize(path)} bytes, store cover)")
 
 
 # --------------------------------------------------------------------------- actions
 
-def same_pixels(path, size):
-    """Whether the PNG at `path` holds exactly what render(size) draws: decoded pixels,
-    not file bytes, so zlib's output on another platform does not matter."""
+def same_pixels(path, size, holds=False):
+    """Whether the PNG at `path` holds exactly what render(size, holds) draws: decoded
+    pixels, not file bytes, so zlib's output on another platform does not matter."""
     from PIL import Image
     with Image.open(path) as image:
-        return image.convert('RGB').tobytes() == render(size).tobytes()
+        return image.convert('RGB').tobytes() == render(size, holds).tobytes()
 
 
 def check(path=COVER):
@@ -154,7 +193,7 @@ def check(path=COVER):
     ok(icons, "resources-icon-*/ holds icons")
     for icon in icons + [FALLBACK, path]:
         got = png_size(icon) if os.path.exists(icon) else None
-        ok(got is not None and got[0] == got[1] and same_pixels(icon, got[0]),
+        ok(got is not None and got[0] == got[1] and same_pixels(icon, got[0], holds=icon == path),
            f"{os.path.relpath(icon, ROOT)} is what the renderer draws; else run make icons")
 
     print(f"\n{'ALL CONSISTENT' if not fail else f'{len(fail)} PROBLEM(S)'}\n")
