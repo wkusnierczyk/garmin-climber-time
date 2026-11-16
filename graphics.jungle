@@ -1,0 +1,15 @@
+# The capture build for make graphics and make preview, and nothing else (#7).
+#
+# Layered over monkey.jungle rather than replacing it, so every shared setting comes from
+# the one file that defines it:
+#
+#   monkeyc -f "monkey.jungle;graphics.jungle" ...
+#
+# monkeyc -f takes a semicolon-separated list and later files override earlier ones.
+# This adds capture/, whose Now.mc answers the clock and the display mode from the moment
+# in capture/Frame.mc, and excludes source/Now.mc's (:live) definitions of the same
+# functions. Fail-closed both ways: without the exclusion, or with capture/ on another
+# build's path, the build stops on a redefinition rather than compiling the frozen clock.
+base.sourcePath = $(base.sourcePath);capture
+# Added to, not replaced: an exclusion monkey.jungle sets (an edition's, say) still holds.
+base.excludeAnnotations = $(base.excludeAnnotations);live

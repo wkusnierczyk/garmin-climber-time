@@ -12,6 +12,9 @@ export/
 ClimberTime*-settings.json
 test_build-settings.json
 
+# make graphics' hero drafts: the hero is ClimberTimeHero.png, made from them by hand (#8).
+store/lite/graphics/*-draft*.png
+
 # Safeguards rather than outputs: editor settings, system files and the key.
 # IDE/Editor settings
 .settings/

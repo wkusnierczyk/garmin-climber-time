@@ -74,7 +74,8 @@ TEST_FLAGS   := $(BUILD_FLAGS) --unit-test
 EXPORT_FLAGS := -e -r -w -y "$(DEV_KEY)" -f monkey.jungle
 
 .PHONY: all build sim run test golden sideload export fonts check-fonts check-ttf2bmp install-ttf2bmp \
-  check-garmin-font-scaler install-garmin-font-scaler clean help check-help
+  check-garmin-font-scaler install-garmin-font-scaler check-garmin-graphics-generator \
+  graphics preview icons check-icons clean help check-help
 
 ## The default: build [DEVICE DEV_KEY]
 all: build
@@ -309,6 +310,102 @@ fonts:
 check-fonts:
 	@echo "Checking the fonts..."
 	@python3 tools/check-font-config.py
+
+# The store and README images (#7), captured by garmin-graphics-generator: the Connect IQ
+# simulator in a container under Xvfb, so Docker and nothing else -- no desktop simulator,
+# no GUI, no macOS screen-recording permission. The container is CI's tester image, a
+# private package: docker login ghcr.io first. tools/make-graphics.py holds the inventory,
+# the moments each image shows; each is a build of its own through graphics.jungle, with
+# the clock frozen at its moment (source/Now.mc). On an arm64 Mac the image runs emulated,
+# a minute or so a build.
+#
+# Run make graphics again whenever what the face draws changes: nothing reports the images
+# stale. They are deterministic, the same face drawing the same images, but for the hero's
+# placement, which is random: look at the draft and run again if it is poor.
+#
+# The tool runs in GRAPHICS_PYTHON, which must have it installed. It is not on PyPI:
+#   python3 -m pip install 'garmin-graphics-generator @ git+https://github.com/wkusnierczyk/garmin-graphics-generator@v0.8.1'
+# 0.8.1 is the release the targets were written and run against (tools/make-graphics.py).
+## The Python graphics and preview run in, with garmin-graphics-generator installed
+GRAPHICS_PYTHON ?= python3
+## The container platform for graphics and preview; the tester image is amd64 only
+PLATFORM ?= linux/amd64
+GRAPHICS_TOOL_VERSION := 0.8.1
+
+define require_graphics_tool
+@"$(GRAPHICS_PYTHON)" -c 'import sys; from importlib.metadata import version; \
+  number = lambda v: tuple(int(part) for part in v.split(".")[:3]); \
+  raise SystemExit(number(version("garmin_graphics_generator")) < number(sys.argv[1]))' \
+  '$(GRAPHICS_TOOL_VERSION)' 2>/dev/null || { \
+  echo "make $@ needs garmin-graphics-generator $(GRAPHICS_TOOL_VERSION) or newer, installed for"; \
+  echo "GRAPHICS_PYTHON ($(GRAPHICS_PYTHON)); see README.md."; exit 1; }
+endef
+
+## Check that GRAPHICS_PYTHON has garmin-graphics-generator, new enough for the images [GRAPHICS_PYTHON]
+check-garmin-graphics-generator:
+	$(require_graphics_tool)
+	@"$(GRAPHICS_PYTHON)" -c 'from importlib.metadata import version; \
+	  print("garmin-graphics-generator", version("garmin_graphics_generator"))'
+
+# On the reference product, epix2pro47mm, whatever DEVICE says: the images show what CI
+# builds and tests. Writes store/lite/graphics/: ClimberTimeCapture.png, the raw screen;
+# ClimberTime1.png and on, the gallery at 200 px, which the README uses too; and
+# ClimberTimeHero-draft.png with its 900x450 banner. Never ClimberTimeHero.png, the name a
+# published hero takes.
+## Capture the store gallery and a draft hero into store/lite/graphics [PLATFORM GRAPHICS_PYTHON]
+graphics:
+	$(require_graphics_tool)
+	@"$(GRAPHICS_PYTHON)" tools/make-graphics.py $(if $(PLATFORM),--platform $(PLATFORM),)
+
+# The same frames as make graphics, at full size and on a labelled contact sheet, for
+# review and for picking the gallery, plus any moments in AT: HH:MM:SS, HH:MM:fall (the
+# first fall of that minute) or HH:MM:always-on, e.g. AT="09:05:30 09:00:fall". Writes
+# nothing outside PREVIEW_DIR, which is gitignored.
+PREVIEW_DIR := .dev/scratchpad/preview
+## More moments for preview: HH:MM:SS, HH:MM:fall or HH:MM:always-on, space-separated
+AT ?=
+## Capture the gallery's frames, and AT, on a contact sheet in .dev/scratchpad/preview [DEVICE AT PLATFORM GRAPHICS_PYTHON]
+preview:
+	$(require_graphics_tool)
+	@"$(GRAPHICS_PYTHON)" tools/make-graphics.py --preview $(PREVIEW_DIR) -d $(DEVICE) \
+	  $(foreach moment,$(AT),--at $(moment)) $(if $(PLATFORM),--platform $(PLATFORM),)
+	@echo "Contact sheet: $(PREVIEW_DIR)/contact-sheet.png"
+
+# The launcher icons (#19). Their size is a per-device property, not a per-family one,
+# so the icons and the per-product jungle mapping that serves them are generated from
+# the SDK's device definitions rather than kept by hand, by garmin-graphics-generator's
+# icons command with the renderer tools/launcher_icon.py: a white climber in a high
+# step, on black, drawn at each size. The command writes resources-icon-<size>/, the
+# fallback resources/drawables/launcher_icon.png (the largest size), the block between
+# the markers in monkey.jungle, and the size table in README.md that follows
+# ICONS_README. The store cover, store/lite/graphics/ClimberTimeCover.png, is the same
+# drawing at 500 x 500; the command knows nothing about it, so the renderer, run as a
+# script, writes and checks it. --check needs no SDK: it cross-checks the mapping with
+# the device definitions when they are there, and skips that when not (CI).
+#
+# Both go through GRAPHICS_PYTHON, not through the tool's own garmin-graphics-generator
+# script, which may belong to another interpreter: so one Pillow draws the icons and the
+# cover. 0.8.1 is the first release that records the renderer in the jungle's
+# "Regenerate with:" line, so every machine writes that line the same way.
+ICONS_TOOL = "$(GRAPHICS_PYTHON)" -c 'import sys; from garmin_graphics_generator.cli import main; \
+  sys.argv[0] = "garmin-graphics-generator"; sys.exit(main())'
+ICONS_README := --readme-anchor 'Each supported product is mapped to the icon its device asks for'
+
+## Regenerate the launcher icons, their mapping in monkey.jungle, the README table and the store cover [GRAPHICS_PYTHON]
+icons:
+	$(require_graphics_tool)
+	@echo "Generating the launcher icons..."
+	@$(ICONS_TOOL) icons -R tools/launcher_icon.py $(ICONS_README)
+	@echo "Generating the store cover..."
+	@"$(GRAPHICS_PYTHON)" tools/launcher_icon.py cover
+
+## Check the launcher icons, their mapping, the README table and the store cover [GRAPHICS_PYTHON]
+check-icons:
+	$(require_graphics_tool)
+	@echo "Checking the launcher icons..."
+	@$(ICONS_TOOL) icons $(ICONS_README) --check
+	@echo "Checking the icons' and the store cover's pixels against the renderer..."
+	@"$(GRAPHICS_PYTHON)" tools/launcher_icon.py check
 
 ## Remove build output
 clean:

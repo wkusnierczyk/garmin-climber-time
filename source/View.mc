@@ -1,7 +1,6 @@
 using Toybox.Graphics;
 using Toybox.Math;
 using Toybox.System;
-using Toybox.Time;
 using Toybox.WatchUi;
 
 import Toybox.Lang;
@@ -9,11 +8,9 @@ import Toybox.Lang;
 class View extends WatchUi.WatchFace {
 
     // Always-on draws its own scene (Draw.lowPower, DESIGN.md §13.1), and a display that is
-    // off draws nothing. As in Matrix Time (wkusnierczyk/garmin-matrix-time#191, #212), the
-    // always-on scene is drawn unless both signals say awake: the sleep callbacks' flag, which
-    // lags on the epix Pro, and System.getDisplayMode() (API 5.0.0, the minApiLevel). The
-    // scene takes everything from the clock, so it changes once a minute however often
-    // onUpdate is called.
+    // off draws nothing. Now.lowPower decides between them, from this flag and the display
+    // mode. The scene takes everything from the clock, so it changes once a minute however
+    // often onUpdate is called. The clock is read through Now as well, for the captures (#7).
     private var _lowPower as Boolean = false;
     private var _checker as Graphics.BitmapType?;
 
@@ -52,7 +49,7 @@ class View extends WatchUi.WatchFace {
     // Local minutes since the epoch (DESIGN.md §15.3), with the offset taken from the
     // clock itself so that it follows DST.
     private function absMinute(ct as System.ClockTime) as Number {
-        var utcMin = Time.now().value() / 60;
+        var utcMin = Now.utcSeconds() / 60;
         var local = ct.hour * 60 + ct.min;
         var off = Climb.posMod(local - utcMin % 1440, 1440);
         if (off > 720) {
@@ -93,19 +90,19 @@ class View extends WatchUi.WatchFace {
         if (System.getDisplayMode() == System.DISPLAY_MODE_OFF) {
             return;
         }
-        var ct = System.getClockTime();
+        var ct = Now.clockTime();
         var absMin = absMinute(ct);
         var r = routesFor(absMin, g);
         var rc = Climb.GYM[r.colorIdx];
         var hh = ct.hour;
-        if (!System.getDeviceSettings().is24Hour) {
+        if (!Now.is24Hour()) {
             hh = hh % 12;
             if (hh == 0) {
                 hh = 12;
             }
         }
 
-        if (_lowPower || System.getDisplayMode() != System.DISPLAY_MODE_HIGH_POWER) {
+        if (Now.lowPower(_lowPower)) {
             var ck = _checker;
             if (ck == null) {
                 ck = WatchUi.loadResource(Rez.Drawables.Checker) as Graphics.BitmapType;
@@ -139,7 +136,7 @@ class View extends WatchUi.WatchFace {
         }
 
         var rn = nextRoute(absMin, g);
-        var P = Climb.poseAt(r, rn, ct.sec);
+        var P = Climb.poseAt(r, rn, Now.poseSecond(r, ct.sec));
         Draw.dynamicLayer(dc, g, P);
     }
 

@@ -85,6 +85,28 @@ jobs:
       - name: Fonts
         run: make check-fonts
 
+      # check-icons checks the launcher icons, their mapping, the README table and the
+      # store cover (#19) with garmin-graphics-generator, which is not on PyPI, so it
+      # is installed from GitHub. Only its icons command runs here, and that imports
+      # Pillow and nothing else, so the package goes in without its dependencies:
+      # rembg and onnxruntime are hundreds of megabytes the check never loads. Pillow
+      # is pinned to the version the icons were drawn with, the venv's on the owner's
+      # Mac, so a check that ever compares pixels compares like with like.
+      #
+      # Pinned to a commit SHA, with the release it was published as trailing, for the
+      # reason the actions are. Keep it in step with GRAPHICS_TOOL_VERSION in the
+      # Makefile. A venv, because the runner's own Python is externally managed; make
+      # runs the tool through it as GRAPHICS_PYTHON.
+      - name: garmin-graphics-generator
+        run: |
+          python3 -m venv "$RUNNER_TEMP/tools"
+          "$RUNNER_TEMP/tools/bin/pip" install --quiet --no-deps \
+            'garmin-graphics-generator @ git+https://github.com/wkusnierczyk/garmin-graphics-generator@9d37f5487d3684452cc468a8944bc83132277040'  # v0.8.1
+          "$RUNNER_TEMP/tools/bin/pip" install --quiet Pillow==11.3.0
+
+      - name: Launcher icons
+        run: make check-icons GRAPHICS_PYTHON="$RUNNER_TEMP/tools/bin/python"
+
   build:
     name: build and export
     runs-on: ubuntu-latest
