@@ -104,7 +104,7 @@ Wall **width** (floating panel only) is a setting from 0.22 to 0.36 of W, defaul
 
 In right-half mode the route region stays where the bezel leaves room on a round screen; the rest of the half is wall and, on a fixed wall, unused holds (§5.4).
 
-**The time group** (prototype, 2026-11-11, for the right half; since 2026-11-15 also beside the floating panel, which 0.1.0 ships): with the linear time layout, the space left of the wall holds a two-line group, the time on one line above the tags on one line, the time centred vertically and the group right-aligned 0.03 W short of the wall's left edge (0.47 W in the right half; beside the panel, 0.525 W on round screens and 0.53 W on rectangular ones):
+**The time group** (prototype, 2026-11-11, for the right half, which 0.1.0 ships (owner, 2026-11-16); also beside the floating panel): with the linear time layout, the space left of the wall holds a two-line group, the time on one line above the tags on one line, the time centred vertically and the group right-aligned 0.03 W short of the wall's left edge (0.47 W in the right half; beside the panel, 0.525 W on round screens and 0.53 W on rectangular ones):
 
 - Time: HHMM, no separator, fitted to the width between the bezel's left edge at y = H/2 ± 0.10 H (plus 0.03 W) and the group's right edge, then 1.1 × **Size** (§4.1; 0.94 in 0.1.0) × that size; the last cell ends at the group's right edge, with three cells or four.
 - Tags: side by side, sized so that the two boxes and their gap span the minutes' two digit cells, right-aligned with them; boxes hug the widest of 8, B, I and E as in the centre panel (§3.3).
@@ -117,7 +117,7 @@ With the linear time layout the centre panel puts the time on one line left of t
 **In the time group** (§3.2, the default and 0.1.0) the tags sit side by side under the minutes, sized there. Otherwise two small tags sit at mid-height (y = H/2), centred on the panel's right edge (floating panel), in the strip right of the route ((route right + W)/2, right half), or right of the wall ((wall right + W)/2, centre panel). They sit side by side. The prototype stacks them, grade above proficiency, in the right half. In the centre panel it puts the grade level with the hours row and the proficiency level with the minutes row, both in the digits' font at 0.6 × the digits' size, centred between the wall right + 0.025 W and the bezel (mirroring the digits), in boxes hugging the widest of 8, B, I and E (padding 0.12 fs, corner radius max(2 px, 0.12 fs), outline max(2 px, 0.05 fs)). Two user settings to come: **Tag arrangement** (side by side, stacked, or level with the time rows) and **Tag size** relative to the digits (0.6 in the prototype's centre panel):
 
 - **Grade tag** (setting **Show grade tag**, default on): filled in the route colour, the grade number cut out in dark (route colour mixed 82 % toward black).
-- **Proficiency tag** (setting **Show proficiency tag**, default on): filled in the wall colour, outlined in its proficiency's colour, letter B, I or E in the same colour. One fixed colour per proficiency (settings **Proficiency tag, beginner / intermediate / expert**): yellow #F7C948, orange #FF8C2B and red #EF4444 by default.
+- **Proficiency tag** (setting **Show proficiency tag**, default on): filled in the wall colour, outlined in its proficiency's colour, letter B, I or E in the same colour. Its colour per proficiency (settings **Proficiency tag, beginner / intermediate / expert**): a fixed colour (yellow #F7C948, orange #FF8C2B, red #EF4444 suggested) or the route colour, the default (owner, 2026-11-16).
 
 Order is [grade][proficiency], left to right or top to bottom. If one is hidden the other takes the first slot. Sizes in Appendix A.6; the prototype uses fs = 0.085 H, box width 1.05 fs, gap 0.18 fs, outline max(1.5 px, 0.09 fs), after 0.055 H proved barely readable on the wrist. The climber is drawn over the tags.
 
@@ -153,7 +153,7 @@ Roboto Condensed, bold by default. Alternatives offered in the simulator: Roboto
 | Setting | Values | Default |
 |---|---|---|
 | Hours colour | a fixed colour (white #F6F6F6, grey #969C99, amber #FFBC54, or a gym colour) or the route colour | white |
-| Minutes colour | the same choices | grey |
+| Minutes colour | the same choices | the route colour |
 | 24-hour | on, off (12-hour shows 1 to 12) | on |
 | Leading zero on hours | on, off | on |
 
@@ -531,7 +531,7 @@ These become Connect IQ properties (§15.5). Keys match the simulator's settings
 | layout | stacked, inline (linear HHMM) | inline | §4.1 |
 | digitSize | 0.8 to 1.2 | 0.94 | §4.1 |
 | hourColor | a fixed colour (§4.4), route | white | §4.4 |
-| minColor | a fixed colour (§4.4), route | grey | §4.4 |
+| minColor | a fixed colour (§4.4), route | route | §4.4 |
 | hour24 | on, off | on | §4.4 |
 | leadZero | on, off | on | §4.4 |
 | palette | round, shuffle, cycle, hue | round | §7 |
@@ -547,11 +547,11 @@ These become Connect IQ properties (§15.5). Keys match the simulator's settings
 | gMax | 4 to 8 | 8 | §8.3 |
 | showGrade | on, off | on | §3.3 |
 | showProf | on, off | on | §3.3 |
-| profB, profI, profE | a fixed colour (§4.4), route | yellow, orange, red | §3.3 |
+| profB, profI, profE | a fixed colour (§4.4), route | route | §3.3 |
 | tagLayout | inline, stacked, rows (planned) | per wall area: inline (panel), stacked (half), rows (centre) | §3.3 |
 | tagScale | fraction of the digits' size, rows only (planned) | 0.6 | §3.3 |
 | wallStyle | slate, plywood, none | slate | §5.1 |
-| wallClip | panel, half, centre | panel | §3.2 |
+| wallClip | panel, half, centre | half | §3.2 |
 | wallWidth | 0.22 to 0.36 | 0.30 | §3.2 |
 | tnut | on, off | on | §5.1 |
 | scale | off, 10, 15, 5 | 10 | §3.4 |
@@ -575,13 +575,13 @@ A partner logo under the time is not part of the design and must not be implemen
 
 ### 14.3 Lite 0.1.0
 
-Lite 0.1.0 ships **no settings** (owner, 2026-11-15): the face is §14.1's defaults, fixed. Which settings ship later, and in which edition, is #12. The owner's picks, made in the 0.1.0 mock and now the simulator's defaults:
+Lite 0.1.0 ships **no settings** (owner, 2026-11-15): the face is §14.1's defaults, fixed. Which settings ship later, and in which edition, is #12. The owner's picks, made in the 0.1.0 mock and now the simulator's defaults (2026-11-16, replacing 2026-11-15's floating panel and fixed colours):
 
 | | 0.1.0 |
 |---|---|
-| Wall | floating panel (`wallClip` panel, width 0.30), slate, T-nut grid |
-| Time | linear HHMM in the time group (§3.2), size 0.94, Roboto Condensed bold; hours white, minutes grey |
-| Tags | grade in the route colour, proficiency B yellow, I orange, E red, side by side under the minutes |
+| Wall | the right half of the screen (`wallClip` half), slate, T-nut grid |
+| Time | linear HHMM in the time group (§3.2), size 0.94, Roboto Condensed bold; hours white, minutes in the route colour |
+| Tags | grade and proficiency both in the route colour, side by side under the minutes |
 | Routes | new holds every grade round, 30 moves at grade 6, rising difficulty 4 to 8, proficiency cycling, one gym colour per grade round |
 | Descent | lowered on the rope, 3 s |
 | Off | chalk, top rope, quarter ropes, beer break, downclimb |

@@ -216,14 +216,14 @@ const DEVICES={   // the screen classes 0.1.0 can support: at least 360 px each 
 };
 const FONTS=['Roboto Condensed','Roboto','Roboto Slab','Ubuntu','Lato','Rubik','Barlow Semi Condensed'];
 const DEF={device:'r454',speed:1,tick:'tick',aod:false,showBBox:false,font:'Roboto Condensed',weight:700,layout:'inline',digitSize:0.94,
-  hourColor:'white',minColor:'grey',profB:'yellow',profI:'orange',profE:'red',aodGuard:'checker',hour24:true,leadZero:true,palette:'round',moves:30,holdStyle:'mixed',volumes:true,otherRoutes:true,
-  chalk:false,wallStyle:'slate',wallClip:'panel',wallWidth:0.30,tnut:true,scale:'10',climberColor:'white',climberScale:1,lower:3,topRope:false,descent:'line',features:'random',wallSeed:1,grades:true,gMin:4,gMax:8,showGrade:true,quarters:false,beer:false,prof:'expert',showProf:true,profCycle:true};
+  hourColor:'white',minColor:'route',profB:'route',profI:'route',profE:'route',aodGuard:'checker',hour24:true,leadZero:true,palette:'round',moves:30,holdStyle:'mixed',volumes:true,otherRoutes:true,
+  chalk:false,wallStyle:'slate',wallClip:'half',wallWidth:0.30,tnut:true,scale:'10',climberColor:'white',climberScale:1,lower:3,topRope:false,descent:'line',features:'random',wallSeed:1,grades:true,gMin:4,gMax:8,showGrade:true,quarters:false,beer:false,prof:'expert',showProf:true,profCycle:true};
 const STORE='climber-time-v1';
 let S={...DEF};
 try{const j=JSON.parse(localStorage.getItem(STORE)||'null');if(j)S={...DEF,...j}}catch(e){}
 if(!DEVICES[S.device])S.device=DEF.device;
 if(!FONTS.includes(S.font))S.font=DEF.font;
-if(S.wallClip!=='panel'&&S.wallClip!=='half')S.wallClip='panel';
+if(S.wallClip!=='panel'&&S.wallClip!=='half')S.wallClip='half';
 const save=()=>{try{localStorage.setItem(STORE,JSON.stringify(S))}catch(e){}};
 
 /* ---------- utils ---------- */
