@@ -2,7 +2,7 @@
 
 [![build](https://github.com/wkusnierczyk/garmin-climber-time/actions/workflows/build.yml/badge.svg)](https://github.com/wkusnierczyk/garmin-climber-time/actions/workflows/build.yml)
 
-<!-- TODO (#11): the Connect IQ Store link goes here once the listing is live. -->
+<!-- TODO (#52): the Connect IQ Store link goes here once the listing is live. -->
 
 ![Climber Time on four watches](store/lite/graphics/ClimberTimeHero-small.png)
 
