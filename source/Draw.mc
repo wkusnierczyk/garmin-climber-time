@@ -388,12 +388,14 @@ module Draw {
         dc.setColor(mix(rc, 0, 0.82), Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx1, cy1, font, r.grade.toString(), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
-        dc.setColor(WALL, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(cx2 - bw / 2, cy2 - th / 2, bw, th, rad);
+        // The outline as two fills, the box in the route colour and the inside in the wall's,
+        // so its outer edge is the grade box's by construction: a thick pen's stroke does not
+        // land where a fill's edge does, and drew this box 3 px short (#41).
         dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
-        dc.setPenWidth(lw.toNumber());
-        dc.drawRoundedRectangle(cx2 - bw / 2 + lw / 2, cy2 - th / 2 + lw / 2, bw - lw, th - lw, Climb.maxf(1.0, rad - lw / 2));
-        dc.setPenWidth(1);
+        dc.fillRoundedRectangle(cx2 - bw / 2, cy2 - th / 2, bw, th, rad);
+        dc.setColor(WALL, Graphics.COLOR_TRANSPARENT);
+        dc.fillRoundedRectangle(cx2 - bw / 2 + lw, cy2 - th / 2 + lw, bw - 2 * lw, th - 2 * lw, Climb.maxf(1.0, rad - lw));
+        dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx2, cy2, font, letters[r.prof], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 
