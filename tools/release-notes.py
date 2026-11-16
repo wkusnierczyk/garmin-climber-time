@@ -226,6 +226,9 @@ def main():
 
     editions = released_editions(version)
     section = changelog_section(version)
+    if not any(line.strip() for line in section):
+        fail(f'{CHANGELOG}\'s section for {version} is empty; write the release notes '
+             f'under its heading before tagging')
     store_texts(version, editions)
 
     notes = ('\n'.join(section).strip() + '\n\n'

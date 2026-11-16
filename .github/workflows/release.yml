@@ -50,11 +50,10 @@ on:
   push:
     tags: ['v*']
 
-# Read-only by default, plus pulling the private tester image (as in build.yml).
-# The one job that creates the release widens it for itself, and nothing else.
+# Read-only by default. The bundle job adds pulling the private tester image (as in
+# build.yml), and the one job that creates the release widens it for itself.
 permissions:
   contents: read
-  packages: read
 
 jobs:
   version:
@@ -64,8 +63,21 @@ jobs:
       bundles: ${{ steps.check.outputs.bundles }}
     steps:
       # No lfs: true here: this job reads manifest.xml, CHANGELOG.md and the
-      # plain-text store/ files and compiles nothing.
+      # plain-text store/ files and compiles nothing. The full history, to check
+      # where the tag points.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # A release is main's head after the owner fast-forwards main to the release
+      # branch (playbook/release.md, The release branch), so the tagged commit must
+      # be on main. A tag on dev-<version> before the fast-forward, or on any other
+      # commit, would sign a bundle of a commit main does not have.
+      - name: Check the tag is on main
+        run: |
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || {
+            echo "::error::$GITHUB_REF_NAME ($GITHUB_SHA) is not on main. Fast-forward main to the release branch, then tag main's head."
+            exit 1; }
 
       # Before the container is even pulled. A tag is a name someone typed, and
       # nothing about `git tag` consults the manifest or CHANGELOG.md, while a
@@ -96,6 +108,10 @@ jobs:
     strategy:
       matrix:
         include: ${{ fromJSON(needs.version.outputs.bundles) }}
+    # Job-level permissions replace the workflow's, so contents: read is restated.
+    permissions:
+      contents: read
+      packages: read
     # The gate. Everything about this job that touches the key depends on this
     # one line; see the note at the top.
     environment: release

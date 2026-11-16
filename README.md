@@ -116,7 +116,7 @@ The push runs [`.github/workflows/release.yml`](.github/workflows/release.yml):
 
 | Job | What it does |
 | :-- | :-- |
-| `version check` | [`tools/release-notes.py`](tools/release-notes.py), with no SDK: refuses the tag unless it is `v` plus a version `manifest.xml` is not ahead of, `CHANGELOG.md` has a dated section for it, and `store/lite/` has a non-empty `description.txt` and, when the tag is the manifest's version, `whats-new-<version>.txt`. Run it locally before tagging: `tools/release-notes.py vX.Y.Z`. |
+| `version check` | refuses a tag that is not on `main`; then [`tools/release-notes.py`](tools/release-notes.py), with no SDK: refuses the tag unless it is `v` plus a version `manifest.xml` is not ahead of, `CHANGELOG.md` has a dated, non-empty section for it, and `store/lite/` has a non-empty `description.txt` and, when the tag is the manifest's version, `whats-new-<version>.txt`. Run it locally before tagging: `tools/release-notes.py vX.Y.Z`. |
 | `signed bundle` | `make export` in the CI image, signed with the real developer key: `ClimberTime-<version>.iq`, checked against the manifest's version. |
 | `draft release` | a **draft** release for the tag, with that `CHANGELOG.md` section and the bundle. |
 
