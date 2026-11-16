@@ -75,7 +75,7 @@ EXPORT_FLAGS := -e -r -w -y "$(DEV_KEY)" -f monkey.jungle
 
 .PHONY: all build sim run test golden sideload export check-ttf2bmp install-ttf2bmp \
   check-garmin-font-scaler install-garmin-font-scaler check-garmin-graphics-generator \
-  graphics preview clean help check-help
+  graphics preview icons check-icons clean help check-help
 
 ## The default: build [DEVICE DEV_KEY]
 all: build
@@ -348,6 +348,42 @@ preview:
 	@"$(GRAPHICS_PYTHON)" tools/make-graphics.py --preview $(PREVIEW_DIR) -d $(DEVICE) \
 	  $(foreach moment,$(AT),--at $(moment)) $(if $(PLATFORM),--platform $(PLATFORM),)
 	@echo "Contact sheet: $(PREVIEW_DIR)/contact-sheet.png"
+
+# The launcher icons (#19). Their size is a per-device property, not a per-family one,
+# so the icons and the per-product jungle mapping that serves them are generated from
+# the SDK's device definitions rather than kept by hand, by garmin-graphics-generator's
+# icons command with the renderer tools/launcher_icon.py: a white climber in a high
+# step, on black, drawn at each size. The command writes resources-icon-<size>/, the
+# fallback resources/drawables/launcher_icon.png (the largest size), the block between
+# the markers in monkey.jungle, and the size table in README.md that follows
+# ICONS_README. The store cover, store/lite/graphics/ClimberTimeCover.png, is the same
+# drawing at 500 x 500; the command knows nothing about it, so the renderer, run as a
+# script, writes and checks it. --check needs no SDK: it cross-checks the mapping with
+# the device definitions when they are there, and skips that when not (CI).
+#
+# Both go through GRAPHICS_PYTHON, not through the tool's own garmin-graphics-generator
+# script, which may belong to another interpreter: so one Pillow draws the icons and the
+# cover. 0.8.1 is the first release that records the renderer in the jungle's
+# "Regenerate with:" line, so every machine writes that line the same way.
+ICONS_TOOL = "$(GRAPHICS_PYTHON)" -c 'import sys; from garmin_graphics_generator.cli import main; \
+  sys.argv[0] = "garmin-graphics-generator"; sys.exit(main())'
+ICONS_README := --readme-anchor 'Each supported product is mapped to the icon its device asks for'
+
+## Regenerate the launcher icons, their mapping in monkey.jungle, the README table and the store cover [GRAPHICS_PYTHON]
+icons:
+	$(require_graphics_tool)
+	@echo "Generating the launcher icons..."
+	@$(ICONS_TOOL) icons -R tools/launcher_icon.py $(ICONS_README)
+	@echo "Generating the store cover..."
+	@"$(GRAPHICS_PYTHON)" tools/launcher_icon.py cover
+
+## Check the launcher icons, their mapping, the README table and the store cover [GRAPHICS_PYTHON]
+check-icons:
+	$(require_graphics_tool)
+	@echo "Checking the launcher icons..."
+	@$(ICONS_TOOL) icons $(ICONS_README) --check
+	@echo "Checking the icons' and the store cover's pixels against the renderer..."
+	@"$(GRAPHICS_PYTHON)" tools/launcher_icon.py check
 
 ## Remove build output
 clean:
