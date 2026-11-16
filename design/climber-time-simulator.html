@@ -216,14 +216,14 @@ const DEVICES={   // the screen classes 0.1.0 can support: at least 360 px each 
 };
 const FONTS=['Roboto Condensed','Roboto','Roboto Slab','Ubuntu','Lato','Rubik','Barlow Semi Condensed'];
 const DEF={device:'r454',speed:1,tick:'tick',aod:false,showBBox:false,font:'Roboto Condensed',weight:700,layout:'inline',digitSize:0.94,
-  hourColor:'white',minColor:'grey',profB:'yellow',profI:'orange',profE:'red',aodGuard:'checker',hour24:true,leadZero:true,palette:'round',moves:30,holdStyle:'mixed',volumes:true,otherRoutes:true,
-  chalk:false,wallStyle:'slate',wallClip:'panel',wallWidth:0.30,tnut:true,scale:'10',climberColor:'white',climberScale:1,lower:3,topRope:false,descent:'line',features:'random',wallSeed:1,grades:true,gMin:4,gMax:8,showGrade:true,quarters:false,beer:false,prof:'expert',showProf:true,profCycle:true};
-const STORE='climber-time-v1';
+  hourColor:'white',minColor:'route',profB:'route',profI:'route',profE:'route',aodGuard:'checker',hour24:true,leadZero:true,palette:'round',moves:30,holdStyle:'mixed',volumes:true,otherRoutes:true,
+  chalk:false,wallStyle:'slate',wallClip:'half',wallWidth:0.30,tnut:true,scale:'10',climberColor:'white',climberScale:1,lower:3,topRope:false,descent:'line',features:'random',wallSeed:1,grades:true,gMin:4,gMax:8,showGrade:true,quarters:false,beer:false,prof:'expert',showProf:true,profCycle:true};
+const STORE='climber-time-v2';   // v2: the half wall and route colours became the defaults (#30)
 let S={...DEF};
 try{const j=JSON.parse(localStorage.getItem(STORE)||'null');if(j)S={...DEF,...j}}catch(e){}
 if(!DEVICES[S.device])S.device=DEF.device;
 if(!FONTS.includes(S.font))S.font=DEF.font;
-if(S.wallClip!=='panel'&&S.wallClip!=='half')S.wallClip='panel';
+if(S.wallClip!=='panel'&&S.wallClip!=='half')S.wallClip='half';
 const save=()=>{try{localStorage.setItem(STORE,JSON.stringify(S))}catch(e){}};
 
 /* ---------- utils ---------- */
@@ -240,7 +240,7 @@ const BLACK=[0,0,0],WHITE=[255,255,255];
 
 /* ---------- colour per minute ---------- */
 const GYM=[['Yellow',[247,201,72]],['Green',[52,196,106]],['Blue',[58,134,255]],['Red',[239,68,68]],['Purple',[160,108,240]],
-  ['Orange',[255,140,43]],['Pink',[255,111,176]],['Teal',[34,195,195]],['White',[232,232,232]]];
+  ['Orange',[255,140,43]],['Pink',[255,111,176]],['Teal',[34,195,195]]];   // no white: the route colour is the minutes' (owner, 2026-11-16)
 function routeColor(absMin,mode){
   const L=GYM.length;
   if(mode==='hue'){const h=(((absMin%60)+60)%60)*6;return{name:'Hue '+h+'°',rgb:hsl2rgb(h,.85,.58),idx:-1}}
@@ -734,11 +734,11 @@ function drawTags(ctx,G,R,rc,wallRGB){
     ctx.fillText(it.t,x+bw/2,y+asc/2);x+=bw+gap;
   }
 }
-function drawDigits(ctx,G,t,rc,dim=1){
+function drawDigits(ctx,G,t,rc,dim=1,minRGB=null){
   let h=t.h;if(!S.hour24)h=h%12||12;
   const hh=S.leadZero?String(h).padStart(2,'0'):String(h),mm=String(t.m).padStart(2,'0');
   const d=c=>dim<1?mix(BLACK,c,dim):c;
-  const hc=d(digitColor(S.hourColor,rc)),mc=d(digitColor(S.minColor,rc));
+  const hc=d(digitColor(S.hourColor,rc)),mc=d(minRGB||digitColor(S.minColor,rc));
   if(G.timeGroup){const L=groupLayout(ctx,G),str=hh+mm;   // the last cell ends at groupRight
     return cellText(ctx,str,G.groupRight-str.length*L.cw/2,L.yTime,L.fs,[...str].map((ch,i)=>i<hh.length?hc:mc))}
   const mg=G.W*.03,maxW=2*Math.min(G.dcx-mg,G.x0-G.dcx-mg);   // keep digits clear of the bezel and the wall
@@ -807,7 +807,7 @@ function renderFace(ctx,devId,t){
     // Always-on: the time, with the burn-in protection S.aodGuard picks (aodShift, aodMask), and
     // the route's holds as dots, jittered on their own (aodHolds). No climber, wall or tags.
     ctx.save();const J=aodShift(t.absMin,W);ctx.translate(J.x,J.y);
-    drawDigits(ctx,G,t,rc,1);
+    drawDigits(ctx,G,t,rc,1,FIXED_COLORS.grey[1]);   // always-on minutes grey (owner, 2026-11-16)
     ctx.restore();aodMask(ctx,W,H,t.absMin);
     aodHolds(ctx,R,rc,t);
     ctx.restore();return{R,col,P:null,G,aod,kind:sl.kind};
