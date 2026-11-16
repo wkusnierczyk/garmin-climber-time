@@ -59,7 +59,11 @@ Needs the Connect IQ SDK (the Makefile follows the SDK manager's current SDK), t
 key at `../garmin-keys/developer_key`, `git-lfs`, and `libmtp` (`brew install libmtp`) for
 sideloading.
 
-Building the fonts needs [`garmin-font-scaler`](https://github.com/wkusnierczyk/garmin-font-scaler)
+Building the fonts needs [`ttf2bmp`](https://github.com/wkusnierczyk/ttf2bmp) 0.3.0 or newer on
+`PATH`. `make install-ttf2bmp` downloads its release binary for macOS (arm64 or Intel) or Linux
+(x86-64) into `~/.local/bin` (`BIN_DIR`), which must be on `PATH`; `make check-ttf2bmp` checks it.
+
+It also needs [`garmin-font-scaler`](https://github.com/wkusnierczyk/garmin-font-scaler)
 0.3.0 or newer on `PATH`. It is not on PyPI: `make install-garmin-font-scaler` installs it from its
 tag with `pip`, in a virtual environment of its own (`~/.local/share/venvs/garmin-font-scaler`,
 `FONT_SCALER_VENV`), linked into `~/.local/bin` (`BIN_DIR`), which must be on `PATH`;
