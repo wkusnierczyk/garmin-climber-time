@@ -293,8 +293,9 @@ install-garmin-font-scaler:
 # resources/fonts/ (fonts.xml, charsets.json, resolutions.json), and fonts.md. It does not
 # refresh resources/fonts/'s own bitmaps, which the compiler reads for a product with no
 # directory of its own, so they are copied from the reference resolution's; the reference is
-# read from resolutions.json. The README's size table is copied from fonts.md, then checked.
-## Regenerate the bitmap fonts, fonts.md and the README's size table (needs ttf2bmp and garmin-font-scaler)
+# read from resolutions.json. The README's size table is copied from fonts.md, and the
+# typeface's and the bitmaps' SHA-256 recorded in fonts.sha256; then all of it is checked.
+## Regenerate the bitmap fonts, fonts.md, fonts.sha256 and the README's size table (needs ttf2bmp and garmin-font-scaler)
 fonts:
 	$(require_ttf2bmp)
 	$(require_font_scaler)
@@ -302,8 +303,8 @@ fonts:
 	@ref=$$(python3 -c 'import json; r = json.load(open("resources/fonts/resolutions.json"))["reference"]; print("resources-%s-%dx%d" % (r["shape"], *r["resolution"]))') && \
 	  for f in $$(sed -nE 's/.*filename="([^"]+)\.fnt".*/\1/p' resources/fonts/fonts.xml); do \
 	    cp "$$ref/fonts/$$f.fnt" "$$ref/fonts/$$f.png" resources/fonts/ || exit 1; done
-	@garmin-font-scaler --table fonts.md 2>/dev/null
-	@python3 tools/check-font-config.py --write-readme
+	@garmin-font-scaler --table fonts.md
+	@python3 tools/check-font-config.py --write
 
 # Pure Python, no SDK and no font tools, so it runs in CI's consistency checks.
 ## Check that the fonts agree with their configuration, the design's sizes and the README

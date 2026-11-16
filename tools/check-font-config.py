@@ -2,7 +2,7 @@
 """Check that the bitmap fonts agree with their configuration, the design and the README (#17).
 
     python3 tools/check-font-config.py                  (make check-fonts)
-    python3 tools/check-font-config.py --write-readme   (make fonts: copy fonts.md's table in)
+    python3 tools/check-font-config.py --write          (make fonts: record the hashes, copy fonts.md's table in)
 
 Adapted from Matrix Time's. The sources of truth are resources/fonts/resolutions.json (the
 reference resolution and the targets), resources/fonts/fonts.xml (each font's size at the
@@ -11,7 +11,10 @@ garmin-font-scaler derives everything else: the resources-<family>/fonts directo
 fonts.md, whose size table the README copies. This script derives what those must be and
 checks them, never the reverse. It also repeats the design's sizing of the digits and the
 tags (DESIGN.md §4.1, the simulator's groupLayout, Geom), which the face no longer computes at
-run time, and checks every generated size against it. Pure Python, no SDK, no font tools.
+run time, and checks every generated size against it. It holds the typeface and every bitmap to
+the SHA-256 hashes make fonts records in fonts.sha256, and, where the SDK's device definitions
+are present, every product in manifest.xml to a family with fonts. Pure Python, no SDK, no font
+tools.
 """
 import hashlib
 import json
@@ -36,6 +39,12 @@ UPM = 2048
 DIGIT_ADVANCE = 1035
 B_ADVANCE = 1149
 LINE = 1900 + 500
+
+# Where the SDK manager keeps the device definitions: macOS, then Linux (CI's container runs as
+# root, so ~ is /root). CIQ_DEVICES overrides. As in tools/ci-devices.py.
+DEVICE_DIRS = ['~/Library/Application Support/Garmin/ConnectIQ/Devices', '~/.Garmin/ConnectIQ/Devices']
+HASHES = 'fonts.sha256'
+WRITE = '--write' in sys.argv[1:]
 
 fail = []
 
@@ -82,6 +91,25 @@ for fid, fn in FONT_RE.findall(read('resources/fonts/fonts.xml')):
     print(f"  fonts.xml         {fid:5} -> {fn}  (reference size {m.group(2)})")
 
 
+# Regular expressions, not xml.etree: Homebrew's Python on the owner's Mac has no working
+# pyexpat (2026-11-16), and these files are the scaler's, in one known shape.
+ATTR_RE = re.compile(r'(\w+)="([^"]*)"')
+ELEM_RE = re.compile(r'<font\s([^>]*?)/>')
+
+
+def font_elements(text):
+    return [dict(ATTR_RE.findall(e)) for e in ELEM_RE.findall(text)]
+
+
+def scaler_shape(text):
+    """The scaler's output: a declaration, <resources><fonts>, <font/> elements, nothing else."""
+    body = re.sub(r'\s+', '', ELEM_RE.sub('', text))
+    return re.sub(r'^<\?xml[^>]*\?>', '', body) == '<resources><fonts></fonts></resources>'
+
+
+base_fonts = font_elements(read('resources/fonts/fonts.xml'))
+
+
 def k(w, h):
     return min(w / rw, h / rh)
 
@@ -116,6 +144,13 @@ for w, h, shape in targets:
         ok(False, f"{d}/fonts.xml is missing"); bad += 1
         continue
     got = dict(FONT_RE.findall(read(f'{d}/fonts.xml')))
+    # The whole file, as the scaler writes it: <resources><fonts> and the base's <font>
+    # elements, every attribute as the base has it but the filename, and nothing else.
+    text = read(f'{d}/fonts.xml')
+    want_attrs = [dict(e, filename=f"{refsize[e['id']][0]}-{size_at(e['id'], w, h)}.fnt")
+                  for e in base_fonts if e.get('id') in refsize]
+    if not scaler_shape(text) or font_elements(text) != want_attrs:
+        ok(False, f"{d}/fonts.xml is not the scaler's: {font_elements(text)}"); bad += 1
     if set(got) != set(refsize):
         ok(False, f"{d}: declares {sorted(got)}, resources/fonts declares {sorted(refsize)}"); bad += 1
     for fid in sorted(set(got) & set(refsize)):
@@ -125,7 +160,7 @@ for w, h, shape in targets:
         elif not all(os.path.exists(f"{d}/{want[:-4]}.{e}") for e in ('fnt', 'png')):
             ok(False, f"{d} {fid}: {want} or its .png is missing"); bad += 1
 if not bad:
-    ok(True, f"every target declares each font at round(reference x k), and its files are there")
+    ok(True, "every target's fonts.xml is the scaler's, each font at round(reference x k), and its files are there")
 
 orphans = []
 for d in ['resources/fonts'] + [f"{x}/fonts" for x in dirs]:
@@ -144,6 +179,49 @@ for fid, (stem, size) in sorted(refsize.items()):
         b, r = f'resources/fonts/{stem}-{size}.{ext}', f'{refdir}/{stem}-{size}.{ext}'
         ok(os.path.exists(b) and os.path.exists(r) and sha(b) == sha(r),
            f"resources/fonts/{stem}-{size}.{ext} is {refdir}'s, byte for byte")
+
+# A product whose family has no fonts directory compiles with resources/fonts/'s copies, the
+# reference's 95 and 56, too large for any smaller screen, and nothing else would say so.
+dev_dir = os.environ.get('CIQ_DEVICES') or next(
+    (p for p in map(os.path.expanduser, DEVICE_DIRS) if os.path.isdir(p)), None)
+products = re.findall(r'<iq:product id="([^"]+)"', read('manifest.xml'))
+if dev_dir is None:
+    print(f"  SKIP  every product has a font family: no device definitions (looked in "
+          f"{', '.join(DEVICE_DIRS)}; set CIQ_DEVICES)")
+else:
+    families, missing = {}, []
+    for p in products:
+        f = os.path.join(dev_dir, p, 'compiler.json')
+        if os.path.exists(f):
+            families.setdefault(json.loads(read(f))['deviceFamily'], []).append(p)
+        else:
+            missing.append(p)
+    ok(not missing, f"every product in manifest.xml has a device definition in {dev_dir}"
+       + (f" (missing {missing})" if missing else ""))
+    want_fam = {f"{s}-{w}x{h}" for w, h, s in targets}
+    ok(set(families) == want_fam,
+       f"the {len(products)} products' families are exactly resolutions.json's targets"
+       + ("" if set(families) == want_fam else
+          f" (without fonts: {sorted(set(families) - want_fam)}, no product: {sorted(want_fam - set(families))})"))
+
+# The typeface and every bitmap, by the hashes make fonts records: a changed TTF, or a bitmap
+# copied over another of the same name, passes every other check.
+hashed = sorted([f'resources/fonts/{stem}.ttf' for stem in {s for s, _ in refsize.values()}] +
+                [f'{d}/{f}' for d in ['resources/fonts'] + [f"{x}/fonts" for x in dirs]
+                 if os.path.isdir(d) for f in os.listdir(d) if f.endswith(('.fnt', '.png'))])
+now = {p: sha(p) for p in hashed}
+if WRITE:
+    with open(HASHES, 'w', encoding='utf-8') as f:
+        f.writelines(f"{h}  {p}\n" for p, h in sorted(now.items()))
+    print(f"  wrote {HASHES}")
+recorded = {}
+if os.path.exists(HASHES):
+    for line in read(HASHES).splitlines():
+        h, p = line.split(None, 1)
+        recorded[p] = h
+changed = sorted(p for p in set(now) | set(recorded) if now.get(p) != recorded.get(p))
+ok(not changed, f"the typeface and the {len(hashed) - 1} bitmaps match {HASHES} (SHA-256)"
+   + (f" (differ: {changed[:4]}; make fonts records them)" if changed else ""))
 
 # ---------------------------------------------------------------------- glyphs
 print("\nGLYPHS")
@@ -263,7 +341,7 @@ check_rows(table, 'fonts.md')
 
 readme = read('README.md')
 START, END = '<!-- fonts.md: start -->', '<!-- fonts.md: end -->'
-if '--write-readme' in sys.argv[1:]:
+if WRITE:
     if START in readme and END in readme:
         head, rest = readme.split(START, 1)
         readme = head + START + '\n' + '\n'.join(table) + '\n' + END + rest.split(END, 1)[1]

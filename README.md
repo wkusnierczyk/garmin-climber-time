@@ -66,7 +66,9 @@ compiler picks for each product by its screen:
 
 The typeface is `RobotoCondensed[wght].ttf`, a variable font, from
 [google/fonts](https://github.com/google/fonts/tree/69d0549e8fc7ad72e1531734c81237be401ec4fd/ofl/robotocondensed)
-at commit `69d0549e8fc7ad72e1531734c81237be401ec4fd` (2026-03-12), with its `OFL.txt`.
+at commit `69d0549e8fc7ad72e1531734c81237be401ec4fd` (2026-03-12), with its `OFL.txt`. The TTF's own name table says
+"Licensed under the Apache License, Version 2.0", as Roboto once was; google/fonts publishes this
+file under the OFL 1.1 (`ofl/robotocondensed/`, with `OFL.txt`), and that is the licence it ships under here.
 [`resources/fonts/RobotoCondensed-Bold.ttf`](resources/fonts/RobotoCondensed-Bold.ttf) is its bold
 instance, weight 700, made with [`fonttools`](https://github.com/fonttools/fonttools) 4.60.2:
 
@@ -116,6 +118,12 @@ To change a size, a glyph or a resolution, edit `resources/fonts/`, then:
 make fonts         # every resources-<family>/fonts/, the copies in resources/fonts/, fonts.md and the table above
 make check-fonts   # the configuration, the bitmaps, the design's sizes and this table agree (no SDK, no font tools)
 ```
+
+`make fonts` records the SHA-256 of the typeface and of every bitmap in [`fonts.sha256`](fonts.sha256),
+and `make check-fonts` holds them to it. Where the SDK's device definitions are present (locally, or
+in CI's build job), it also checks that every product in `manifest.xml` belongs to a family with fonts,
+since one without would compile with the reference's sizes from `resources/fonts/`; without them it
+says it skipped that check.
 
 `make fonts` needs both tools (see [Build and sideload](#build-and-sideload)). It also copies the reference
 resolution's bitmaps into `resources/fonts/`, which the scaler does not refresh.

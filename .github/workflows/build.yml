@@ -78,10 +78,11 @@ jobs:
           make check-help
           make help
 
-      # The bitmap fonts against their configuration, the design's sizes and the README's
-      # table (tools/check-font-config.py, #17). Pure Python: no SDK, no font tools. It reads
-      # the .fnt files only, which are not LFS objects; the .png and .ttf ones it checks by
-      # hash need the lfs: true above.
+      # The bitmap fonts against their configuration, the design's sizes, the README's table
+      # and fonts.sha256 (tools/check-font-config.py, #17). Pure Python: no SDK, no font
+      # tools. The .png and .ttf files it hashes are LFS objects, hence the lfs: true above.
+      # There are no device definitions here, so it skips the check that every product has
+      # a font family; the build job runs it again where they are.
       - name: Fonts
         run: make check-fonts
 
@@ -147,6 +148,16 @@ jobs:
           openssl genrsa -out /tmp/ci_key.pem 4096
           openssl pkcs8 -topk8 -inform PEM -outform DER \
             -in /tmp/ci_key.pem -out /tmp/ci_key -nocrypt
+
+      # The font check again, here because the image has the device definitions
+      # (/root/.Garmin/ConnectIQ/Devices): every product in manifest.xml must belong to a
+      # family with fonts, or it would compile with resources/fonts/'s reference sizes (#17).
+      # CIQ_DEVICES names the directory outright, so the check cannot skip here: with no
+      # definitions there it fails on every product rather than passing.
+      - name: Fonts, with the device definitions
+        env:
+          CIQ_DEVICES: /root/.Garmin/ConnectIQ/Devices
+        run: make check-fonts
 
       # HOME, explicitly, because the image keeps the device definitions in
       # root's home -- /root/.Garmin/ConnectIQ/Devices -- while a container job
