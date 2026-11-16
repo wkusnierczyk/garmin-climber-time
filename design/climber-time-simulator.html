@@ -706,7 +706,7 @@ function groupLayout(ctx,G){
   const dh=.72*fs,th=.96*tfs,gap=.18*fs;
   return{fs,cw,tfs,tgw,yTime:G.H/2,yTags:G.H/2+dh/2+gap+th/2};
 }
-function drawGroupTags(ctx,G,R,rc,wallRGB){
+function drawGroupTags(ctx,G,R,rc){
   const L=groupLayout(ctx,G),fs=L.tfs;ctx.font=fontOf(fs,700);ctx.textAlign='center';ctx.textBaseline='alphabetic';
   const asc=fs*.72,pad=fs*.12,bw=L.tgw+2*pad,th=asc+2*pad,lw=Math.max(2,fs*.05),rad=Math.max(2,fs*.12),gap=fs*.18;
   const cx2=G.groupRight-bw/2,cx1=cx2-bw-gap,cy=L.yTags;
@@ -718,7 +718,7 @@ function drawGroupTags(ctx,G,R,rc,wallRGB){
     ctx.fillStyle=css(pc);glyph({beginner:'B',intermediate:'I',expert:'E'}[pf]||'E',cx2)}
 }
 function drawTags(ctx,G,R,rc,wallRGB){
-  if(G.timeGroup)return drawGroupTags(ctx,G,R,rc,wallRGB);
+  if(G.timeGroup)return drawGroupTags(ctx,G,R,rc);
   const items=[];
   if(S.showGrade)items.push({t:String(R.grade),filled:true});
   if(S.showProf)items.push({t:{beginner:'B',intermediate:'I',expert:'E'}[R.prof||S.prof]||'E',filled:false});
@@ -729,7 +729,7 @@ function drawTags(ctx,G,R,rc,wallRGB){
   for(const it of items){
     if(it.filled){ctx.fillStyle=css(rc);rrPath(ctx,x,y-th/2,bw,th,rad);ctx.fill();ctx.fillStyle=css(mix(rc,BLACK,.82))}
     else{const pc=digitColor(S[{beginner:'profB',intermediate:'profI',expert:'profE'}[R.prof||S.prof]],rc);
-      ctx.fillStyle=css(wallRGB);rrPath(ctx,x,y-th/2,bw,th,rad);ctx.fill();
+      ctx.fillStyle=css(G.full?wallRGB:BLACK);rrPath(ctx,x,y-th/2,bw,th,rad);ctx.fill();   // on the wall only in the right half (#45)
       ctx.strokeStyle=css(pc);ctx.lineWidth=lw;rrPath(ctx,x+lw/2,y-th/2+lw/2,bw-lw,th-lw,Math.max(1,rad-lw/2));ctx.stroke();ctx.fillStyle=css(pc)}
     ctx.fillText(it.t,x+bw/2,y+asc/2);x+=bw+gap;
   }
