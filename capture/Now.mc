@@ -33,10 +33,16 @@ module Now {
         return Frame.ALWAYS_ON;
     }
 
+    // 24-hour, whatever the simulator's default: the images do not depend on it.
+    function is24Hour() as Boolean {
+        return true;
+    }
+
     // With Frame.FALL, the second the climber hangs on the rope after his first fall of the
     // minute; a frame of a fall is chosen by what happens, not by a second that would go stale
     // with the next change to the routes. The pose is drawn for whole seconds, as on the watch:
-    // the first one at least half a second into the fall (Climb.FALL_T, DESIGN.md §12.3). A
+    // the first one past the drop (Climb.FALL_T, DESIGN.md §12.3), so the climber hangs on the
+    // rope, being lowered, whatever fraction of a second the fall starts at. A
     // minute with no fall stops the app, so that the capture shows the error, not a climb.
     function poseSecond(r as Route, s as Number) as Number {
         if (!Frame.FALL) {
@@ -45,7 +51,7 @@ module Now {
         var segs = r.plan(59 - Climb.LOWER).segs;
         for (var i = 0; i < segs.size(); i++) {
             if (segs[i].fall) {
-                return Math.ceil(segs[i].t0 + 0.5).toNumber();
+                return Math.ceil(segs[i].t0 + Climb.FALL_T).toNumber();
             }
         }
         throw new Lang.InvalidValueException("Frame.FALL: the climber does not fall in this minute");

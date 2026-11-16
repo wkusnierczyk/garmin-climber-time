@@ -303,6 +303,12 @@ def write_graphics(tools, shots, frames, arguments):
 
     os.makedirs(GRAPHICS, exist_ok=True)
     quiet = arguments.silent
+    # A gallery image left from a longer SHOTS would otherwise survive beside the new ones.
+    # Only the numbered ones: ClimberTimeHero.png, made by hand, lives here too.
+    numbered = re.compile(re.escape(GALLERY_NAME).replace(r"\{index\}", r"[0-9]+") + "$")
+    for name in os.listdir(GRAPHICS):
+        if numbered.match(name):
+            os.remove(os.path.join(GRAPHICS, name))
     if not quiet:
         print(f"Writing {os.path.relpath(GRAPHICS, PROJECT)}:")
 

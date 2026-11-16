@@ -36,6 +36,12 @@ module Now {
         return asleep || System.getDisplayMode() != System.DISPLAY_MODE_HIGH_POWER;
     }
 
+    // The watch's 12/24-hour setting.
+    (:live)
+    function is24Hour() as Boolean {
+        return System.getDeviceSettings().is24Hour;
+    }
+
     // The second the climber's pose is drawn for: the clock's. The capture build can ask for
     // the second of a fall instead, which depends on the route.
     (:live)

@@ -11,4 +11,5 @@
 # functions. Fail-closed both ways: without the exclusion, or with capture/ on another
 # build's path, the build stops on a redefinition rather than compiling the frozen clock.
 base.sourcePath = $(base.sourcePath);capture
-base.excludeAnnotations = live
+# Added to, not replaced: an exclusion monkey.jungle sets (an edition's, say) still holds.
+base.excludeAnnotations = $(base.excludeAnnotations);live

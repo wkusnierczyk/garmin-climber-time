@@ -103,7 +103,7 @@ class View extends WatchUi.WatchFace {
         var r = routesFor(absMin, g);
         var rc = Climb.GYM[r.colorIdx];
         var hh = ct.hour;
-        if (!System.getDeviceSettings().is24Hour) {
+        if (!Now.is24Hour()) {
             hh = hh % 12;
             if (hh == 0) {
                 hh = 12;
