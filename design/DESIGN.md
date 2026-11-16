@@ -289,7 +289,7 @@ Setting **Colour per route**:
 - **Gym colours, in order**: cycling through the palette.
 - **Hue wheel**: hue = (route start minute mod 60) × 6°, saturation 85 %, lightness 58 %. The colour itself encodes the minute.
 
-Gym palette: Yellow #F7C948, Green #34C46A, Blue #3A86FF, Red #EF4444, Purple #A06CF0, Orange #FF8C2B, Pink #FF6FB0, Teal #22C3C3, White #E8E8E8.
+Gym palette: Yellow #F7C948, Green #34C46A, Blue #3A86FF, Red #EF4444, Purple #A06CF0, Orange #FF8C2B, Pink #FF6FB0, Teal #22C3C3. No white (owner, 2026-11-16): the minutes take the route colour, and white minutes would merge with the white hours.
 
 The colour index is hour·60 + route ordinal within the hour (§10), so consecutive routes are consecutive indices even when routes span two minutes or a beer break intervenes.
 
@@ -504,7 +504,7 @@ The simulator's route tag reports the attempt: "no falls · tops out", "1 fall �
 
 **The scene** (owner, 2026-11-15):
 
-- The time in its own colours, at full brightness (owner, 2026-11-16: 55 % was too dim for daylight; at full brightness the scene stays far below 10 % by either measure, lit pixels or luminance, which Garmin's FAQ gives as the rule since the Venu 2), with a **checkerboard** over it: every other pixel black, the other half the next minute, so no pixel of the time is lit two minutes running.
+- The time, hours white and minutes grey (owner, 2026-11-16: the route colour stays on the holds), at full brightness (owner, 2026-11-16: 55 % was too dim for daylight; at full brightness the scene stays far below 10 % by either measure, lit pixels or luminance, which Garmin's FAQ gives as the rule since the Venu 2), with a **checkerboard** over it: every other pixel black, the other half the next minute, so no pixel of the time is lit two minutes running.
 - The route's holds as dots of radius max(1.2 px, 0.18·size) in the route colour at 60 %, stepping round the corners of a ±4 px square, one corner a minute (corner = minute mod 4). A 2·4 px step clears a dot's diameter; ±3 px fails once a minute (#4).
 - No climber, wall, T-nuts, ticks or tags.
 
@@ -737,7 +737,7 @@ Distances are fractions of W or H, multiples of the climber size c, or pixels wh
 
 | Element | Colour |
 |---|---|
-| Gym palette | #F7C948, #34C46A, #3A86FF, #EF4444, #A06CF0, #FF8C2B, #FF6FB0, #22C3C3, #E8E8E8 |
+| Gym palette | #F7C948, #34C46A, #3A86FF, #EF4444, #A06CF0, #FF8C2B, #FF6FB0, #22C3C3 |
 | Walls | slate #24292D, plywood #5C4A37, none #000000 |
 | Climber | #F5F5F5, #C4CAC6, #FFBC54 |
 | Digits | white #F6F6F6, grey #969C99 |

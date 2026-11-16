@@ -457,7 +457,7 @@ module Climb {
         [1.24, 0.56, [1.0, 0.25, 4.0, 0.35, 2.0, 0.10, 5.0, 0.30], 4, 0.55, 2.5]
     ] as Array<Array>;
 
-    const GYM = [0xF7C948, 0x34C46A, 0x3A86FF, 0xEF4444, 0xA06CF0, 0xFF8C2B, 0xFF6FB0, 0x22C3C3, 0xE8E8E8] as Array<Number>;
+    const GYM = [0xF7C948, 0x34C46A, 0x3A86FF, 0xEF4444, 0xA06CF0, 0xFF8C2B, 0xFF6FB0, 0x22C3C3] as Array<Number>;   // no white (DESIGN.md §7)
 
     const FALL_T = 1.0;
     const FALL_LOWER_T = 2.5;
@@ -526,13 +526,13 @@ module Climb {
         var a = roundRaw(r - 1);
         var b = roundRaw(r + 1);
         while (i == a || i == b) {
-            i = (i + 1) % 9;
+            i = (i + 1) % GYM.size();
         }
         return i;
     }
 
     function roundRaw(r as Number) as Number {
-        return Rand.hashMod(r.toLong() * 977 + 17, 9);
+        return Rand.hashMod(r.toLong() * 977 + 17, GYM.size());
     }
 
     // Three other routes on the wall, per day (DESIGN.md §5.3).
@@ -543,7 +543,7 @@ module Climb {
         var xb = g.x1 - (g.x1 - g.x0) * 0.06;
         var types = [JUG, CRIMP, SLOPER, PINCH] as Array<Number>;
         for (var r = 0; r < 3; r++) {
-            var ci = Rand.hashMod(day.toLong() * 5 + r, 9);
+            var ci = Rand.hashMod(day.toLong() * 5 + r, GYM.size());
             for (var i = 0; i < 11; i++) {
                 var x = lerp(xa, xb, rng.next());
                 var y = lerp(g.full ? g.H * 0.05 : g.ry0, g.ry1, rng.next());

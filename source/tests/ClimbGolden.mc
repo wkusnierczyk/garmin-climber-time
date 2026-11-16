@@ -28,23 +28,23 @@ module ClimbGolden {
     const HASH_OUT = [0l, 824515495l, 1952335732l, 3253613923l, 309200731l] as Array<Long>;
     const MUL = [0.680348081, 0.884524133, 0.724700797] as Array<Float>;
     const ROUND_IN = [0, 1, 2, 3, 491040 * 20, 491040 * 20 + 19, 491041 * 20] as Array<Number>;
-    const ROUND_OUT = [2, 7, 8, 0, 1, 0, 7] as Array<Number>;
+    const ROUND_OUT = [7, 0, 2, 1, 4, 0, 5] as Array<Number>;
     // Per route: offset, grade, proficiency (0 B, 1 I, 2 E), colour, moves, top level, jumps.
     const ROUTES = [
-        [0, 4, 0, 1, 36, 19, [] as Array<Number>],
-        [1, 4, 1, 1, 36, 19, [] as Array<Number>],
-        [2, 4, 2, 1, 36, 19, [] as Array<Number>],
-        [3, 5, 0, 7, 32, 17, [] as Array<Number>],
+        [0, 4, 0, 4, 36, 19, [] as Array<Number>],
+        [1, 4, 1, 4, 36, 19, [] as Array<Number>],
+        [2, 4, 2, 4, 36, 19, [] as Array<Number>],
+        [3, 5, 0, 2, 32, 17, [] as Array<Number>],
         [6, 6, 0, 6, 30, 16, [] as Array<Number>],
-        [9, 7, 0, 4, 26, 14, [2, 10] as Array<Number>],
-        [10, 7, 1, 4, 26, 14, [2, 10] as Array<Number>],
-        [12, 8, 0, 1, 24, 13, [2, 10, 14, 18] as Array<Number>],
-        [13, 8, 1, 1, 24, 13, [2, 10, 14, 18] as Array<Number>],
-        [14, 8, 2, 1, 24, 13, [2, 10, 14, 18] as Array<Number>],
-        [24, 7, 0, 1, 26, 14, [10, 16] as Array<Number>],
-        [28, 8, 1, 5, 24, 13, [2, 6, 14, 18] as Array<Number>],
+        [9, 7, 0, 7, 26, 14, [2, 10] as Array<Number>],
+        [10, 7, 1, 7, 26, 14, [2, 10] as Array<Number>],
+        [12, 8, 0, 5, 24, 13, [2, 10, 14, 18] as Array<Number>],
+        [13, 8, 1, 5, 24, 13, [2, 10, 14, 18] as Array<Number>],
+        [14, 8, 2, 5, 24, 13, [2, 10, 14, 18] as Array<Number>],
+        [24, 7, 0, 5, 26, 14, [10, 16] as Array<Number>],
+        [28, 8, 1, 1, 24, 13, [2, 6, 14, 18] as Array<Number>],
         [59, 8, 2, 0, 24, 13, [6, 12, 16, 20] as Array<Number>],
-        [60, 4, 0, 7, 36, 19, [] as Array<Number>]
+        [60, 4, 0, 5, 36, 19, [] as Array<Number>]
     ] as Array<Array>;
     // Per route: x, y, type (Climb enum) and size of each hold, k = -4 .. top level.
     const HOLDS = [

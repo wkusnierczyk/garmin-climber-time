@@ -11,6 +11,7 @@ module Draw {
     const TIME_CENTRED = true;            // time group: the digits row on H/2, tags below; see groupRows
     const CLIMBER = 0xF5F5F5;       // white
     const HOURS = 0xF6F6F6;         // white; the minutes and both tags take the route colour (DESIGN.md §14.3)
+    const AOD_MINUTES = 0x969C99;   // grey: always-on keeps the route colour for the holds only (§13.1)
     const ROPE = 0xD6D4C8;
     const ANCHOR = 0x969C98;
     const VECTOR_FACES = ["RobotoCondensedBold", "BionicBold", "Swiss721Bold"] as Array<String>;
@@ -131,7 +132,7 @@ module Draw {
     function lowPower(dc as Graphics.Dc, g as Geom, r as Route, rc as Number, hh as Number, mm as Number,
                       absMin as Number, font as Graphics.FontType, checker as Graphics.BitmapType) as Void {
         aa(dc);
-        time(dc, g, 0.0, 0.0, hh, mm, font, HOURS, rc);
+        time(dc, g, 0.0, 0.0, hh, mm, font, HOURS, AOD_MINUTES);
 
         // The checker over the time's box: its cells, plus the glyphs' overhang, sized from the
         // font drawn, which is the system's number font on products without the vector faces
