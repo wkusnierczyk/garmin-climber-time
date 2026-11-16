@@ -1,0 +1,232 @@
+# The release (#6), copied from Matrix Time's release.yml
+# (wkusnierczyk/garmin-matrix-time#110, wkusnierczyk/garmin-matrix-time#216,
+# wkusnierczyk/garmin-matrix-time#223, wkusnierczyk/garmin-matrix-time#240) and
+# cut down to one edition: Lite, from manifest.xml. A v* tag push becomes a draft GitHub release
+# with the signed store bundle attached. The only place the real developer key is
+# involved at all.
+#
+# A tag is a code release of the repository, and manifest.xml carries the face's
+# version. The release whose tag equals the manifest's version gives the face a new
+# version; a release that changes only the tooling leaves the manifest where it was
+# and still carries the bundle, at that earlier version. The notes end with a list
+# saying which. Uploading to the store is the owner's, and outside this workflow.
+#
+# Why the real key now, when build.yml generates a throwaway. monkeyc signs, it
+# does not authenticate: it accepts any key, so for proving that the face compiles
+# and that the bundle packages, a key made up on the spot proves everything a real
+# one would. A release artifact is different in kind. It is the file that goes to
+# the store, and the store identifies an app by the key it was signed with: signed
+# with anything else it is not an update of Climber Time, it is a different app
+# that cannot be published over it.
+#
+# Three things keep that key away from everything but a release:
+#
+#   - the trigger. This workflow runs on v* tag pushes and on nothing else -- no
+#     pull_request, no workflow_dispatch -- so no one else's branch reaches a job
+#     that holds it;
+#   - the environment. DEVELOPER_KEY lives in the `release` environment, whose
+#     only deployment rule admits v* tags. GitHub, not this file, then refuses the
+#     secret to any job on any other ref, including a workflow added later by
+#     someone who did not read this comment;
+#   - who can push a v* tag, which is now exactly who can sign a release.
+#     wkusnierczyk is the only account with write access to this repository, and
+#     a fork cannot push a tag here. Before adding a collaborator, add a tag
+#     ruleset restricting v* (README.md, "Releases").
+#
+# .gitignore guards developer_key* as a second line of defence, not the mechanism.
+#
+# Every action here is pinned to a commit SHA, as in build.yml, and here it
+# matters more: a tag like v7 is a mutable pointer, and a retarget would put new
+# code into a job that has the signing key on its filesystem and, in the last job,
+# a contents: write token. build.yml pins actions/checkout to the same SHA; bump
+# them together.
+#
+# Publishing to the Connect IQ store stays manual. The upload's first step
+# publishes and moves the listing's version irreversibly (Matrix Time lost 0.2.0
+# that way), so the release is a draft and the last outward step a decision.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+# Read-only by default. The bundle job adds pulling the private tester image (as in
+# build.yml), and the one job that creates the release widens it for itself.
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: version check
+    runs-on: ubuntu-latest
+    outputs:
+      bundles: ${{ steps.check.outputs.bundles }}
+    steps:
+      # No lfs: true here: this job reads manifest.xml, CHANGELOG.md and the
+      # plain-text store/ files and compiles nothing. The full history, to check
+      # where the tag points.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # A release is main's head after the owner fast-forwards main to the release
+      # branch (playbook/release.md, The release branch), so the tagged commit must
+      # be on main. A tag on dev-<version> before the fast-forward, or on any other
+      # commit, would sign a bundle of a commit main does not have.
+      - name: Check the tag is on main
+        run: |
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || {
+            echo "::error::$GITHUB_REF_NAME ($GITHUB_SHA) is not on main. Fast-forward main to the release branch, then tag main's head."
+            exit 1; }
+
+      # Before the container is even pulled. A tag is a name someone typed, and
+      # nothing about `git tag` consults the manifest or CHANGELOG.md, while a
+      # version number, once used in the store, cannot be used again.
+      # tools/release-notes.py refuses unless manifest.xml is not ahead of the
+      # tag, CHANGELOG.md has a dated section for it, and store/lite/ has the
+      # description and, for a new version, its What's New. It writes that section
+      # as the notes, with the list of bundles at the end, and gives the bundle
+      # job's matrix: one entry, with the manifest's version. Pure Python, seconds.
+      - name: Check the tag against the manifest, CHANGELOG.md and the store texts
+        id: check
+        run: |
+          tools/release-notes.py "$GITHUB_REF_NAME" -o notes.md -b bundles.json
+          echo "bundles=$(cat bundles.json)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: release-notes
+          path: notes.md
+
+  bundle:
+    name: signed bundle (${{ matrix.edition }} ${{ matrix.version }})
+    needs: version
+    runs-on: ubuntu-latest
+    # One entry today (Lite). Kept as a matrix so that a Premium edition, if the
+    # face gets one (design/DESIGN.md §18), is one more entry in
+    # tools/release-notes.py rather than a new job.
+    strategy:
+      matrix:
+        include: ${{ fromJSON(needs.version.outputs.bundles) }}
+    # Job-level permissions replace the workflow's, so contents: read is restated.
+    permissions:
+      contents: read
+      packages: read
+    # The gate. Everything about this job that touches the key depends on this
+    # one line; see the note at the top.
+    environment: release
+    container:
+      # The same private image and digest as build.yml, with the same credentials
+      # (packages: read above, and the package's grant to this repository). Bump
+      # them together: a release built in a different image from the one CI proved
+      # the commit in is not the thing that was proved.
+      image: ghcr.io/wkusnierczyk/connectiq-tester@sha256:43c0f915cf5dbb721c87dabf36bcb0109ce33d42414e05c9472b53bc0b14914e  # 9.3.0-2026-11-16
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      # The image is ubuntu:jammy plus the SDK and carries none of these: make,
+      # because the build is spelled in the Makefile; git, so that actions/checkout
+      # clones; git-lfs, so that its lfs: true does anything -- without it checkout
+      # fails outright. No python3: make export needs none.
+      - name: Install make, git and git-lfs
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends make git git-lfs
+
+      # lfs: true because the launcher icon is an LFS object, and a checkout
+      # without it leaves a 129-byte pointer file that monkeyc compiles as a
+      # drawable without a word. A release bundle is the worst place to find out.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          lfs: true
+
+      # The secret holds the DER key base64-encoded, because a GitHub secret is
+      # text and the key is binary. Decoded to a file because -y takes a path.
+      #
+      # The openssl check says which of the two usual mistakes it was -- the PEM
+      # instead of the DER, or the DER without the base64 wrapper -- which monkeyc
+      # would report as a stack trace that mentions neither. Its output goes to
+      # /dev/null; no key material is printed either way.
+      - name: Write the developer key
+        env:
+          DEVELOPER_KEY: ${{ secrets.DEVELOPER_KEY }}
+        run: |
+          test -n "$DEVELOPER_KEY" || {
+            echo "::error::DEVELOPER_KEY is empty. See \"Releases\" in README.md."; exit 1; }
+          printf '%s' "$DEVELOPER_KEY" | base64 -d > /tmp/developer_key
+          chmod 600 /tmp/developer_key
+          openssl pkcs8 -inform DER -nocrypt -in /tmp/developer_key -out /dev/null || {
+            echo "::error::DEVELOPER_KEY did not decode to a DER PKCS#8 private key."
+            echo "::error::Store base64 of developer_key, not developer_key.pem."; exit 1; }
+
+      # The same make export a developer runs before an upload: one signed .iq
+      # covering every product manifest.xml names, named by the manifest's version,
+      # ClimberTime-0.1.0.iq. The name is checked against the version the version
+      # check read from the manifest, so a mismatch fails the job rather than
+      # attaching a misnamed bundle. HOME, because the image keeps the device
+      # definitions in root's home while a container job runs with
+      # HOME=/github/home, and monkeyc finds them by expanding ~.
+      - name: Export the store bundle
+        shell: bash
+        env:
+          HOME: /root
+          BUNDLE_APP: ${{ matrix.app }}
+          BUNDLE_VERSION: ${{ matrix.version }}
+        run: |
+          make export SDK_BIN=/connectiq/bin DEV_KEY=/tmp/developer_key
+          ls -l "export/$BUNDLE_APP-$BUNDLE_VERSION.iq"
+
+      # if: always(), so a failed export does not leave the key behind for
+      # whatever steps this job grows later. The container goes away with the job
+      # regardless; this guards against the next step added above the upload.
+      - name: Remove the developer key
+        if: always()
+        run: rm -f /tmp/developer_key
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: store-bundle-${{ matrix.edition }}
+          path: export/ClimberTime-*.iq
+          if-no-files-found: error
+
+  release:
+    name: draft release
+    needs: [version, bundle]
+    runs-on: ubuntu-latest
+    # The only job that writes anything, and the only one that widens the
+    # workflow's default. It never sees the signing key: it attaches a file the
+    # previous job signed.
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      # Refuse rather than clobber: upload --clobber would overwrite a release
+      # that may already be published. Deleting an unwanted draft is one click,
+      # and the caller's decision.
+      #
+      # GH_REPO, because this job does not check the repository out, and gh
+      # resolves its repository from --repo, then GH_REPO, then the git remote --
+      # never GITHUB_REPOSITORY. Without it every gh release call here dies with
+      # "failed to determine base repo" (wkusnierczyk/garmin-matrix-time#110).
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "::error::a release already exists for $GITHUB_REF_NAME."
+            echo "::error::Delete it if it is an unwanted draft, then re-run this workflow."
+            exit 1
+          fi
+          gh release create "$GITHUB_REF_NAME" \
+            --draft \
+            --verify-tag \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file artifacts/notes.md \
+            artifacts/ClimberTime-*.iq
+          echo "Draft release $GITHUB_REF_NAME created. Review the notes and publish it."
