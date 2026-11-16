@@ -1,0 +1,259 @@
+# Build, package and test verification (#5), copied from Matrix Time's build.yml
+# (wkusnierczyk/garmin-matrix-time#41, #102, #109) and cut down to one edition:
+# Lite, from manifest.xml. Every push to main or a dev-* release branch, and every pull request, runs the
+# checks that need no SDK, compiles the face for one product per deviceFamily,
+# exports the store bundle -- which builds every product manifest.xml names -- and
+# runs the unit tests in the simulator under a virtual display.
+#
+# Why a container rather than a plain runner. The SDK is a public download, but
+# the device definitions monkeyc compiles against are not in it: the SDK manager
+# pulls them from monkeynet.garmin.com behind a Garmin account sign-in, one
+# product at a time, so they have to arrive in an image.
+#
+# The image is our own, ghcr.io/wkusnierczyk/connectiq-tester: a private copy of
+# matco/connectiq-tester's recipe (private repository wkusnierczyk/connectiq-tester)
+# with a resources layer built from our own SDK manager installation, so that no
+# third party redistributes Garmin's device definitions on our behalf
+# (wkusnierczyk/garmin-watch-faces#37). Tag 9.3.0-2026-11-16: SDK 9.3.0, 94 device
+# definitions, every product in manifest.xml among them.
+#
+# It is a PRIVATE package. The container jobs log in to ghcr.io with the run's
+# GITHUB_TOKEN, which needs packages: read (below), and the package's settings
+# must grant this repository read access ("Manage Actions access"), or the pull
+# is refused. A pull request from a FORK may not be able to pull it at all: a fork
+# run gets a read-only token and no secrets, and a repository grant covers this
+# repository, not its forks. Such a PR runs the consistency checks only: the build
+# and test jobs are skipped for it (their if:), where they would only
+# fail at the image pull, which says nothing about the change
+# (wkusnierczyk/garmin-watch-faces#37, step 4).
+#
+# Pinned by digest, not by tag, with the tag trailing. A tag is mutable, so a
+# retag would swap the whole build environment, and the code CI runs, with no
+# diff here to show it. An SDK bump is then a visible one-line change with a
+# green run behind it. (The Makefile deliberately does NOT pin the SDK -- it
+# follows whatever the SDK manager has selected -- but a local developer chooses
+# that; CI does not.) The build and test jobs pin the same digest: bump both
+# together, and re-check that the image still defines every product in
+# manifest.xml. A product added to the manifest that the image lacks fails the
+# build job (tools/ci-devices.py) and needs a rebuilt resources image.
+#
+# No developer key is involved. monkeyc accepts any key, so each job signs with a
+# throwaway one generated per run; the real key is the identity every published
+# app is signed with and does not belong in a public repository's secrets.
+name: build
+
+on:
+  push:
+    branches: [main, 'dev-*']
+  pull_request:
+
+# Read the repository, and pull the private tester image; nothing else.
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  checks:
+    name: consistency checks
+    runs-on: ubuntu-latest
+    steps:
+      # lfs: true, and not only for tidiness. The launcher icon is an LFS object,
+      # and a checkout without it leaves a 129-byte pointer file where the .png
+      # should be, which monkeyc compiles as a drawable without a word.
+      #
+      # Pinned to a commit SHA, with the release it was published as trailing,
+      # for the reason the image is pinned by digest: a tag like v7 is a mutable
+      # pointer, and a retarget upstream would change the code CI runs with no
+      # diff here to show it. Nothing secret is reachable from this workflow, so
+      # the cost would be a wrong CI result rather than a stolen identity; still,
+      # every checkout below pins the same SHA. Bump them together.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          lfs: true
+
+      # Every target in .PHONY and every ?= variable has a "## " help line. make
+      # help runs too, because it must work with no SDK, and this runner has none.
+      - name: Make help
+        run: |
+          make check-help
+          make help
+
+  build:
+    name: build and export
+    runs-on: ubuntu-latest
+    # Skipped for a fork's pull request, which cannot pull the private image (top).
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    container:
+      # Private: see the note at the top for the credentials and the package grant.
+      image: ghcr.io/wkusnierczyk/connectiq-tester@sha256:43c0f915cf5dbb721c87dabf36bcb0109ce33d42414e05c9472b53bc0b14914e  # 9.3.0-2026-11-16
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      # The image is ubuntu:jammy plus the SDK, so it carries none of these as a
+      # matter of its own design. make is how the build is spelled everywhere
+      # else in this project -- calling monkeyc directly here would be a second
+      # copy of the build flags, free to drift from the Makefile's. git lets
+      # actions/checkout clone rather than fall back to a tarball download, and
+      # git-lfs is what makes its lfs: true do anything: without it checkout fails
+      # outright with "Unable to locate executable file: git-lfs".
+      #
+      # python3 is named even though it is already there: it arrives as a
+      # transitive dependency of the simulator's GTK stack rather than because
+      # anyone chose it, so a slimmer image would take tools/ci-devices.py with
+      # it and the failure would look like a broken script.
+      - name: Install make, git, git-lfs and python3
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends make git git-lfs python3
+
+      # lfs: true, and the SHA pin, for the reasons given in the checks job.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          lfs: true
+
+      # See the note at the top: a throwaway key, generated per run, never stored.
+      - name: Generate a throwaway signing key
+        run: |
+          openssl genrsa -out /tmp/ci_key.pem 4096
+          openssl pkcs8 -topk8 -inform PEM -outform DER \
+            -in /tmp/ci_key.pem -out /tmp/ci_key -nocrypt
+
+      # HOME, explicitly, because the image keeps the device definitions in
+      # root's home -- /root/.Garmin/ConnectIQ/Devices -- while a container job
+      # runs with HOME=/github/home. Both monkeyc and tools/ci-devices.py find the
+      # definitions by expanding ~, so without this neither looks in the one
+      # place they exist.
+      #
+      # The device set is resolved into a variable first, and the job's bash runs
+      # under -e, so a failure to resolve it stops the step. Read straight into
+      # the loop from a process substitution, the script's exit status would be
+      # discarded: the step would read an empty list, build nothing, and report
+      # success (Matrix Time paid for this twice). The empty-list guard is the
+      # second half of the same rule.
+      #
+      # Past that, every family is built even after one fails, so a run reports
+      # all the damage rather than the first of it. A make in an if condition is
+      # exempt from -e, which is what lets the status be accumulated.
+      - name: Build one product per device family
+        shell: bash
+        env:
+          HOME: /root
+        run: |
+          devices=$(python3 tools/ci-devices.py)
+          test -n "$devices" || { echo "::error::no device families resolved"; exit 1; }
+          echo "Building $(echo "$devices" | wc -l) families:"
+          echo "$devices"
+
+          mkdir -p bin
+          status=0
+          while read -r family device; do
+            echo "::group::$family -- $device"
+            if make build DEVICE="$device" \
+                          SDK_BIN=/connectiq/bin \
+                          DEV_KEY=/tmp/ci_key \
+                          OUTPUT="bin/$device.prg"; then
+              ls -l "bin/$device.prg"
+            else
+              echo "::error::build failed for $device ($family)"
+              status=1
+            fi
+            echo "::endgroup::"
+          done <<< "$devices"
+          exit $status
+
+      # A different check from the one above rather than a larger one: monkeyc -e
+      # builds EVERY product manifest.xml names, not one per family, and fails if
+      # any one of them lacks a device definition. Otherwise the only thing that
+      # ever builds the whole list is a release being cut, at the worst moment.
+      #
+      # Through make export, like every other build here, so CI and a developer's
+      # own export are one command with one set of flags. Deliberately no if:
+      # clause: a failure in the per-family build fails here too, on the same
+      # cause, so the default -- skip once an earlier step has failed -- reports
+      # the fault once.
+      - name: Export the store bundle
+        shell: bash
+        env:
+          HOME: /root
+        run: |
+          make export SDK_BIN=/connectiq/bin DEV_KEY=/tmp/ci_key
+          ls -l export/*.iq
+
+  test:
+    name: unit tests
+    runs-on: ubuntu-latest
+    # Skipped for a fork's pull request, which cannot pull the private image (top).
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    # monkeydo pushes a .prg into a RUNNING simulator, and the simulator is a GUI
+    # application. The image carries xvfb because its own entrypoint runs the
+    # simulator under one, but a container job replaces that entrypoint with its
+    # own command, so the display is this workflow's to start.
+    #
+    # Separate from build: the two prove different things and fail for different
+    # reasons, so a red here should not be read as a compile failure.
+    #
+    # timeout-minutes because a hung monkeydo is this job's characteristic
+    # failure: it produces no output and never returns, and GitHub's default would
+    # let that burn six hours. The suite needs a small fraction of this.
+    timeout-minutes: 15
+    container:
+      # The same digest, and the same credentials, as the build job; bump both
+      # together.
+      image: ghcr.io/wkusnierczyk/connectiq-tester@sha256:43c0f915cf5dbb721c87dabf36bcb0109ce33d42414e05c9472b53bc0b14914e  # 9.3.0-2026-11-16
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      # make, git and git-lfs for the reasons the build job gives. Two more:
+      #
+      #   - netcat, which ubuntu:jammy does not carry. make sim probes port 1234
+      #     until the simulator accepts connections and gives up, with advice,
+      #     after sixty seconds: a deterministic wait rather than a flat sleep;
+      #   - xauth, which xvfb only Recommends and --no-install-recommends
+      #     therefore skips; xvfb-run exits non-zero without it. xvfb itself is
+      #     already in the image; naming it makes the dependency ours.
+      - name: Install make, git, git-lfs, netcat and xvfb
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            make git git-lfs netcat-openbsd xvfb xauth
+
+      # lfs: true, and the SHA pin, for the reasons given in the checks job. The
+      # test build compiles the same resources the app does.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          lfs: true
+
+      # monkeyc signs the test build like any other, so this job needs a key too.
+      - name: Generate a throwaway signing key
+        run: |
+          openssl genrsa -out /tmp/ci_key.pem 4096
+          openssl pkcs8 -topk8 -inform PEM -outform DER \
+            -in /tmp/ci_key.pem -out /tmp/ci_key -nocrypt
+
+      # xvfb-run -a starts an X server on the first free display, runs the command
+      # against it and tears it down afterwards. The whole of make test goes inside
+      # it, not just monkeydo: the target starts the simulator itself (make sim),
+      # which has to see the same DISPLAY.
+      #
+      # DEVICE is named rather than left to the Makefile's default, which is a
+      # developer's convenience and free to change. Which product it is does not
+      # matter: the suite tests logic, not layout.
+      #
+      # HOME for the device definitions, as in the build job.
+      #
+      # What make test reports on is the anchored "^PASSED (" line, not monkeydo's
+      # exit status, which is 1 whether every test passed or one failed
+      # (wkusnierczyk/garmin-matrix-time#23). With no (:test) functions it fails
+      # with "No tests ran": an empty run is not a passing one. Do not "simplify"
+      # either into trusting the status.
+      - name: Run the unit tests
+        shell: bash
+        timeout-minutes: 10
+        env:
+          HOME: /root
+        run: |
+          xvfb-run -a make test DEVICE=epix2pro47mm \
+                                SDK_BIN=/connectiq/bin \
+                                DEV_KEY=/tmp/ci_key
