@@ -350,9 +350,10 @@ class Route {
         for (var v = 0; v < nv; v++) {
             var k = 3 + (rng.next() * (lmax - 6)).toNumber();
             var h = holds[k + 4];
-            var vx = h.x + (rng.next() - 0.5) * hs * 1.4;
-            var vr = hs * (1.7 + rng.next() * 0.6);
-            vols.add(new Volume(vx, h.y + hs * 0.3, vr, rng.next() * 6.283));
+            // The grade's hold size, as the simulator's hs = hs0 * sz (#2).
+            var vx = h.x + (rng.next() - 0.5) * hsg * 1.4;
+            var vr = hsg * (1.7 + rng.next() * 0.6);
+            vols.add(new Volume(vx, h.y + hsg * 0.3, vr, rng.next() * 6.283));
         }
 
         // Jumps: hand moves, at least one limb cycle apart (makeDynos).

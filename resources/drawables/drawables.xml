@@ -1,3 +1,5 @@
 <drawables>
     <bitmap id="LauncherIcon" filename="launcher_icon.png"/>
+    <!-- Always-on: black on even (x + y), transparent on odd, drawn over the time (DESIGN.md §13.1). -->
+    <bitmap id="Checker" filename="checker.png" dithering="none"/>
 </drawables>

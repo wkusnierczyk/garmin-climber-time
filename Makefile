@@ -34,6 +34,8 @@ EVERY   ?= 5
 TRIES   ?= 6
 ## Seconds before the second attempt, doubled each time
 BACKOFF ?= 5
+## The Chrome make golden runs headless to compute the simulator's values
+CHROME  ?= /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
 
 # The store bundle export writes, named by manifest.xml's version
 # (wkusnierczyk/garmin-matrix-time#216):
@@ -71,7 +73,7 @@ BUILD_FLAGS  := -w -y "$(DEV_KEY)" -d $(DEVICE) -f monkey.jungle
 TEST_FLAGS   := $(BUILD_FLAGS) --unit-test
 EXPORT_FLAGS := -e -r -w -y "$(DEV_KEY)" -f monkey.jungle
 
-.PHONY: all build sim run test sideload export check-garmin-font-scaler \
+.PHONY: all build sim run test golden sideload export check-garmin-font-scaler \
   install-garmin-font-scaler clean help check-help
 
 ## The default: build [DEVICE DEV_KEY]
@@ -115,6 +117,12 @@ test:
 	    echo "No tests ran: the build has no (:test) functions, or the simulator did not answer."; exit 1; }; \
 	  printf '%s\n' "$$output"; \
 	  printf '%s\n' "$$output" | grep -qE '^PASSED \(' || { echo "Unit tests did not report PASSED."; exit 1; }
+
+# The tests compare the watch with the browser simulator (design/), never with the watch's
+# own output: this recomputes source/tests/ClimbGolden.mc from the simulator in headless Chrome.
+## Regenerate the tests' golden values from the browser simulator [CHROME]
+golden:
+	@python3 tools/make-golden.py "$(CHROME)"
 
 ## Build for the connected watch and copy it over USB, retrying with backoff (MTP; brew install libmtp) [DEV_KEY WAIT EVERY TRIES BACKOFF CIQ_HOME]
 sideload:

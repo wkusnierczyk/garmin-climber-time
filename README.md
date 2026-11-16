@@ -27,8 +27,13 @@ simulator, with the settings fixed:
   centre panel with the time and tags stacked or in one line on either side. Premium may offer
   them as settings.
 
-Not in the prototype: settings, an always-on scene (the same face is drawn in every display
-mode) and the custom digit font (the watch's Roboto Condensed Bold vector font stands in).
+- Always-on shows the time under a fine checkerboard that swaps its pixels every minute, and the
+  route's holds as dots that step a few pixels once a minute; no climber, wall or tags. That keeps
+  the screen inside the AMOLED burn-in protector's limits: under 3 % of the pixels lit, and no
+  pixel lit three minutes running (DESIGN.md §13.1).
+
+Not in the prototype: settings and the custom digit font (the watch's Roboto Condensed Bold
+vector font stands in).
 
 ## Devices
 
@@ -70,6 +75,7 @@ make build      # ClimberTime.prg for DEVICE (default epix2pro47mm)
 make run        # build and load into the simulator
 make sideload   # build for the watch connected by USB and copy it over
 make test       # run the (:test) functions in the simulator
+make golden     # recompute the tests' expected values from the browser simulator (Chrome)
 make export     # export/ClimberTime-<version>.iq, the signed store bundle, version from manifest.xml
 make help       # every target and variable, with the values they have now
 ```

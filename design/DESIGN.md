@@ -504,11 +504,11 @@ The simulator's route tag reports the attempt: "no falls · tops out", "1 fall �
 
 **The scene** (owner, 2026-11-15):
 
-- The time at 55 % brightness (colour scaled toward black), with a **checkerboard** over it: every other pixel black, the other half the next minute, so no pixel of the time is lit two minutes running.
+- The time in its own colours, at full brightness (owner, 2026-11-16: 55 % was too dim for daylight; at full brightness the scene stays far below 10 % by either measure, lit pixels or luminance, which Garmin's FAQ gives as the rule since the Venu 2), with a **checkerboard** over it: every other pixel black, the other half the next minute, so no pixel of the time is lit two minutes running.
 - The route's holds as dots of radius max(1.2 px, 0.18·size) in the route colour at 60 %, stepping round the corners of a ±4 px square, one corner a minute (corner = minute mod 4). A 2·4 px step clears a dot's diameter; ±3 px fails once a minute (#4).
 - No climber, wall, T-nuts, ticks or tags.
 
-**Measured** in the simulator, every minute of a day in 12 h and 24 h, counting any non-black pixel: at most 2.65 % lit on the screens of §2, no pixel lit three minutes, the longest run 2 minutes (the holds). Simple corner jitter of the time fails below W/12, which pushes the time off the bezel; the figures for the alternatives are on #4. The simulator's *Check always-on burn-in over a day* repeats the check.
+**Measured** in the simulator, every minute of a day in 12 h and 24 h, counting any non-black pixel: at most 2.72 % lit on the screens of §2 (2026-11-16, the time at full brightness), no pixel lit three minutes, the longest run 2 minutes (the holds). Simple corner jitter of the time fails below W/12, which pushes the time off the bezel; the figures for the alternatives are on #4. The simulator's *Check always-on burn-in over a day* repeats the check.
 
 ### 13.2 MIP low power
 
