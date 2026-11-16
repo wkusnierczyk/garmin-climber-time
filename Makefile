@@ -73,7 +73,8 @@ BUILD_FLAGS  := -w -y "$(DEV_KEY)" -d $(DEVICE) -f monkey.jungle
 TEST_FLAGS   := $(BUILD_FLAGS) --unit-test
 EXPORT_FLAGS := -e -r -w -y "$(DEV_KEY)" -f monkey.jungle
 
-.PHONY: all build sim run test golden sideload export clean help check-help
+.PHONY: all build sim run test golden sideload export check-ttf2bmp install-ttf2bmp clean help \
+  check-help
 
 ## The default: build [DEVICE DEV_KEY]
 all: build
@@ -166,6 +167,61 @@ export:
 	  END { exit status + 0 }'
 	@mkdir -p $(dir $(EXPORT)) && mv "$(EXPORT_STAGE)/$(APP).iq" $(EXPORT)
 	@echo "Export complete: $(EXPORT)"
+
+# The font tools (#17): ttf2bmp turns a TTF into bitmap fonts, garmin-font-scaler drives
+# it once per resolution. Neither comes with the SDK. The check looks on PATH, where
+# garmin-font-scaler looks too; install-ttf2bmp puts ttf2bmp in BIN_DIR, which must be on PATH.
+## Where install-ttf2bmp puts ttf2bmp; must be on PATH
+BIN_DIR ?= $(HOME)/.local/bin
+# The lowest ttf2bmp the fonts build with (--stroke came in 0.3.0), and the release
+# install-ttf2bmp fetches (#31). Each release carries a .tar.gz of one binary for
+# darwin-arm64, darwin-amd64 and linux-amd64; the binary's name inside varies (linux-amd64
+# holds ttf2bmp-linux), so the install takes the one file the archive holds.
+TTF2BMP_VERSION := 0.3.0
+TTF2BMP_RELEASES := https://github.com/wkusnierczyk/ttf2bmp/releases/download
+
+# Exits 1 when $(1)'s version, MAJOR.MINOR.PATCH, is below $(2)'s, or is not one.
+version_at_least = awk -v have="$(1)" -v need="$(2)" 'BEGIN { \
+  if (have !~ /^[0-9]+\.[0-9]+\.[0-9]+$$/) exit 1; split(have, h, "."); split(need, n, "."); \
+  for (i = 1; i <= 3; i++) { if (h[i] + 0 != n[i] + 0) exit (h[i] + 0 < n[i] + 0) } }'
+
+# "ttf2bmp --version" prints "ttf2bmp version v0.3.0".
+define require_ttf2bmp
+@have=$$(ttf2bmp --version 2>/dev/null | head -n 1 | sed -nE 's/.*version v?([0-9]+\.[0-9]+\.[0-9]+).*/\1/p'); \
+  $(call version_at_least,$$have,$(TTF2BMP_VERSION)) || { \
+  if command -v ttf2bmp >/dev/null; then \
+    echo "make $@ needs ttf2bmp $(TTF2BMP_VERSION) or newer; $$(command -v ttf2bmp) is $${have:-of no known version}."; \
+  else echo "make $@ needs ttf2bmp $(TTF2BMP_VERSION) or newer, and there is none on PATH."; fi; \
+  echo "Install it into $(BIN_DIR) with: make install-ttf2bmp"; exit 1; }
+endef
+
+## Check that PATH has ttf2bmp, new enough for the fonts
+check-ttf2bmp:
+	$(require_ttf2bmp)
+	@echo "ttf2bmp $$(ttf2bmp --version | sed -nE 's/.*version v?//p') at $$(command -v ttf2bmp)."
+
+# Replaces a ttf2bmp already in BIN_DIR, even a newer one, but only with a binary that runs and
+# reports TTF2BMP_VERSION or newer. curl and tar are on macOS and on the CI image.
+## Install ttf2bmp's release binary into BIN_DIR [BIN_DIR]
+install-ttf2bmp:
+	@os=$$(uname -s | tr '[:upper:]' '[:lower:]'); arch=$$(uname -m); \
+	case $$arch in x86_64|amd64) arch=amd64 ;; arm64|aarch64) arch=arm64 ;; esac; \
+	case $$os-$$arch in darwin-arm64|darwin-amd64|linux-amd64) ;; \
+	  *) echo "ttf2bmp $(TTF2BMP_VERSION) has no release binary for $$os-$$arch."; exit 1 ;; esac; \
+	url="$(TTF2BMP_RELEASES)/v$(TTF2BMP_VERSION)/ttf2bmp-$$os-$$arch.tar.gz"; \
+	tmp=$$(mktemp -d) || exit 1; trap 'rm -rf "$$tmp"' EXIT; \
+	echo "Downloading $$url..."; \
+	curl -fsSL -o "$$tmp/ttf2bmp.tar.gz" "$$url" || { echo "Download failed."; exit 1; }; \
+	mkdir "$$tmp/x" && tar -xzf "$$tmp/ttf2bmp.tar.gz" -C "$$tmp/x" || exit 1; \
+	set -- "$$tmp"/x/*; test $$# -eq 1 && test -f "$$1" || { \
+	  echo "The archive does not hold one file: $$(ls "$$tmp/x" | tr '\n' ' ')"; exit 1; }; \
+	chmod 755 "$$1"; got=$$("$$1" --version 2>/dev/null | head -n 1 | sed -nE 's/.*version v?([0-9]+\.[0-9]+\.[0-9]+).*/\1/p'); \
+	$(call version_at_least,$$got,$(TTF2BMP_VERSION)) || { \
+	  echo "The downloaded file does not run as ttf2bmp $(TTF2BMP_VERSION); nothing installed."; exit 1; }; \
+	mkdir -p "$(BIN_DIR)" && install -m 755 "$$1" "$(BIN_DIR)/ttf2bmp" || exit 1; \
+	echo "Installed $$("$(BIN_DIR)/ttf2bmp" --version) at $(BIN_DIR)/ttf2bmp."; \
+	case ":$$PATH:" in *":$(BIN_DIR):"*) ;; \
+	  *) echo "$(BIN_DIR) is not on PATH: add it, or make check-ttf2bmp will not find ttf2bmp." ;; esac
 
 ## Remove build output
 clean:
