@@ -63,6 +63,15 @@ Building the fonts needs [`ttf2bmp`](https://github.com/wkusnierczyk/ttf2bmp) 0.
 `PATH`. `make install-ttf2bmp` downloads its release binary for macOS (arm64 or Intel) or Linux
 (x86-64) into `~/.local/bin` (`BIN_DIR`), which must be on `PATH`; `make check-ttf2bmp` checks it.
 
+It also needs [`garmin-font-scaler`](https://github.com/wkusnierczyk/garmin-font-scaler)
+0.3.0 or newer on `PATH`. It is not on PyPI: `make install-garmin-font-scaler` installs it from its
+tag with `pip`, in a virtual environment of its own (`~/.local/share/venvs/garmin-font-scaler`,
+`FONT_SCALER_VENV`), linked into `~/.local/bin` (`BIN_DIR`), which must be on `PATH`;
+`make check-garmin-font-scaler` checks it. It needs `git`, and a Python 3 that can make a virtual
+environment with `pip`: it tries `/usr/bin/python3`, then `python3` (Homebrew's cannot on some Macs);
+pick another with `FONT_SCALER_PYTHON=/path/to/python3`. On Ubuntu that takes `python3-venv`; on a
+Mac, Apple's Python and `git` need the Xcode command-line tools (`xcode-select --install`).
+
 `make sideload` waits up to 5 minutes for the watch to appear, then retries detection and
 installation with doubling gaps; a watch just plugged in or restarted can take a while to offer
 MTP. Tune with `WAIT`, `EVERY`, `TRIES` and `BACKOFF`.

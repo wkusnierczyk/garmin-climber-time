@@ -73,8 +73,8 @@ BUILD_FLAGS  := -w -y "$(DEV_KEY)" -d $(DEVICE) -f monkey.jungle
 TEST_FLAGS   := $(BUILD_FLAGS) --unit-test
 EXPORT_FLAGS := -e -r -w -y "$(DEV_KEY)" -f monkey.jungle
 
-.PHONY: all build sim run test golden sideload export check-ttf2bmp install-ttf2bmp clean help \
-  check-help
+.PHONY: all build sim run test golden sideload export check-ttf2bmp install-ttf2bmp \
+  check-garmin-font-scaler install-garmin-font-scaler clean help check-help
 
 ## The default: build [DEVICE DEV_KEY]
 all: build
@@ -170,8 +170,8 @@ export:
 
 # The font tools (#17): ttf2bmp turns a TTF into bitmap fonts, garmin-font-scaler drives
 # it once per resolution. Neither comes with the SDK. The check looks on PATH, where
-# garmin-font-scaler looks too; install-ttf2bmp puts ttf2bmp in BIN_DIR, which must be on PATH.
-## Where install-ttf2bmp puts ttf2bmp; must be on PATH
+# garmin-font-scaler looks too; the install puts each in BIN_DIR, which must be on PATH.
+## Where the install targets put the font tools; must be on PATH
 BIN_DIR ?= $(HOME)/.local/bin
 # The lowest ttf2bmp the fonts build with (--stroke came in 0.3.0), and the release
 # install-ttf2bmp fetches (#31). Each release carries a .tar.gz of one binary for
@@ -222,6 +222,71 @@ install-ttf2bmp:
 	echo "Installed $$("$(BIN_DIR)/ttf2bmp" --version) at $(BIN_DIR)/ttf2bmp."; \
 	case ":$$PATH:" in *":$(BIN_DIR):"*) ;; \
 	  *) echo "$(BIN_DIR) is not on PATH: add it, or make check-ttf2bmp will not find ttf2bmp." ;; esac
+
+# The lowest garmin-font-scaler the fonts build with (stroke="W" came in 0.3.0), and the
+# tag install-garmin-font-scaler installs (#32). It is not on PyPI, so pip takes it from
+# the tag, into a virtual environment of its own, linked into BIN_DIR.
+FONT_SCALER_VERSION := 0.3.0
+FONT_SCALER_REPO := https://github.com/wkusnierczyk/garmin-font-scaler.git
+## The scaler's virtual environment, which install-garmin-font-scaler replaces
+FONT_SCALER_VENV ?= $(HOME)/.local/share/venvs/garmin-font-scaler
+# Not whichever python3 is first on PATH: on the owner's Mac, Homebrew's (3.13, 3.15)
+# cannot bootstrap pip in a new environment, as platform.mac_ver() returns empty strings
+# there and pip's vendored truststore fails parsing them (#32). Apple's /usr/bin/python3
+# (3.9, older pip) works, so it is tried first, then python3 on PATH (Linux, where
+# /usr/bin/python3 may lack venv); the first that makes an environment with pip is kept.
+# pip is not upgraded in the environment, which would bring truststore back. On macOS
+# /usr/bin/python3 is tried only with the developer tools installed, or it opens a dialog.
+## The Python to build the scaler's environment on; empty tries /usr/bin/python3, then python3
+FONT_SCALER_PYTHON ?=
+
+# "garmin-font-scaler --version" prints "garmin-font-scaler 0.3.0".
+define require_font_scaler
+@have=$$(garmin-font-scaler --version 2>/dev/null | head -n 1 | sed -nE 's/^garmin-font-scaler v?([0-9]+\.[0-9]+\.[0-9]+).*/\1/p'); \
+  $(call version_at_least,$$have,$(FONT_SCALER_VERSION)) || { \
+  if command -v garmin-font-scaler >/dev/null; then \
+    echo "make $@ needs garmin-font-scaler $(FONT_SCALER_VERSION) or newer; $$(command -v garmin-font-scaler) is $${have:-of no known version}."; \
+  else echo "make $@ needs garmin-font-scaler $(FONT_SCALER_VERSION) or newer, and there is none on PATH."; fi; \
+  echo "Install it into $(BIN_DIR) with: make install-garmin-font-scaler"; exit 1; }
+endef
+
+## Check that PATH has garmin-font-scaler, new enough for the fonts
+check-garmin-font-scaler:
+	$(require_font_scaler)
+	@echo "$$(garmin-font-scaler --version) at $$(command -v garmin-font-scaler)."
+
+# A working environment is moved aside, not deleted, and put back if the new one fails or the
+# run is interrupted; an environment left aside by an interrupted run stays the backup. The
+# environment's path is made absolute, so the link into BIN_DIR resolves from anywhere.
+## Install garmin-font-scaler in its own environment, linked into BIN_DIR [BIN_DIR FONT_SCALER_VENV FONT_SCALER_PYTHON]
+install-garmin-font-scaler:
+	@venv="$(FONT_SCALER_VENV)"; case $$venv in /*) ;; *) venv="$$PWD/$$venv" ;; esac; old="$$venv.old"; \
+	nodev=; if test "$$(uname -s)" = Darwin && ! xcode-select -p >/dev/null 2>&1; then nodev=1; fi; \
+	if test -e "$$venv"; then rm -rf "$$old" && mv "$$venv" "$$old" || exit 1; fi; \
+	restore() { rm -rf "$$venv"; if test -e "$$old"; then mv "$$old" "$$venv"; echo "Kept the previous $$venv."; fi; }; \
+	trap 'restore; exit 1' INT TERM; \
+	try() { p=$$(command -v "$$1") || { echo "No $$1."; return 1; }; \
+	  if test -n "$$nodev" && test "$$p" = /usr/bin/python3; then \
+	    echo "Skipping $$p: without the developer tools it opens their install dialog."; return 1; fi; \
+	  echo "Making $$venv with $$p ($$("$$p" --version 2>&1))..."; \
+	  if "$$p" -m venv "$$venv" && "$$venv/bin/python" -m pip --version >/dev/null; then return 0; fi; \
+	  echo "$$p cannot make a virtual environment with pip."; rm -rf "$$venv"; return 1; }; \
+	if test -n "$(FONT_SCALER_PYTHON)"; then try "$(FONT_SCALER_PYTHON)"; \
+	else try /usr/bin/python3 || try python3; fi || { \
+	  echo "No Python made one; pick one with FONT_SCALER_PYTHON=/path/to/python3."; restore; exit 1; }; \
+	echo "Installing garmin-font-scaler $(FONT_SCALER_VERSION) from $(FONT_SCALER_REPO)..."; \
+	"$$venv/bin/python" -m pip install --quiet --disable-pip-version-check \
+	  "git+$(FONT_SCALER_REPO)@v$(FONT_SCALER_VERSION)" || { echo "pip install failed."; restore; exit 1; }; \
+	got=$$("$$venv/bin/garmin-font-scaler" --version 2>/dev/null | head -n 1 | sed -nE 's/^garmin-font-scaler v?([0-9]+\.[0-9]+\.[0-9]+).*/\1/p'); \
+	$(call version_at_least,$$got,$(FONT_SCALER_VERSION)) || { \
+	  echo "The installed garmin-font-scaler does not run as $(FONT_SCALER_VERSION) or newer."; restore; exit 1; }; \
+	trap - INT TERM; rm -rf "$$old"; \
+	mkdir -p "$(BIN_DIR)" && ln -sf "$$venv/bin/garmin-font-scaler" "$(BIN_DIR)/garmin-font-scaler" || exit 1; \
+	"$(BIN_DIR)/garmin-font-scaler" --version >/dev/null 2>&1 || { \
+	  echo "$(BIN_DIR)/garmin-font-scaler does not run."; exit 1; }; \
+	echo "Installed garmin-font-scaler $$got at $(BIN_DIR)/garmin-font-scaler."; \
+	case ":$$PATH:" in *":$(BIN_DIR):"*) ;; \
+	  *) echo "$(BIN_DIR) is not on PATH: add it, or make check-garmin-font-scaler will not find the scaler." ;; esac
 
 ## Remove build output
 clean:
