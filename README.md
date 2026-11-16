@@ -73,9 +73,9 @@ Every push to `main` and every pull request runs [`.github/workflows/build.yml`]
 
 - **consistency checks**: `make check-help` and `make help`, with no SDK;
 - **build and export**: `make build` for one product per screen family (`tools/ci-devices.py`), then
-  `make export`, which builds all 52 products;
+  `make export`, which builds every product in `manifest.xml`;
 - **unit tests**: `make test` in the simulator, under a virtual display.
 
 The two SDK jobs run in our own tester image, `ghcr.io/wkusnierczyk/connectiq-tester` (SDK 9.3.0
-and the device definitions), pinned by digest. It is a private package, so a pull request from a
-fork runs the consistency checks only. CI signs with a throwaway key, never the developer key.
+and the device definitions), pinned by digest. It is a private package, so for a pull request from a
+fork the two SDK jobs are skipped and only the consistency checks run. CI signs with a throwaway key, never the developer key.

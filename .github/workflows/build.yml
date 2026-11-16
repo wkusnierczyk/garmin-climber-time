@@ -22,8 +22,9 @@
 # must grant this repository read access ("Manage Actions access"), or the pull
 # is refused. A pull request from a FORK may not be able to pull it at all: a fork
 # run gets a read-only token and no secrets, and a repository grant covers this
-# repository, not its forks. Such a PR runs the consistency checks only; its
-# build and test jobs fail at the image pull, which says nothing about the change
+# repository, not its forks. Such a PR runs the consistency checks only: the build
+# and test jobs are skipped for it (their if:), where they would only
+# fail at the image pull, which says nothing about the change
 # (wkusnierczyk/garmin-watch-faces#37, step 4).
 #
 # Pinned by digest, not by tag, with the tag trailing. A tag is mutable, so a
@@ -80,6 +81,8 @@ jobs:
   build:
     name: build and export
     runs-on: ubuntu-latest
+    # Skipped for a fork's pull request, which cannot pull the private image (top).
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     container:
       # Private: see the note at the top for the credentials and the package grant.
       image: ghcr.io/wkusnierczyk/connectiq-tester@sha256:43c0f915cf5dbb721c87dabf36bcb0109ce33d42414e05c9472b53bc0b14914e  # 9.3.0-2026-11-16
@@ -180,6 +183,8 @@ jobs:
   test:
     name: unit tests
     runs-on: ubuntu-latest
+    # Skipped for a fork's pull request, which cannot pull the private image (top).
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     # monkeydo pushes a .prg into a RUNNING simulator, and the simulator is a GUI
     # application. The image carries xvfb because its own entrypoint runs the
     # simulator under one, but a container job replaces that entrypoint with its

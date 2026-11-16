@@ -73,6 +73,10 @@ def main():
                  f'  {", ".join(missing)}\n'
                  'Download them in the SDK manager; monkeyc cannot build without them.')
 
+    # One product per family, the alphabetically first. That is not necessarily the
+    # family's oldest Connect IQ version: an API missing on the lowest one (5.0.0:
+    # venu2, venu2plus, venu2s, d2airx10) is caught by make export, which builds
+    # every product, not here.
     families = {}
     for p in sorted(ids):
         families.setdefault(family(root, p), p)
