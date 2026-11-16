@@ -358,17 +358,30 @@ module Draw {
         }
         var letters = ["B", "I", "E"] as Array<String>;
 
+        // Both boxes on whole pixels, the same size, and a whole-pixel ring, so the two outer
+        // edges match and the ring is as thick on every side (#41).
+        var w = (bw + 0.5).toNumber();
+        var h = (th + 0.5).toNumber();
+        var rr = (rad + 0.5).toNumber();
+        var ring = (lw + 0.5).toNumber();
+        var x1 = (cx1 - bw / 2 + 0.5).toNumber();
+        var y1 = (cy1 - th / 2 + 0.5).toNumber();
+        var x2 = (cx2 - bw / 2 + 0.5).toNumber();
+        var y2 = (cy2 - th / 2 + 0.5).toNumber();
+
         dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(cx1 - bw / 2, cy1 - th / 2, bw, th, rad);
+        dc.fillRoundedRectangle(x1, y1, w, h, rr);
         dc.setColor(mix(rc, 0, 0.82), Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx1, cy1, font, r.grade.toString(), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
-        dc.setColor(WALL, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(cx2 - bw / 2, cy2 - th / 2, bw, th, rad);
+        // The outline as two fills, the box in the route colour and the inside in the wall's,
+        // so its outer edge is the grade box's by construction: a thick pen's stroke does not
+        // land where a fill's edge does, and drew this box 3 px short (#41).
         dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
-        dc.setPenWidth(lw.toNumber());
-        dc.drawRoundedRectangle(cx2 - bw / 2 + lw / 2, cy2 - th / 2 + lw / 2, bw - lw, th - lw, Climb.maxf(1.0, rad - lw / 2));
-        dc.setPenWidth(1);
+        dc.fillRoundedRectangle(x2, y2, w, h, rr);
+        dc.setColor(WALL, Graphics.COLOR_TRANSPARENT);
+        dc.fillRoundedRectangle(x2 + ring, y2 + ring, w - 2 * ring, h - 2 * ring, rr > ring + 1 ? rr - ring : 1);
+        dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx2, cy2, font, letters[r.prof], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 
