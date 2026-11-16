@@ -338,8 +338,9 @@ check-fonts:
 # (.github/workflows/build.yml): check-icons compares pixels, which only one Pillow reproduces.
 ## The generator's virtual environment, which install-garmin-graphics-generator replaces
 GRAPHICS_VENV ?= $(HOME)/.local/share/venvs/garmin-graphics-generator
+# test -x, not $(wildcard): wildcard splits a path with spaces, and reads [ and * as patterns.
 ## The Python graphics, preview, icons and check-icons run in: GRAPHICS_VENV's, else python3
-GRAPHICS_PYTHON ?= $(if $(wildcard $(GRAPHICS_VENV)/bin/python),$(GRAPHICS_VENV)/bin/python,python3)
+GRAPHICS_PYTHON ?= $(shell test -x "$(GRAPHICS_VENV)/bin/python" && printf '%s' "$(GRAPHICS_VENV)/bin/python" || echo python3)
 # The same choice as the scaler's environment (FONT_SCALER_PYTHON, above), for the same reason.
 ## The Python to build the generator's environment on; empty tries /usr/bin/python3, then python3
 GRAPHICS_VENV_PYTHON ?=
@@ -378,6 +379,8 @@ install-garmin-graphics-generator:
 	got=$$($(call graphics_tool_version,$$venv/bin/python)); \
 	$(call version_at_least,$$got,$(GRAPHICS_TOOL_VERSION)) || { \
 	  echo "The installed garmin-graphics-generator is not $(GRAPHICS_TOOL_VERSION) or newer."; restore; exit 1; }; \
+	"$$venv/bin/python" -c 'import garmin_graphics_generator.cli' || { \
+	  echo "The installed garmin-graphics-generator does not import."; restore; exit 1; }; \
 	pil=$$("$$venv/bin/python" -c 'import PIL; print(PIL.__version__)' 2>/dev/null); \
 	test "$$pil" = "$(GRAPHICS_PILLOW_VERSION)" || { \
 	  echo "The environment has Pillow $${pil:-none}, not $(GRAPHICS_PILLOW_VERSION)."; restore; exit 1; }; \

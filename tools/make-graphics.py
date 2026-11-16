@@ -161,9 +161,10 @@ GENERATOR = "garmin_graphics_generator"
 GENERATOR_VERSION = "0.8.1"
 INSTALL_HINT = """garmin-graphics-generator {version} or newer is needed, and {problem}.
 
-    python3 -m pip install 'garmin-graphics-generator @ git+https://github.com/wkusnierczyk/garmin-graphics-generator@v{version}'
+    make install-garmin-graphics-generator
 
-for the python3 that runs this ({python}); or pass make GRAPHICS_PYTHON=/path/to/python3."""
+installs it, with the pinned Pillow, in its own environment, which make then runs this in;
+this run used {python}. Or pass make GRAPHICS_PYTHON=/path/to/python3."""
 
 FRAME_TEMPLATE = """import Toybox.Lang;
 

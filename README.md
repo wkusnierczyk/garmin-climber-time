@@ -186,7 +186,7 @@ minute or so per image. They also need
 newer, with Pillow 11.3.0. It is not on PyPI: `make install-garmin-graphics-generator` installs both
 from its tag with `pip`, in a virtual environment of its own
 (`~/.local/share/venvs/garmin-graphics-generator`, `GRAPHICS_VENV`), whose Python the image and icon
-targets then run in (`GRAPHICS_PYTHON`, else `python3`); `make check-garmin-graphics-generator`
+targets then run in (`GRAPHICS_PYTHON`, which defaults to it when it exists, else to `python3`); `make check-garmin-graphics-generator`
 checks it. Like `make install-garmin-font-scaler` (see *Build and sideload*), it needs `git` and a
 Python 3 that can make a virtual environment with `pip`, tried in the same order; pick another with
 `GRAPHICS_VENV_PYTHON=/path/to/python3`. Pillow is pinned because `make check-icons` compares the
