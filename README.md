@@ -1,5 +1,7 @@
 # Climber Time
 
+[![build](https://github.com/wkusnierczyk/garmin-climber-time/actions/workflows/build.yml/badge.svg)](https://github.com/wkusnierczyk/garmin-climber-time/actions/workflows/build.yml)
+
 A Garmin Connect IQ watch face: the time on the left, a climbing wall on the right, and a
 miniature climber marking the seconds, one climb per minute. The design is
 [`design/DESIGN.md`](design/DESIGN.md), whose behavioural reference is the browser simulator
@@ -64,3 +66,16 @@ make test       # run the (:test) functions in the simulator
 make export     # export/ClimberTime-<version>.iq, the signed store bundle, version from manifest.xml
 make help       # every target and variable, with the values they have now
 ```
+
+## CI
+
+Every push to `main` and every pull request runs [`.github/workflows/build.yml`](.github/workflows/build.yml):
+
+- **consistency checks**: `make check-help` and `make help`, with no SDK;
+- **build and export**: `make build` for one product per screen family (`tools/ci-devices.py`), then
+  `make export`, which builds all 52 products;
+- **unit tests**: `make test` in the simulator, under a virtual display.
+
+The two SDK jobs run in our own tester image, `ghcr.io/wkusnierczyk/connectiq-tester` (SDK 9.3.0
+and the device definitions), pinned by digest. It is a private package, so a pull request from a
+fork runs the consistency checks only. CI signs with a throwaway key, never the developer key.
