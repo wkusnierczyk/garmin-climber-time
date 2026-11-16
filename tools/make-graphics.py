@@ -20,7 +20,7 @@ the real simulator. That makes the captures deterministic, unlike Matrix Time's:
 same face draws the same images.
 
   ClimberTimeCapture.png           the first frame's raw screen, nothing composited
-  ClimberTime1.png .. 6.png        watch renders at 200px, for the store gallery and
+  ClimberTime1.png .. 4.png        watch renders at 200px, for the store gallery and
                                    the README
   ClimberTimeHero-draft.png        the hero frames scattered across 1440x720
   ClimberTimeHero-draft-small.png  the same composition at 900x450
@@ -120,7 +120,7 @@ class Shot(NamedTuple):
 
 # The gallery, in the order the files are numbered: two climbs and a fall across the grades
 # (6I, 4B, 8E), and the always-on scene (the owner's picks, #8; the start and the lower-off
-# were dropped). Other moments are AT on make preview. The
+# were dropped; capture them, or any other moment, with make preview AT=...). The
 # minute sets the grade and the proficiency: grade 4 + (minute / 3) mod 5, proficiency
 # minute mod 3 (DESIGN.md §8.3), so :00 is 4B, :07 6I and :14 8E, whatever the hour.
 # The beginner falls on every attempt that leaves time for another (§12), so 4B has a
@@ -306,7 +306,7 @@ def write_graphics(tools, shots, frames, arguments):
     os.makedirs(GRAPHICS, exist_ok=True)
     quiet = arguments.silent
     # A gallery image left from a longer SHOTS would otherwise survive beside the new ones.
-    # Only the numbered ones: ClimberTimeHero.png, made by hand, lives here too.
+    # Only the numbered ones: the published ClimberTimeHero.png lives here too (#8).
     numbered = re.compile(re.escape(GALLERY_NAME).replace(r"\{index\}", r"[0-9]+") + "$")
     for name in os.listdir(GRAPHICS):
         if numbered.match(name):

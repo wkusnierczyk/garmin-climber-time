@@ -6,8 +6,9 @@ drawing new ones.
 INPUTS
 Four images. Each is a front-on render of the same watch model, differing only in
 what its screen shows. Treat each as a separate physical watch.
-The screens show a watch face called Climber Time: a climbing wall with a tiny
-stick-figure climber on the right half, and the time on the left half.
+The screens show a watch face called Climber Time: the time on the left half and,
+except on the always-on screen, a climbing wall with a tiny stick-figure climber on
+the right half.
 
 OUTPUT
 A single image, exactly twice as wide as it is tall, at the largest resolution you
@@ -32,7 +33,8 @@ INVARIANTS — these outrank every layout rule below
      holds of other colours, and exactly one small white stick-figure climber with
      a round head. Where the input shows a thin white rope from the top of the wall
      to the climber, keep it; where it does not, do not add one.
-   - Each screen has its own route colour (pink, blue, red); keep each one exactly.
+   - Each screen with a wall has its own route colour (pink, blue, red); keep each
+     one exactly. The always-on screen's faint dots are pink.
    - No digits anywhere on any screen except the four-digit time and the one grade
      digit. No other text.
    - One input is the always-on state: an otherwise black screen with a dim grey
@@ -59,8 +61,8 @@ LAYOUT
    - roll (spin in the picture plane, 12 o'clock leaving vertical): up to ±15°
    - pitch (top tipping away from or toward the viewer): up to ±30°
    - yaw (left or right edge turning away): up to ±35°
-   At ±15° a watch is clearly tilted but still read head-on; at ±40° you see well
-   down its side wall and the case depth, lugs and crown come into view. At least
+   At ±15° a watch is clearly tilted but still read head-on; near the limits you see
+   down its side wall, and the case depth, lugs and crown come into view. At least
    three of the four watches show visible case depth: the side wall of the case, the
    lugs and the thickness of the strap. Draw a different combination for each watch;
    do not give them all the same attitude, and do not leave any of them square to
