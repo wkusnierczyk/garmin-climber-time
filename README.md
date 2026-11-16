@@ -85,6 +85,32 @@ make export     # export/ClimberTime-<version>.iq, the signed store bundle, vers
 make help       # every target and variable, with the values they have now
 ```
 
+## Store and README images
+
+`make graphics` captures the store gallery, the README's screenshot and a draft hero into
+`store/lite/graphics/`, on the epix Pro (Gen 2) 47 mm. `make preview` captures the same frames at
+full size onto a labelled contact sheet, `.dev/scratchpad/preview/contact-sheet.png`, for review and
+for picking the gallery; `AT="09:05:30 09:00:fall 09:05:always-on"` adds moments of your own
+(`HH:MM:SS`, the first fall of a minute, or the always-on scene).
+
+Each image is a moment: a minute and a second, a fall, or always-on, listed in
+`tools/make-graphics.py`. The face takes everything from the clock, so the capture build
+(`graphics.jungle`) freezes it there, and draws with the face's own code in the real simulator; it
+is never shipped. The captures run the simulator in a container, so they need Docker and nothing
+else: no desktop simulator and no screen-recording permission. The container is CI's tester image, a
+private package (`docker login ghcr.io`); it is amd64 only, and on an arm64 Mac it runs emulated, a
+minute or so per image. They also need
+[`garmin-graphics-generator`](https://github.com/wkusnierczyk/garmin-graphics-generator) 0.8.1 or
+newer for `python3` (or `GRAPHICS_PYTHON=/path/to/python3`); `make check-garmin-graphics-generator`
+checks it:
+
+```sh
+python3 -m pip install 'garmin-graphics-generator @ git+https://github.com/wkusnierczyk/garmin-graphics-generator@v0.8.1'
+```
+
+Run `make graphics` again whenever what the face draws changes: nothing reports the images stale.
+The hero's placement is random, so look at the draft and run it again if it is poor.
+
 ## CI
 
 Every push to `main` or a release branch (`dev-*`) and every pull request runs [`.github/workflows/build.yml`](.github/workflows/build.yml):

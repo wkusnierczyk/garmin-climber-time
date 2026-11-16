@@ -74,7 +74,8 @@ TEST_FLAGS   := $(BUILD_FLAGS) --unit-test
 EXPORT_FLAGS := -e -r -w -y "$(DEV_KEY)" -f monkey.jungle
 
 .PHONY: all build sim run test golden sideload export check-ttf2bmp install-ttf2bmp \
-  check-garmin-font-scaler install-garmin-font-scaler clean help check-help
+  check-garmin-font-scaler install-garmin-font-scaler check-garmin-graphics-generator \
+  graphics preview clean help check-help
 
 ## The default: build [DEVICE DEV_KEY]
 all: build
@@ -287,6 +288,66 @@ install-garmin-font-scaler:
 	echo "Installed garmin-font-scaler $$got at $(BIN_DIR)/garmin-font-scaler."; \
 	case ":$$PATH:" in *":$(BIN_DIR):"*) ;; \
 	  *) echo "$(BIN_DIR) is not on PATH: add it, or make check-garmin-font-scaler will not find the scaler." ;; esac
+
+# The store and README images (#7), captured by garmin-graphics-generator: the Connect IQ
+# simulator in a container under Xvfb, so Docker and nothing else -- no desktop simulator,
+# no GUI, no macOS screen-recording permission. The container is CI's tester image, a
+# private package: docker login ghcr.io first. tools/make-graphics.py holds the inventory,
+# the moments each image shows; each is a build of its own through graphics.jungle, with
+# the clock frozen at its moment (source/Now.mc). On an arm64 Mac the image runs emulated,
+# a minute or so a build.
+#
+# Run make graphics again whenever what the face draws changes: nothing reports the images
+# stale. They are deterministic, the same face drawing the same images, but for the hero's
+# placement, which is random: look at the draft and run again if it is poor.
+#
+# The tool runs in GRAPHICS_PYTHON, which must have it installed. It is not on PyPI:
+#   python3 -m pip install 'garmin-graphics-generator @ git+https://github.com/wkusnierczyk/garmin-graphics-generator@v0.8.1'
+# 0.8.1 is the release the targets were written and run against (tools/make-graphics.py).
+## The Python graphics and preview run in, with garmin-graphics-generator installed
+GRAPHICS_PYTHON ?= python3
+## The container platform for graphics and preview; the tester image is amd64 only
+PLATFORM ?= linux/amd64
+GRAPHICS_TOOL_VERSION := 0.8.1
+
+define require_graphics_tool
+@"$(GRAPHICS_PYTHON)" -c 'import sys; from importlib.metadata import version; \
+  number = lambda v: tuple(int(part) for part in v.split(".")[:3]); \
+  raise SystemExit(number(version("garmin_graphics_generator")) < number(sys.argv[1]))' \
+  '$(GRAPHICS_TOOL_VERSION)' 2>/dev/null || { \
+  echo "make $@ needs garmin-graphics-generator $(GRAPHICS_TOOL_VERSION) or newer, installed for"; \
+  echo "GRAPHICS_PYTHON ($(GRAPHICS_PYTHON)); see README.md."; exit 1; }
+endef
+
+## Check that GRAPHICS_PYTHON has garmin-graphics-generator, new enough for the images [GRAPHICS_PYTHON]
+check-garmin-graphics-generator:
+	$(require_graphics_tool)
+	@"$(GRAPHICS_PYTHON)" -c 'from importlib.metadata import version; \
+	  print("garmin-graphics-generator", version("garmin_graphics_generator"))'
+
+# On the reference product, epix2pro47mm, whatever DEVICE says: the images show what CI
+# builds and tests. Writes store/lite/graphics/: ClimberTimeCapture.png, the raw screen;
+# ClimberTime1.png and on, the gallery at 200 px, which the README uses too; and
+# ClimberTimeHero-draft.png with its 900x450 banner. Never ClimberTimeHero.png, the name a
+# published hero takes.
+## Capture the store gallery and a draft hero into store/lite/graphics [PLATFORM GRAPHICS_PYTHON]
+graphics:
+	$(require_graphics_tool)
+	@"$(GRAPHICS_PYTHON)" tools/make-graphics.py $(if $(PLATFORM),--platform $(PLATFORM),)
+
+# The same frames as make graphics, at full size and on a labelled contact sheet, for
+# review and for picking the gallery, plus any moments in AT: HH:MM:SS, HH:MM:fall (the
+# first fall of that minute) or HH:MM:always-on, e.g. AT="09:05:30 09:00:fall". Writes
+# nothing outside PREVIEW_DIR, which is gitignored.
+PREVIEW_DIR := .dev/scratchpad/preview
+## More moments for preview: HH:MM:SS, HH:MM:fall or HH:MM:always-on, space-separated
+AT ?=
+## Capture the gallery's frames, and AT, on a contact sheet in .dev/scratchpad/preview [DEVICE AT PLATFORM GRAPHICS_PYTHON]
+preview:
+	$(require_graphics_tool)
+	@"$(GRAPHICS_PYTHON)" tools/make-graphics.py --preview $(PREVIEW_DIR) -d $(DEVICE) \
+	  $(foreach moment,$(AT),--at $(moment)) $(if $(PLATFORM),--platform $(PLATFORM),)
+	@echo "Contact sheet: $(PREVIEW_DIR)/contact-sheet.png"
 
 ## Remove build output
 clean:
