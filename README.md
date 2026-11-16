@@ -13,7 +13,7 @@ expert in turn.
 
 ## Edition
 
-**Climber Time Lite** is free. A Premium edition is planned.
+**Climber Time Lite** is free.
 
 ## Features
 
@@ -30,12 +30,13 @@ expert in turn.
 - **The climber climbs to its skill**: a beginner falls onto the rope and restarts, never reaching
   the top; an intermediate may fall once or miss a jump; an expert tops out. Every climb ends with a
   3 s lower-off on the rope onto the next climb's start: the same route within a grade, a new one
-  after the expert ([`DESIGN.md`](design/DESIGN.md) §12).
+  after the expert ([`DESIGN.md`](design/DESIGN.md) §11.3, §12).
 - **Always-on**: the time, hours white and minutes grey, under a fine checkerboard that swaps its
   pixels every minute, and the route's holds as dots that step a few pixels once a minute; no
-  climber, wall or tags. That keeps the screen inside the AMOLED burn-in protector's limits: under
-  3 % of the pixels lit, and no pixel lit three minutes running ([`DESIGN.md`](design/DESIGN.md) §13.1).
-- **No settings**: the face is drawn as designed.
+  climber, wall or tags. That keeps the screen far inside the AMOLED burn-in protector's limits (10 %
+  of the pixels lit, no pixel lit three minutes): at most about 2.4 % lit, no pixel lit more than two
+  minutes running ([`DESIGN.md`](design/DESIGN.md) §13.1).
+- **No settings**: the face is drawn as designed; 12- or 24-hour time follows the watch.
 
 ## Devices
 

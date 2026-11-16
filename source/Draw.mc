@@ -39,7 +39,7 @@ module Draw {
     }
 
     // The digits and the tags are bitmap fonts, Roboto Condensed Bold, one size per screen
-    // resolution (resources/fonts/fonts.xml, README.md: Fonts). The sizes are what the design's
+    // resolution (resources/fonts/fonts.xml, docs/fonts.md). The sizes are what the design's
     // formula gives on each screen, which is no longer computed here: the digits 0.19 H, shrunk to
     // fit Geom.digitMaxW, times Geom.digitScale (DESIGN.md §4.1); the tags so that their two boxes
     // and gap span the minutes' two cells. tools/check-font-config.py checks the sizes against it.
