@@ -104,7 +104,7 @@ Wall **width** (floating panel only) is a setting from 0.22 to 0.36 of W, defaul
 
 In right-half mode the route region stays where the bezel leaves room on a round screen; the rest of the half is wall and, on a fixed wall, unused holds (§5.4).
 
-**The time group** (prototype, 2026-11-11, for the right half; since 2026-11-15 also beside the floating panel, which 0.1.0 ships): with the linear time layout, the space left of the wall holds a two-line group, the time on one line above the tags on one line, the time centred vertically and the group right-aligned 0.03 W short of the wall's left edge (0.47 W in the right half; beside the panel, 0.525 W on round screens and 0.53 W on rectangular ones):
+**The time group** (prototype, 2026-11-11, for the right half, which 0.1.0 ships (owner, 2026-11-16); also beside the floating panel): with the linear time layout, the space left of the wall holds a two-line group, the time on one line above the tags on one line, the time centred vertically and the group right-aligned 0.03 W short of the wall's left edge (0.47 W in the right half; beside the panel, 0.525 W on round screens and 0.53 W on rectangular ones):
 
 - Time: HHMM, no separator, fitted to the width between the bezel's left edge at y = H/2 ± 0.10 H (plus 0.03 W) and the group's right edge, then 1.1 × **Size** (§4.1; 0.94 in 0.1.0) × that size; the last cell ends at the group's right edge, with three cells or four.
 - Tags: side by side, sized so that the two boxes and their gap span the minutes' two digit cells, right-aligned with them; boxes hug the widest of 8, B, I and E as in the centre panel (§3.3).
@@ -117,7 +117,7 @@ With the linear time layout the centre panel puts the time on one line left of t
 **In the time group** (§3.2, the default and 0.1.0) the tags sit side by side under the minutes, sized there. Otherwise two small tags sit at mid-height (y = H/2), centred on the panel's right edge (floating panel), in the strip right of the route ((route right + W)/2, right half), or right of the wall ((wall right + W)/2, centre panel). They sit side by side. The prototype stacks them, grade above proficiency, in the right half. In the centre panel it puts the grade level with the hours row and the proficiency level with the minutes row, both in the digits' font at 0.6 × the digits' size, centred between the wall right + 0.025 W and the bezel (mirroring the digits), in boxes hugging the widest of 8, B, I and E (padding 0.12 fs, corner radius max(2 px, 0.12 fs), outline max(2 px, 0.05 fs)). Two user settings to come: **Tag arrangement** (side by side, stacked, or level with the time rows) and **Tag size** relative to the digits (0.6 in the prototype's centre panel):
 
 - **Grade tag** (setting **Show grade tag**, default on): filled in the route colour, the grade number cut out in dark (route colour mixed 82 % toward black).
-- **Proficiency tag** (setting **Show proficiency tag**, default on): filled in the wall colour, outlined in its proficiency's colour, letter B, I or E in the same colour. One fixed colour per proficiency (settings **Proficiency tag, beginner / intermediate / expert**): yellow #F7C948, orange #FF8C2B and red #EF4444 by default.
+- **Proficiency tag** (setting **Show proficiency tag**, default on): filled in the wall colour, outlined in its proficiency's colour, letter B, I or E in the same colour. Its colour per proficiency (settings **Proficiency tag, beginner / intermediate / expert**): a fixed colour (yellow #F7C948, orange #FF8C2B, red #EF4444 suggested) or the route colour, the default (owner, 2026-11-16).
 
 Order is [grade][proficiency], left to right or top to bottom. If one is hidden the other takes the first slot. Sizes in Appendix A.6; the prototype uses fs = 0.085 H, box width 1.05 fs, gap 0.18 fs, outline max(1.5 px, 0.09 fs), after 0.055 H proved barely readable on the wrist. The climber is drawn over the tags.
 
@@ -153,7 +153,7 @@ Roboto Condensed, bold by default. Alternatives offered in the simulator: Roboto
 | Setting | Values | Default |
 |---|---|---|
 | Hours colour | a fixed colour (white #F6F6F6, grey #969C99, amber #FFBC54, or a gym colour) or the route colour | white |
-| Minutes colour | the same choices | grey |
+| Minutes colour | the same choices | the route colour |
 | 24-hour | on, off (12-hour shows 1 to 12) | on |
 | Leading zero on hours | on, off | on |
 
@@ -289,7 +289,7 @@ Setting **Colour per route**:
 - **Gym colours, in order**: cycling through the palette.
 - **Hue wheel**: hue = (route start minute mod 60) × 6°, saturation 85 %, lightness 58 %. The colour itself encodes the minute.
 
-Gym palette: Yellow #F7C948, Green #34C46A, Blue #3A86FF, Red #EF4444, Purple #A06CF0, Orange #FF8C2B, Pink #FF6FB0, Teal #22C3C3, White #E8E8E8.
+Gym palette: Yellow #F7C948, Green #34C46A, Blue #3A86FF, Red #EF4444, Purple #A06CF0, Orange #FF8C2B, Pink #FF6FB0, Teal #22C3C3. No white (owner, 2026-11-16): the minutes take the route colour, and white minutes would merge with the white hours.
 
 The colour index is hour·60 + route ordinal within the hour (§10), so consecutive routes are consecutive indices even when routes span two minutes or a beer break intervenes.
 
@@ -504,11 +504,11 @@ The simulator's route tag reports the attempt: "no falls · tops out", "1 fall �
 
 **The scene** (owner, 2026-11-15):
 
-- The time in its own colours, at full brightness (owner, 2026-11-16: 55 % was too dim for daylight; at full brightness the scene stays far below 10 % by either measure, lit pixels or luminance, which Garmin's FAQ gives as the rule since the Venu 2), with a **checkerboard** over it: every other pixel black, the other half the next minute, so no pixel of the time is lit two minutes running.
+- The time, hours white and minutes grey (owner, 2026-11-16: the route colour stays on the holds), at full brightness (owner, 2026-11-16: 55 % was too dim for daylight; at full brightness the scene stays far below 10 % by either measure, lit pixels or luminance, which Garmin's FAQ gives as the rule since the Venu 2), with a **checkerboard** over it: every other pixel black, the other half the next minute, so no pixel of the time is lit two minutes running.
 - The route's holds as dots of radius max(1.2 px, 0.18·size) in the route colour at 60 %, stepping round the corners of a ±4 px square, one corner a minute (corner = minute mod 4). A 2·4 px step clears a dot's diameter; ±3 px fails once a minute (#4).
 - No climber, wall, T-nuts, ticks or tags.
 
-**Measured** in the simulator, every minute of a day in 12 h and 24 h, counting any non-black pixel: at most 2.72 % lit on the screens of §2 (2026-11-16, the time at full brightness), no pixel lit three minutes, the longest run 2 minutes (the holds). Simple corner jitter of the time fails below W/12, which pushes the time off the bezel; the figures for the alternatives are on #4. The simulator's *Check always-on burn-in over a day* repeats the check.
+**Measured** in the simulator, every minute of a day in 12 h and 24 h, counting any non-black pixel: at most 2.35 % lit on the screens of §2 with the right-half wall (2.72 % with the floating panel; 2026-11-16, the time at full brightness, the minutes in the route colour), no pixel lit three minutes, the longest run 2 minutes (the holds). Simple corner jitter of the time fails below W/12, which pushes the time off the bezel; the figures for the alternatives are on #4. The simulator's *Check always-on burn-in over a day* repeats the check.
 
 ### 13.2 MIP low power
 
@@ -531,7 +531,7 @@ These become Connect IQ properties (§15.5). Keys match the simulator's settings
 | layout | stacked, inline (linear HHMM) | inline | §4.1 |
 | digitSize | 0.8 to 1.2 | 0.94 | §4.1 |
 | hourColor | a fixed colour (§4.4), route | white | §4.4 |
-| minColor | a fixed colour (§4.4), route | grey | §4.4 |
+| minColor | a fixed colour (§4.4), route | route | §4.4 |
 | hour24 | on, off | on | §4.4 |
 | leadZero | on, off | on | §4.4 |
 | palette | round, shuffle, cycle, hue | round | §7 |
@@ -547,11 +547,11 @@ These become Connect IQ properties (§15.5). Keys match the simulator's settings
 | gMax | 4 to 8 | 8 | §8.3 |
 | showGrade | on, off | on | §3.3 |
 | showProf | on, off | on | §3.3 |
-| profB, profI, profE | a fixed colour (§4.4), route | yellow, orange, red | §3.3 |
-| tagLayout | inline, stacked, rows (planned) | per wall area: inline (panel), stacked (half), rows (centre) | §3.3 |
+| profB, profI, profE | a fixed colour (§4.4), route | route | §3.3 |
+| tagLayout | inline, stacked, rows (planned) | in the time group (linear time, the default): inline, side by side under the minutes; otherwise per wall area: inline (panel), stacked (half), rows (centre) | §3.3 |
 | tagScale | fraction of the digits' size, rows only (planned) | 0.6 | §3.3 |
 | wallStyle | slate, plywood, none | slate | §5.1 |
-| wallClip | panel, half, centre | panel | §3.2 |
+| wallClip | panel, half, centre | half | §3.2 |
 | wallWidth | 0.22 to 0.36 | 0.30 | §3.2 |
 | tnut | on, off | on | §5.1 |
 | scale | off, 10, 15, 5 | 10 | §3.4 |
@@ -575,13 +575,13 @@ A partner logo under the time is not part of the design and must not be implemen
 
 ### 14.3 Lite 0.1.0
 
-Lite 0.1.0 ships **no settings** (owner, 2026-11-15): the face is §14.1's defaults, fixed. Which settings ship later, and in which edition, is #12. The owner's picks, made in the 0.1.0 mock and now the simulator's defaults:
+Lite 0.1.0 ships **no settings** (owner, 2026-11-15): the face is §14.1's defaults, fixed. Which settings ship later, and in which edition, is #12. The owner's picks, made in the 0.1.0 mock and now the simulator's defaults (2026-11-16, replacing 2026-11-15's floating panel and fixed colours):
 
 | | 0.1.0 |
 |---|---|
-| Wall | floating panel (`wallClip` panel, width 0.30), slate, T-nut grid |
-| Time | linear HHMM in the time group (§3.2), size 0.94, Roboto Condensed bold; hours white, minutes grey |
-| Tags | grade in the route colour, proficiency B yellow, I orange, E red, side by side under the minutes |
+| Wall | the right half of the screen (`wallClip` half), slate, T-nut grid |
+| Time | linear HHMM in the time group (§3.2), size 0.94, Roboto Condensed bold; hours white, minutes in the route colour |
+| Tags | grade and proficiency both in the route colour, side by side under the minutes |
 | Routes | new holds every grade round, 30 moves at grade 6, rising difficulty 4 to 8, proficiency cycling, one gym colour per grade round |
 | Descent | lowered on the rope, 3 s |
 | Off | chalk, top rope, quarter ropes, beer break, downclimb |
@@ -737,7 +737,7 @@ Distances are fractions of W or H, multiples of the climber size c, or pixels wh
 
 | Element | Colour |
 |---|---|
-| Gym palette | #F7C948, #34C46A, #3A86FF, #EF4444, #A06CF0, #FF8C2B, #FF6FB0, #22C3C3, #E8E8E8 |
+| Gym palette | #F7C948, #34C46A, #3A86FF, #EF4444, #A06CF0, #FF8C2B, #FF6FB0, #22C3C3 |
 | Walls | slate #24292D, plywood #5C4A37, none #000000 |
 | Climber | #F5F5F5, #C4CAC6, #FFBC54 |
 | Digits | white #F6F6F6, grey #969C99 |
@@ -760,7 +760,7 @@ Distances are fractions of W or H, multiples of the climber size c, or pixels wh
 
 | Name | Value |
 |---|---|
-| Digits | 55 %, checkerboard alternating each minute |
+| Digits | full brightness, checkerboard alternating each minute |
 | Holds as dots | radius max(1.2 px, 0.18·size), 60 %, ±4 px square, one corner a minute |
 | Climber | not drawn |
 | Lit-pixel limit | 10 %; no pixel lit 3 minutes |

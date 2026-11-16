@@ -8,6 +8,18 @@ import Toybox.Lang;
 (:test)
 class ClimbTest {
 
+    // The golden values were made with the simulator's default wall and time layout; if the
+    // face draws another, every coordinate test fails, and this one says why.
+    (:test)
+    static function goldensMadeForTheFacesLayout(logger as Test.Logger) as Boolean {
+        if (ClimbGolden.LAYOUT != Draw.LAYOUT || ClimbGolden.TIME_LINEAR != Draw.TIME_LINEAR) {
+            logger.error("golden layout " + ClimbGolden.LAYOUT + "/" + ClimbGolden.TIME_LINEAR + ", face " + Draw.LAYOUT + "/"
+                + Draw.TIME_LINEAR + ": make the face and the simulator's defaults agree (DESIGN.md §14.3), then make golden");
+            return false;
+        }
+        return true;
+    }
+
     (:test)
     static function hashMatchesTheSimulator(logger as Test.Logger) as Boolean {
         for (var i = 0; i < ClimbGolden.HASH_IN.size(); i++) {
@@ -211,8 +223,14 @@ class ClimbTest {
     static function geometryInsideTheBezel(logger as Test.Logger) as Boolean {
         var g = ClimbGolden.geom();
         var c = g.W / 2;
-        var corners = [[g.x0, g.y0], [g.x1, g.y0], [g.x0, g.y1], [g.x1, g.y1], [g.rx0, g.ry0], [g.rx1, g.ry0],
-                       [g.rx0, g.ry1], [g.rx1, g.ry1], [g.groupRight - g.digitMaxW, g.H / 2 - 0.10 * g.H]] as Array<Array<Float>>;
+        // The route region and the time group must be inside the bezel; so must a panel's corners.
+        // The right-half wall is the screen's half, clipped by the bezel by design, so its own
+        // corners are not checked.
+        var corners = [[g.rx0, g.ry0], [g.rx1, g.ry0], [g.rx0, g.ry1], [g.rx1, g.ry1],
+                       [g.groupRight - g.digitMaxW, g.H / 2 - 0.10 * g.H]] as Array<Array<Float>>;
+        if (!g.full) {
+            corners.addAll([[g.x0, g.y0], [g.x1, g.y0], [g.x0, g.y1], [g.x1, g.y1]] as Array<Array<Float>>);
+        }
         for (var i = 0; i < corners.size(); i++) {
             var dx = corners[i][0] - c;
             var dy = corners[i][1] - c;
