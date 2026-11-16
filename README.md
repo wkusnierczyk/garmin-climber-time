@@ -113,7 +113,7 @@ The hero's placement is random, so look at the draft and run it again if it is p
 
 ## Launcher icon
 
-A white climber in a high step, on black: one foot rocked up beside the hip, hands low and wide.
+A white climber in a high step, on black: one foot rocked up beside the hip, one hand low and one reaching up.
 The launcher icon's size is set per device, from 38 x 38 to 70 x 70, and not per screen, so each
 size is drawn on its own by `tools/launcher_icon.py` (never scaled from one image) into
 `resources-icon-<size>/`, and `monkey.jungle` maps each product to its own. The store cover,

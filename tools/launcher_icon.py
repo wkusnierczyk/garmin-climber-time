@@ -14,7 +14,8 @@ As a script, it does what that command does not -- the store cover, and its chec
   tools/launcher_icon.py check
 
 The artwork is the owner's pick on #19, pose C, "high step" (2026-11-16): a stick
-climber with a round head, one foot rocked up beside the hip, hands low and wide. It is
+climber with a round head, one foot rocked up beside the hip, one hand low and one reaching
+up. It is
 drawn in a 100 x 100 box, the box scaled to 0.9 about its corner and moved by (5, 5), so
 it sits centred with a margin; strokes are round-capped and round-joined. These are the
 mock-up's numbers exactly, so the icon is what the owner approved.
@@ -55,7 +56,10 @@ LIMBS = (
 SUPERSAMPLE = 8
 
 # 500 x 500 is the size the store's dashboard asks for, and the store allows 300 KB.
-COVER = 'store/lite/graphics/ClimberTimeCover.png'
+# Paths from the repository root, so the script works from any directory.
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+COVER = os.path.join(ROOT, 'store/lite/graphics/ClimberTimeCover.png')
+FALLBACK = os.path.join(ROOT, 'resources/drawables/launcher_icon.png')
 COVER_SIZE = 500
 COVER_LIMIT = 300 * 1000
 
@@ -113,9 +117,20 @@ def write_cover(path=COVER):
 
 # --------------------------------------------------------------------------- actions
 
+def same_pixels(path, size):
+    """Whether the PNG at `path` holds exactly what render(size) draws: decoded pixels,
+    not file bytes, so zlib's output on another platform does not matter."""
+    from PIL import Image
+    with Image.open(path) as image:
+        return image.convert('RGB').tobytes() == render(size).tobytes()
+
+
 def check(path=COVER):
-    """The checks garmin-graphics-generator icons --check does not make: the store
-    cover's size and weight. No SDK, and no Pillow."""
+    """The checks garmin-graphics-generator icons --check does not make: every icon, the
+    fallback and the store cover hold what the renderer draws now (the tool checks sizes
+    and the mapping only), and the cover's size and weight. Needs Pillow, the one the
+    icons were made with (11.3.0): another may antialias differently."""
+    import glob
     fail = []
 
     def ok(cond, msg):
@@ -133,6 +148,13 @@ def check(path=COVER):
     ok(weight is not None and weight < COVER_LIMIT,
        f"{path} is under {COVER_LIMIT // 1000} KB"
        + (f" ({weight} bytes)" if weight is not None else ""))
+
+    icons = sorted(glob.glob(os.path.join(ROOT, 'resources-icon-*', 'drawables', 'launcher_icon.png')))
+    ok(icons, "resources-icon-*/ holds icons")
+    for icon in icons + [FALLBACK, path]:
+        got = png_size(icon) if os.path.exists(icon) else None
+        ok(got is not None and got[0] == got[1] and same_pixels(icon, got[0]),
+           f"{os.path.relpath(icon, ROOT)} is what the renderer draws; else run make icons")
 
     print(f"\n{'ALL CONSISTENT' if not fail else f'{len(fail)} PROBLEM(S)'}\n")
     return 1 if fail else 0

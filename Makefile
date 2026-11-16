@@ -382,7 +382,7 @@ check-icons:
 	$(require_graphics_tool)
 	@echo "Checking the launcher icons..."
 	@$(ICONS_TOOL) icons $(ICONS_README) --check
-	@echo "Checking the store cover..."
+	@echo "Checking the icons' and the store cover's pixels against the renderer..."
 	@"$(GRAPHICS_PYTHON)" tools/launcher_icon.py check
 
 ## Remove build output
