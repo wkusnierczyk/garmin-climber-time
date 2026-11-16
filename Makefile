@@ -162,7 +162,7 @@ export:
 
 # The font tools (#17): ttf2bmp turns a TTF into bitmap fonts, garmin-font-scaler drives
 # it once per resolution. Neither comes with the SDK. The check looks on PATH, where
-# garmin-font-scaler looks too; the install puts each in BIN_DIR, which must be on PATH.
+# garmin-font-scaler looks too; install-ttf2bmp puts ttf2bmp in BIN_DIR, which must be on PATH.
 ## Where install-ttf2bmp puts ttf2bmp; must be on PATH
 BIN_DIR ?= $(HOME)/.local/bin
 # The lowest ttf2bmp the fonts build with (--stroke came in 0.3.0), and the release
@@ -179,7 +179,7 @@ version_at_least = awk -v have="$(1)" -v need="$(2)" 'BEGIN { \
 
 # "ttf2bmp --version" prints "ttf2bmp version v0.3.0".
 define require_ttf2bmp
-@have=$$(ttf2bmp --version 2>/dev/null | sed -nE 's/.*version v?([0-9]+\.[0-9]+\.[0-9]+).*/\1/p'); \
+@have=$$(ttf2bmp --version 2>/dev/null | head -n 1 | sed -nE 's/.*version v?([0-9]+\.[0-9]+\.[0-9]+).*/\1/p'); \
   $(call version_at_least,$$have,$(TTF2BMP_VERSION)) || { \
   if command -v ttf2bmp >/dev/null; then \
     echo "make $@ needs ttf2bmp $(TTF2BMP_VERSION) or newer; $$(command -v ttf2bmp) is $${have:-of no known version}."; \
@@ -192,7 +192,8 @@ check-ttf2bmp:
 	$(require_ttf2bmp)
 	@echo "ttf2bmp $$(ttf2bmp --version | sed -nE 's/.*version v?//p') at $$(command -v ttf2bmp)."
 
-# Replaces a ttf2bmp already in BIN_DIR. curl and tar are on macOS and on the CI image.
+# Replaces a ttf2bmp already in BIN_DIR, even a newer one, but only with a binary that runs and
+# reports TTF2BMP_VERSION or newer. curl and tar are on macOS and on the CI image.
 ## Install ttf2bmp's release binary into BIN_DIR [BIN_DIR]
 install-ttf2bmp:
 	@os=$$(uname -s | tr '[:upper:]' '[:lower:]'); arch=$$(uname -m); \
@@ -206,6 +207,9 @@ install-ttf2bmp:
 	mkdir "$$tmp/x" && tar -xzf "$$tmp/ttf2bmp.tar.gz" -C "$$tmp/x" || exit 1; \
 	set -- "$$tmp"/x/*; test $$# -eq 1 && test -f "$$1" || { \
 	  echo "The archive does not hold one file: $$(ls "$$tmp/x" | tr '\n' ' ')"; exit 1; }; \
+	chmod 755 "$$1"; got=$$("$$1" --version 2>/dev/null | head -n 1 | sed -nE 's/.*version v?([0-9]+\.[0-9]+\.[0-9]+).*/\1/p'); \
+	$(call version_at_least,$$got,$(TTF2BMP_VERSION)) || { \
+	  echo "The downloaded file does not run as ttf2bmp $(TTF2BMP_VERSION); nothing installed."; exit 1; }; \
 	mkdir -p "$(BIN_DIR)" && install -m 755 "$$1" "$(BIN_DIR)/ttf2bmp" || exit 1; \
 	echo "Installed $$("$(BIN_DIR)/ttf2bmp" --version) at $(BIN_DIR)/ttf2bmp."; \
 	case ":$$PATH:" in *":$(BIN_DIR):"*) ;; \
