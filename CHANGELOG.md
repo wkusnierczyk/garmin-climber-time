@@ -32,6 +32,6 @@ least 360 px in each direction.
   lower-off on the rope.
 * Always-on: the time, with grey minutes, under a checkerboard that swaps every minute, and the
   route's holds as dots that move a few pixels once a minute: at most about 2.4 % of the screen lit,
-  no pixel lit three minutes running. (#4)
+  no pixel lit three minutes running. (#4, #30)
 * A launcher icon at each watch's own size, and a store cover: a climber in a high step. (#19)
 * No settings; 12- or 24-hour time follows the watch.
