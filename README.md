@@ -147,6 +147,11 @@ environment with `pip`: it tries `/usr/bin/python3`, then `python3` (Homebrew's 
 pick another with `FONT_SCALER_PYTHON=/path/to/python3`. On Ubuntu that takes `python3-venv`; on a
 Mac, Apple's Python and `git` need the Xcode command-line tools (`xcode-select --install`).
 
+The store images and the launcher icons need
+[`garmin-graphics-generator`](https://github.com/wkusnierczyk/garmin-graphics-generator), which
+`make install-garmin-graphics-generator` installs the same way, in its own environment
+(see *Store and README images*).
+
 `make sideload` waits up to 5 minutes for the watch to appear, then retries detection and
 installation with doubling gaps; a watch just plugged in or restarted can take a while to offer
 MTP. Tune with `WAIT`, `EVERY`, `TRIES` and `BACKOFF`.
@@ -178,12 +183,14 @@ else: no desktop simulator and no screen-recording permission. The container is 
 private package (`docker login ghcr.io`); it is amd64 only, and on an arm64 Mac it runs emulated, a
 minute or so per image. They also need
 [`garmin-graphics-generator`](https://github.com/wkusnierczyk/garmin-graphics-generator) 0.8.1 or
-newer for `python3` (or `GRAPHICS_PYTHON=/path/to/python3`); `make check-garmin-graphics-generator`
-checks it:
-
-```sh
-python3 -m pip install 'garmin-graphics-generator @ git+https://github.com/wkusnierczyk/garmin-graphics-generator@v0.8.1'
-```
+newer, with Pillow 11.3.0. It is not on PyPI: `make install-garmin-graphics-generator` installs both
+from its tag with `pip`, in a virtual environment of its own
+(`~/.local/share/venvs/garmin-graphics-generator`, `GRAPHICS_VENV`), whose Python the image and icon
+targets then run in (`GRAPHICS_PYTHON`, which defaults to it when it exists, else to `python3`); `make check-garmin-graphics-generator`
+checks it. Like `make install-garmin-font-scaler` (see *Build and sideload*), it needs `git` and a
+Python 3 that can make a virtual environment with `pip`, tried in the same order; pick another with
+`GRAPHICS_VENV_PYTHON=/path/to/python3`. Pillow is pinned because `make check-icons` compares the
+icons' pixels, which only the Pillow they were drawn with reproduces.
 
 Run `make graphics` again whenever what the face draws changes: nothing reports the images stale.
 The hero's placement is random, so look at the draft and run it again if it is poor.
@@ -198,7 +205,7 @@ size is drawn on its own by `tools/launcher_icon.py` (never scaled from one imag
 regenerates all of it, this table included, after a change to the devices or the drawing, and
 `make check-icons` checks it with no SDK (in CI too). Both need
 [`garmin-graphics-generator`](https://github.com/wkusnierczyk/garmin-graphics-generator) 0.8.1 or
-newer for `GRAPHICS_PYTHON`, as `make graphics` does.
+newer for `GRAPHICS_PYTHON`, as `make graphics` does: `make install-garmin-graphics-generator`.
 
 Each supported product is mapped to the icon its device asks for:
 

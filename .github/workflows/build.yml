@@ -95,9 +95,10 @@ jobs:
       # Mac, so a check that ever compares pixels compares like with like.
       #
       # Pinned to a commit SHA, with the release it was published as trailing, for the
-      # reason the actions are. Keep it in step with GRAPHICS_TOOL_VERSION in the
-      # Makefile. A venv, because the runner's own Python is externally managed; make
-      # runs the tool through it as GRAPHICS_PYTHON.
+      # reason the actions are. Keep it in step with GRAPHICS_TOOL_VERSION, and Pillow
+      # with GRAPHICS_PILLOW_VERSION, in the Makefile (install-garmin-graphics-generator).
+      # A venv, because the runner's own Python is externally managed; make runs the tool
+      # through it as GRAPHICS_PYTHON, which overrides the Makefile's default.
       - name: garmin-graphics-generator
         run: |
           python3 -m venv "$RUNNER_TEMP/tools"
