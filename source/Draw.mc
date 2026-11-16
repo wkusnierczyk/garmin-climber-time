@@ -122,6 +122,50 @@ module Draw {
         digits(dc, mm.format("%02d"), g.dcx + dx, g.H * ROW_MINUTES + dy, font, mc);
     }
 
+    // Always-on (DESIGN.md §13.1): the time in its own colours, under a checkerboard that swaps its black
+    // and clear pixels every minute, so no pixel of the time is lit two minutes running; and the
+    // route's holds as dots at 60 %, stepping round a +/-HOLD_JIT px square, one corner a minute.
+    // Nothing else: the burn-in protector blanks the screen past 10 % lit or a pixel lit 3 min.
+    const HOLD_JIT = 4;
+    // resources/drawables/checker.png, both sides even.
+    const CHECKER_W = 258;
+    const CHECKER_H = 130;
+
+    function lowPower(dc as Graphics.Dc, g as Geom, r as Route, rc as Number, hh as Number, mm as Number,
+                      absMin as Number, font as Graphics.FontType, checker as Graphics.BitmapType) as Void {
+        aa(dc);
+        time(dc, g, 0.0, 0.0, hh, mm, font, HOURS, MINUTES);
+
+        // The checker over the time's box: its cells, plus the glyphs' overhang, sized from the
+        // font drawn, which is the system's number font on products without the vector faces
+        // (#29). The bitmap is tiled over the box; its sides are even, so every tile keeps the
+        // phase. The simulator blacks the pixels with x + y = absMin (mod 2); the bitmap blacks
+        // those with even x + y from its origin, so the origin is moved by 0 or 1 to match.
+        var cw = 1.04 * dc.getTextWidthInPixels("0", font);
+        var y = groupRows(g)[0];
+        var x0 = (g.groupRight - 4 * cw - 2).toNumber();
+        var x1 = (g.groupRight + 2).toNumber();
+        var half = Climb.maxf(0.5 * g.digitSize, 0.5 * dc.getFontHeight(font)).toNumber() + 2;
+        var y0 = (y - half).toNumber();
+        var ox = x0 - Climb.posMod(x0 + y0 + absMin, 2);
+        dc.setClip(x0, y0, x1 - x0, 2 * half);
+        for (var ty = y0; ty < y0 + 2 * half; ty += CHECKER_H) {
+            for (var tx = ox; tx < x1; tx += CHECKER_W) {
+                dc.drawBitmap(tx, ty, checker);
+            }
+        }
+        dc.clearClip();
+
+        var k = Climb.posMod(absMin, 4);
+        var dx = (k == 1 || k == 2) ? HOLD_JIT : -HOLD_JIT;
+        var dy = k >= 2 ? HOLD_JIT : -HOLD_JIT;
+        dc.setColor(mix(0, rc, 0.6), Graphics.COLOR_TRANSPARENT);
+        for (var i = -4; i <= r.lmax; i++) {
+            var h = r.hold(i);
+            dc.fillCircle(h.x + dx, h.y + dy, Climb.maxf(1.2, h.s * 0.18));
+        }
+    }
+
     function aa(dc as Graphics.Dc) as Void {
         if (dc has :setAntiAlias) {
             dc.setAntiAlias(true);

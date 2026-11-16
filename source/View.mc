@@ -8,8 +8,14 @@ import Toybox.Lang;
 
 class View extends WatchUi.WatchFace {
 
-    // Prototype: no always-on scene. The same full face is drawn in every display mode,
-    // once a second while the watch is awake and once a minute in always-on.
+    // Always-on draws its own scene (Draw.lowPower, DESIGN.md §13.1), and a display that is
+    // off draws nothing. As in Matrix Time (wkusnierczyk/garmin-matrix-time#191, #212), the
+    // always-on scene is drawn unless both signals say awake: the sleep callbacks' flag, which
+    // lags on the epix Pro, and System.getDisplayMode() (API 5.0.0, the minApiLevel). The
+    // scene takes everything from the clock, so it changes once a minute however often
+    // onUpdate is called.
+    private var _lowPower as Boolean = false;
+    private var _checker as Graphics.BitmapType?;
 
     private var _geom as Geom?;
     private var _route as Route?;
@@ -92,6 +98,9 @@ class View extends WatchUi.WatchFace {
         if (g == null) {
             return;
         }
+        if (System.getDisplayMode() == System.DISPLAY_MODE_OFF) {
+            return;
+        }
         var ct = System.getClockTime();
         var absMin = absMinute(ct);
         var r = routesFor(absMin, g);
@@ -102,6 +111,16 @@ class View extends WatchUi.WatchFace {
             if (hh == 0) {
                 hh = 12;
             }
+        }
+
+        if (_lowPower || System.getDisplayMode() != System.DISPLAY_MODE_HIGH_POWER) {
+            var ck = _checker;
+            if (ck == null) {
+                ck = WatchUi.loadResource(Rez.Drawables.Checker) as Graphics.BitmapType;
+                _checker = ck;
+            }
+            Draw.lowPower(dc, g, r, rc, hh, ct.min, absMin, _digitFont, ck);
+            return;
         }
 
         var day = Climb.floorDiv(absMin, 1440);
@@ -130,6 +149,16 @@ class View extends WatchUi.WatchFace {
         var rn = nextRoute(absMin, g);
         var P = Climb.poseAt(r, rn, ct.sec);
         Draw.dynamicLayer(dc, g, P);
+    }
+
+    function onEnterSleep() as Void {
+        _lowPower = true;
+        WatchUi.requestUpdate();
+    }
+
+    function onExitSleep() as Void {
+        _lowPower = false;
+        WatchUi.requestUpdate();
     }
 
 }
