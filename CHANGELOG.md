@@ -14,6 +14,16 @@ Issue numbers in parentheses point at
 [the tracker](https://github.com/wkusnierczyk/garmin-climber-time/issues), where the reasoning behind
 each change is recorded in full.
 
+## 0.2.1 -- 2026-11-18
+
+A fix to the tags under the time.
+
+### Fixed
+
+* The letters in the grade and skill tags (4 to 8, and B, I or E) sat high in their boxes and, on
+  the smaller screens, touched the outline. They are now a little smaller and centred in their
+  boxes, and the outlined skill tag looks as large as the filled grade tag beside it. (#62)
+
 ## 0.2.0 -- 2026-11-18
 
 17 more watches: Climber Time now runs on screens of at least 260 px in each direction, MIP

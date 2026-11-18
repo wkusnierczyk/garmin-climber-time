@@ -1,7 +1,7 @@
 # Climber Time. Design
 
-Status: Lite 0.2.0 settled (§14.3; screens down to 260 px, MIP included, §2)  
-Version: 1.2  
+Status: Lite 0.2.1 settled (§14.3; screens down to 260 px, MIP included, §2; the tag letters centred, §3.3, #62)  
+Version: 1.3  
 Date: 2026-11-18  
 Owner: Wacek  
 Platform: Garmin Connect IQ watch face, Monkey C  

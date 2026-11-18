@@ -1,0 +1,1 @@
+The grade and skill tags under the time: their letters are now a little smaller and centred in their boxes, so they no longer touch the outline on smaller screens.

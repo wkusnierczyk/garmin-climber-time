@@ -39,7 +39,7 @@ CHROME  ?= /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
 
 # The store bundle export writes, named by manifest.xml's version
 # (wkusnierczyk/garmin-matrix-time#216):
-# export/ClimberTime-0.2.0.iq. Only MAJOR.MINOR.PATCH from exactly one <iq:application>
+# export/ClimberTime-0.2.1.iq. Only MAJOR.MINOR.PATCH from exactly one <iq:application>
 # start tag is taken, so the name never splits in the shell; anything else reads as no
 # version, which export refuses. override, so the manifest stays the one record of it.
 override APP_VERSION = $(shell tr '\n\r\t' '   ' < "$(MANIFEST)" \
