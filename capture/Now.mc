@@ -29,8 +29,9 @@ module Now {
         return Frame.MOMENT;
     }
 
+    // MIP has no always-on scene (DESIGN.md §13.2), as source/Now.mc.
     function lowPower(asleep as Boolean) as Boolean {
-        return Frame.ALWAYS_ON;
+        return Frame.ALWAYS_ON && !Draw.mip();
     }
 
     // 24-hour, whatever the simulator's default: the images do not depend on it.

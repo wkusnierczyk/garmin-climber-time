@@ -22,9 +22,11 @@ module Draw {
         return mip() ? Graphics.COLOR_BLACK : SLATE;
     }
 
-    // A MIP screen: the one kind with no burn-in to protect against (DESIGN.md §2).
+    // A MIP screen (DESIGN.md §2). getDisplayMode is in every AMOLED product's API and in no
+    // MIP product's (the SDK's device API files, #56), and unlike requiresBurnInProtection, which
+    // can follow the Always On setting, it cannot change while the face runs.
     function mip() as Boolean {
-        return !System.getDeviceSettings().requiresBurnInProtection;
+        return !(System has :getDisplayMode);
     }
 
     // Channel-wise a + (b - a)·t.

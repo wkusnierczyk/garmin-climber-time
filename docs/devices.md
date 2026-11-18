@@ -4,8 +4,8 @@ Climber Time runs on every Connect IQ watch with a screen of at least 260 px in 
 at least 64 colours: 69 products, 54 AMOLED and 15 MIP (since 0.2.0, #56; 0.1.0 needed 360 px). The
 holds and the climber need that resolution, and the routes need colour, so smaller screens are left
 out, and so are 1-bit and 4-bit screens. Watches below Connect IQ 5 are left out too (Venu, Venu
-Mercedes-Benz Collection, D2 Air, and the older 260 and 280 px MIP watches: fēnix 6, Forerunner 945,
-vívoactive 4 and others).
+Mercedes-Benz Collection, D2 Air, and the older 260 and 280 px MIP watches: fēnix 6, Enduro, Descent
+Mk2, Approach S62, vívoactive 4).
 
 On MIP screens the wall has no panel, since the slate rounds to navy on 64 colours, and with the wrist
 down the whole face stays on, redrawn once a minute: MIP cannot burn in, so it needs no always-on
