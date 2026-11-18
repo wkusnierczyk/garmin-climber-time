@@ -14,6 +14,19 @@ Issue numbers in parentheses point at
 [the tracker](https://github.com/wkusnierczyk/garmin-climber-time/issues), where the reasoning behind
 each change is recorded in full.
 
+## 0.2.0 -- 2026-11-18
+
+17 more watches: Climber Time now runs on screens of at least 260 px in each direction, MIP
+included, 69 watches in all.
+
+### Added
+
+* 15 MIP watches: the fēnix 7, 7 Pro and 7X (with quatix 7, tactix 7 and Enduro 2), the fēnix 8
+  Solar and 9 Pro Solar, the Enduro 3 and 4, and the Forerunner 255, 255 Music and 955. On MIP
+  the wall has no panel, the holds on black, and with the wrist down the whole face stays on,
+  redrawn once a minute. (#56)
+* The Venu Sq 2 and Sq 2 Music, a 320 × 360 rectangle. (#56)
+
 ## 0.1.0 -- 2026-11-16
 
 The first release of Climber Time, the free Lite edition, for 52 AMOLED watches with screens of at
