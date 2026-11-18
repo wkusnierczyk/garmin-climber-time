@@ -8,7 +8,7 @@ that version where it was, and carries the bundle at it.
 
 Each section is headed `## X.Y.Z -- YYYY-MM-DD`, two hyphens and the date the tag is pushed: the
 release workflow takes the section with that heading as the release's notes, and refuses a tag
-without one (`tools/release-notes.py`). The first section, 0.1.0, comes with the release.
+without one (`tools/release-notes.py`).
 
 Issue numbers in parentheses point at
 [the tracker](https://github.com/wkusnierczyk/garmin-climber-time/issues), where the reasoning behind
@@ -21,10 +21,10 @@ included, 69 watches in all.
 
 ### Added
 
-* 15 MIP watches: the fēnix 7, 7 Pro and 7X (with quatix 7, tactix 7 and Enduro 2), the fēnix 8
-  Solar and 9 Pro Solar, the Enduro 3 and 4, and the Forerunner 255, 255 Music and 955. On MIP
-  the wall has no panel, the holds on black, and with the wrist down the whole face stays on,
-  redrawn once a minute. (#56)
+* 15 MIP watches: the fēnix 7, 7 Pro, 7X and 7X Pro (with quatix 7 and 7X Solar, tactix 7 and
+  Enduro 2), the fēnix 8 Solar (with tactix 8 Solar 51 mm) and 9 Pro Solar, the Enduro 3 and 4,
+  and the Forerunner 255, 255 Music and 955 / Solar. On MIP the wall has no panel and the holds sit
+  on black, and with the wrist down the whole face stays on, redrawn once a minute. (#56)
 * The Venu Sq 2 and Sq 2 Music, a 320 × 360 rectangle. (#56)
 
 ## 0.1.0 -- 2026-11-16
