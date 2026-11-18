@@ -3,5 +3,6 @@
     <fonts>
         <font id="Time" filename="RobotoCondensed-Bold-70.fnt" antialias="true" />
         <font id="Tag" filename="RobotoCondensed-Bold-41.fnt" antialias="true" />
+        <font id="TagLetter" filename="RobotoCondensed-Bold-33.fnt" antialias="true" />
     </fonts>
 </resources>

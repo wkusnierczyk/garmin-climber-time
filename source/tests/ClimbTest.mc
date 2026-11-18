@@ -283,6 +283,8 @@ class ClimbTest {
                 return false;
             }
         }
+        // The boxes' span; the outlined box's ring reaches a pixel or so further out (#62), within
+        // the 3 px allowed.
         var tags = 2 * (Draw.tagGlyphWidth(dc, tf) + 0.24 * g.tagSize) + 0.18 * g.tagSize;
         if ((tags - 2 * cw).abs() > 3) {
             logger.error("the tags span " + tags + " px, the minutes' cells " + 2 * cw);

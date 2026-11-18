@@ -22,12 +22,16 @@ import math
 import os
 import re
 import sys
+import zlib
+import struct
 
 FONT_RE = re.compile(r'<font\s+id="(\w+)"\s+filename="([^"]+)"')
-FONT_IDS = {'Time', 'Tag'}
+FONT_IDS = {'Time', 'Tag', 'TagLetter'}
 # The glyphs each font draws: the time is %02d hours and minutes; the tags are the grade, 4 to 8
-# (Climb.mc, Route: grade = 4 + ... % 5), and the proficiency, B, I or E (Draw.tags).
-CHARSETS = {'Time': '0123456789', 'Tag': '45678BEI'}
+# (Climb.mc, Route: grade = 4 + ... % 5), and the proficiency, B, I or E (Draw.tags). Tag sizes the
+# boxes (Draw.tagGlyphWidth measures it) and TagLetter, LETTER of its size, draws the letters (#62).
+CHARSETS = {'Time': '0123456789', 'Tag': '45678BEI', 'TagLetter': '45678BEI'}
+LETTER = 0.8
 # Connect IQ's deviceFamily shapes; any other spelling makes a directory the compiler never
 # selects, silently (wkusnierczyk/garmin-matrix-time#39).
 CIQ_SHAPES = {'round', 'semiround', 'rectangle', 'semioctagon'}
@@ -303,19 +307,155 @@ rows = []
 bad = 0
 for w, h, shape in targets:
     digits, tag = design(w, h, shape)
-    got_t, got_g = size_at('Time', w, h), size_at('Tag', w, h)
+    got_t, got_g, got_l = size_at('Time', w, h), size_at('Tag', w, h), size_at('TagLetter', w, h)
     width_binds = w / rw < h / rh
     off = f", {got_t - digits:+d} px, the width binds" if got_t != digits else ""
-    rows.append(f"{w}x{h} Time {got_t} (design {digits}{off}), Tag {got_g} (design {tag:.2f})")
-    if abs(got_t - digits) > (1 if width_binds else 0) or abs(got_g - tag) > 1:
+    rows.append(f"{w}x{h} Time {got_t} (design {digits}{off}), Tag {got_g} (design {tag:.2f}), "
+                f"TagLetter {got_l} (design {LETTER * tag:.2f})")
+    if abs(got_t - digits) > (1 if width_binds else 0) or abs(got_g - tag) > 1 or abs(got_l - LETTER * tag) > 1:
         bad += 1
 for r in rows:
     print(f"        {r}")
-ok(not bad, "every target's Time is the design's size, within 1 where the width binds, and its Tag within 1")
+ok(not bad, "every target's Time is the design's size, within 1 where the width binds, and its Tag and "
+   f"TagLetter ({LETTER} of the Tag) within 1")
+
+# ------------------------------------------------------------------- the tag boxes
+# Each tag letter inside its box with space on every side (#62), as Draw.tags and
+# Draw.inkCentred place them: the box on whole pixels from the Tag font (groupRows' row, hugging
+# B, padded 0.12 of the tag size, a ring of max(2, 0.05 size) on the box's edge, its larger half
+# inside), the TagLetter letter top-aligned so that its ink centre, the baseline less half the
+# cap height, lands on the box's centre, a pixel up against the renderer's (TEXT_DY). The ink is
+# read from each bitmap, not assumed. Both directions are relative to the box's whole-pixel edge;
+# across, INK_X stands in for the bitmap's own centre, so the check asks a pixel more there, 3 px.
+# The constants and code lines this model restates are asserted from Draw.mc and View.mc below,
+# so that a change there fails here until the model follows.
+CAP_EM = 1456 / 2048   # OS/2 sCapHeight (Draw.CAP_EM)
+LINE_EM = 2400 / 2048  # Draw.LINE_EM
+
+
+def png_alpha(path):
+    """Rows of alpha values from an 8-bit RGBA PNG, the format ttf2bmp writes."""
+    data = open(path, 'rb').read()
+    if data[:8] != b'\x89PNG\r\n\x1a\n':
+        raise ValueError(f"{path}: not a PNG (a Git LFS pointer not checked out?)")
+    pos, idat, width = 8, b'', 0
+    while pos < len(data):
+        n, kind = struct.unpack('>I4s', data[pos:pos + 8])
+        body = data[pos + 8:pos + 8 + n]
+        if kind == b'IHDR':
+            width, _, depth, colour = struct.unpack('>IIBB', body[:10])
+            if (depth, colour) != (8, 6):
+                raise ValueError(f"{path}: not 8-bit RGBA")
+        elif kind == b'IDAT':
+            idat += body
+        pos += 12 + n
+    raw, stride, rows, prev, at = zlib.decompress(idat), width * 4, [], bytearray(width * 4), 0
+    while at < len(raw):
+        kind, line = raw[at], bytearray(raw[at + 1:at + 1 + stride])
+        at += 1 + stride
+        for x in range(stride):
+            a = line[x - 4] if x >= 4 else 0
+            b, c = prev[x], (prev[x - 4] if x >= 4 else 0)
+            if kind == 1:
+                line[x] = (line[x] + a) & 255
+            elif kind == 2:
+                line[x] = (line[x] + b) & 255
+            elif kind == 3:
+                line[x] = (line[x] + (a + b) // 2) & 255
+            elif kind == 4:
+                pa, pb, pc = abs(b - c), abs(a - c), abs(a + b - 2 * c)
+                line[x] = (line[x] + (a if pa <= pb and pa <= pc else b if pb <= pc else c)) & 255
+        rows.append([line[x] for x in range(3, stride, 4)])
+        prev = line
+    return rows
+
+
+def ink(path, chars):
+    """{char: (left, right, top, bottom)} of each glyph's visible ink in its cell, and the base."""
+    text = read(path)
+    base = int(re.search(r'\bbase=(\d+)', text).group(1))
+    alpha = png_alpha(os.path.join(os.path.dirname(path), re.search(r'file="([^"]+)"', text).group(1)))
+    out = {}
+    for c in chars:
+        m = re.search(rf'^char id={ord(c)}\s+x=(\d+)\s+y=(\d+)\s+width=(\d+)\s+height=(\d+)'
+                      rf'\s+xoffset=(-?\d+)\s+yoffset=(-?\d+)', text, re.M)
+        x0, y0, cw, ch, xo, yo = map(int, m.groups())
+        if (xo, yo) != (0, 0):
+            raise ValueError(f"{path}: {c} has offset {xo},{yo}; the ink model assumes cells at the origin")
+        pts = [(x, y) for y in range(ch) for x in range(cw) if alpha[y0 + y][x0 + x] > 64]
+        # The visible centre across: the outer columns count by their strongest pixel, so a half-lit
+        # edge column is half a pixel and a faint one next to nothing.
+        cols = [max(alpha[y0 + y][x0 + x] for y in range(ch)) / 255 for x in range(cw)]
+        lit = [x for x in range(cw) if cols[x] > 0]
+        mid = ((lit[0] + 1 - cols[lit[0]]) + (lit[-1] + cols[lit[-1]])) / 2
+        out[c] = (min(p[0] for p in pts), max(p[0] for p in pts), min(p[1] for p in pts), max(p[1] for p in pts), mid)
+    return out, base
+
+
+def whole(v):
+    return math.floor(v + 0.5)
+
+
+print("\nTAG BOXES")
+tight, off = [], []
+inks = re.search(r'const INK_CHARS = "([^"]*)";\s*const INK_X = \[([^\]]*)\]', draw)
+ink_x = dict(zip(inks.group(1), (float(v) for v in inks.group(2).split(',')))) if inks else {}
+ok(sorted(ink_x) == sorted(CHARSETS['TagLetter']), f"Draw.INK_X has a centre for every tag glyph ({''.join(sorted(ink_x))})")
+view = read('source/View.mc')
+model = {
+    "Draw.CAP_EM is the cap height modelled here": re.search(r'const CAP_EM = 1456\.0 / 2048\.0;', draw),
+    "Draw.TEXT_DY is the 1 px modelled here": re.search(r'const TEXT_DY = 1;', draw),
+    "Draw.inkCentred draws left- and top-aligned at the modelled x and y": re.search(
+        r'drawText\(Math\.round\(cx - dx\), Math\.round\(cy - mid\) - TEXT_DY, f, s, Graphics\.TEXT_JUSTIFY_LEFT\)', draw),
+    "Draw.tags splits the ring, the smaller half outside": re.search(r'var out = ring / 2;\s*var inn = ring - out;', draw),
+    "Draw.tags pads the hugging box 0.12 of the tag size": re.search(r'var pad = fs \* 0\.12;', draw),
+    "View.onLayout sizes the boxes from the Tag font and draws the letters in TagLetter": (
+        re.search(r'var tf = WatchUi\.loadResource\(Rez\.Fonts\.Tag\)', view)
+        and re.search(r'g\.tagGlyphW = Draw\.tagGlyphWidth\(dc, tf\);', view)
+        and re.search(r'g\.tagSize = Draw\.em\(dc, tf\);', view)
+        and re.search(r'_tagFont = WatchUi\.loadResource\(Rez\.Fonts\.TagLetter\)', view)),
+}
+for what, found in model.items():
+    ok(bool(found), what)
+for d in dirs:
+    w_, h_ = map(int, d.rsplit('-', 1)[1].split('x'))
+    files = {e['id']: e['filename'] for e in font_elements(read(f'{d}/fonts/fonts.xml'))}
+    line_t, _ = fnt(f"{d}/fonts/{files['Time']}")
+    line_g, adv = fnt(f"{d}/fonts/{files['Tag']}")
+    ds, fs = math.floor(line_t / LINE_EM), math.floor(line_g / LINE_EM)
+    line_l, _ = fnt(f"{d}/fonts/{files['TagLetter']}")
+    ls = math.floor(line_l / LINE_EM)
+    glyphs, base = ink(f"{d}/fonts/{files['TagLetter']}", CHARSETS['TagLetter'])
+    dh = 0.72 * ds
+    cy = h_ / 2 - dh / 2 + dh + 0.18 * ds + 0.96 * fs / 2        # Draw.groupRows, TIME_CENTRED
+    pad = fs * 0.12
+    bw = max(adv[c] for c in '8BIE') + 2 * pad                   # Draw.tagGlyphWidth
+    th = 0.72 * fs + 2 * pad
+    bw_i, th_i, ring_all = whole(bw), whole(th), whole(max(2.0, fs * 0.05))
+    ring = ring_all - ring_all // 2                               # the ring's inner part
+    y = whole(cy - th / 2)
+    top = whole(y + th_i / 2 - (base - CAP_EM * ls / 2))                # Draw.inkCentred (TEXT_DY undoes the renderer's pixel)
+    worst = min(min(top + t - (y + ring), (y + th_i - ring - 1) - (top + b)) for _, _, t, b, _ in glyphs.values())
+    # Across, relative to the box's left edge (a whole pixel, so it drops out): the glyph's origin
+    # at the box's centre less its outline centre, and the space either side of the lit columns.
+    side = 99
+    for c, (l, r, _, _, mid) in glyphs.items():
+        left = whole(bw_i / 2 - ink_x[c] / UPM * ls)
+        side = min(side, left + l - ring, (bw_i - ring - 1) - (left + r))
+        if abs(ink_x[c] / UPM * ls - mid) > 0.5:
+            off.append(f"{d[10:]} {c}: Draw.INK_X puts its centre {ink_x[c] / UPM * ls:.2f} px in, the bitmap {mid:.2f}")
+    print(f"        {d[10:]:16} Tag {fs}, TagLetter {ls}: at least {worst} px above and below, {side} px a side")
+    if worst < 2 or side < 3:
+        tight.append(d)
+ok(not off, "Draw.INK_X centres each tag glyph within half a pixel of its bitmap's visible centre"
+   + (f" (not {off[:3]})" if off else ""))
+ok(not tight, "every tag letter has at least 2 px of space above and below inside its ring, and 3 px a side"
+   + (f" (not in {', '.join(tight)})" if tight else ""))
 
 # ------------------------------------------------------------------- the tables
 print("\nTABLES")
-ROW_RE = re.compile(r'^\|\s*(\d+)\s*x\s*(\d+)\s*\|\s*(\w+)\s*\|\s*(\w+)\s*\|\s*([\w ]+?)\s*\|\s*(\d+)\s*\|$')
+# The element is the font id in words, as the scaler writes it: TagLetter is "Tag letter".
+ROW_RE = re.compile(r'^\|\s*(\d+)\s*x\s*(\d+)\s*\|\s*(\w+)\s*\|\s*(\w+(?: \w+)*?)\s*\|\s*([\w ]+?)\s*\|\s*(\d+)\s*\|$')
 HEAD = '# Font sizes by resolution'
 
 
@@ -336,7 +476,8 @@ def check_rows(lines, label):
     for line in lines:
         m = ROW_RE.match(line.strip())
         if m:
-            got[(int(m.group(1)), int(m.group(2)), m.group(3), m.group(4))] = int(m.group(6))
+            fid = ''.join(word.capitalize() for word in m.group(4).split())
+            got[(int(m.group(1)), int(m.group(2)), m.group(3), fid)] = int(m.group(6))
     want = {(w, h, s, fid): size_at(fid, w, h) for w, h, s in targets for fid in refsize}
     ok(got == want, f"{label}: one row per target and font, at round(reference x k)"
        + ("" if got == want else f" (differs at {sorted(set(got.items()) ^ set(want.items()))[:3]})"))

@@ -5,6 +5,7 @@
     <fonts>
         <font id="Time" filename="RobotoCondensed-Bold-95.fnt" antialias="true" />
         <font id="Tag" filename="RobotoCondensed-Bold-56.fnt" antialias="true" />
+        <font id="TagLetter" filename="RobotoCondensed-Bold-45.fnt" antialias="true" />
     </fonts>
 
     <jsonData id="FontCharsets" filename="charsets.json"/>

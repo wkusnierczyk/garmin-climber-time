@@ -6,5 +6,9 @@
     {
         "fontCharset": "45678BEI",
         "fontId": "Tag"
+    },
+    {
+        "fontCharset": "45678BEI",
+        "fontId": "TagLetter"
     }
 ]

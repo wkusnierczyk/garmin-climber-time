@@ -52,6 +52,33 @@ module Draw {
         return Math.floor(dc.getFontHeight(f) / LINE_EM).toFloat();
     }
 
+    // Roboto Condensed's cap height (OS/2 sCapHeight 1456 of 2048 units): the height of the tag
+    // glyphs' ink (B, I, E and the grade's digits) above the baseline.
+    const CAP_EM = 1456.0 / 2048.0;
+
+    // The tag glyphs' outline centres across, from the origin, in the same units: (xMin + xMax) / 2
+    // of each glyph in the TTF's glyf table. A glyph's outline is not centred in its advance (E's
+    // sits 0.016 em right of it), and ttf2bmp rounds the advance up, so centring the advance, as
+    // TEXT_JUSTIFY_CENTER does, left an E most of a pixel right of its box's centre (#62).
+    const INK_CHARS = "45678BEI";
+    const INK_X = [514.0, 522.0, 531.5, 508.0, 517.0, 585.5, 535.5, 276.5] as Array<Float>;
+
+    // Top-aligned bitmap text lands a pixel below the y it is drawn at: measured on the fēnix 7X
+    // in the simulator, the ink of both tags one row under the bitmap's (#62).
+    const TEXT_DY = 1;
+
+    // Draws one tag glyph of f with its ink centred on (cx, cy), on whole pixels: across on its
+    // outline's centre, down on half the cap height above the baseline (the font's ascent).
+    // VCENTER centres the font's line, whose middle is about a pixel below the ink's, and a Float
+    // y is not rounded the way the boxes are, so a tag letter could reach its ring (#62).
+    function inkCentred(dc as Graphics.Dc, cx as Float, cy as Float, f as Graphics.FontType, s as String) as Void {
+        var size = em(dc, f);
+        var i = INK_CHARS.find(s);
+        var dx = i != null ? INK_X[i] / 2048.0 * size : dc.getTextWidthInPixels(s, f) / 2.0;
+        var mid = Graphics.getFontAscent(f) - CAP_EM * size / 2;
+        dc.drawText(Math.round(cx - dx), Math.round(cy - mid) - TEXT_DY, f, s, Graphics.TEXT_JUSTIFY_LEFT);
+    }
+
     // The digits and the tags are bitmap fonts, Roboto Condensed Bold, one size per screen
     // resolution (resources/fonts/fonts.xml, docs/fonts.md). The sizes are what the design's
     // formula gives on each screen, which is no longer computed here: the digits 0.19 H, shrunk to
@@ -325,8 +352,9 @@ module Draw {
     //   TAGS_INLINE   side by side at mid-height
     //   TAGS_STACKED  grade above proficiency, about mid-height
     //   TAGS_ROWS     grade level with the hours, proficiency level with the minutes
-    // Only the time group ships; the other modes draw with the time group's tag font, which is
-    // sized for it (fs is that font's em). A layout that ships them needs fonts of its own.
+    // Only the time group ships; the other modes draw with the time group's fonts, which are
+    // sized for it: fs is the Tag font's em, which sizes the boxes, and font is TagLetter, 0.8 of
+    // it, for the letters (#62). A layout that ships them needs fonts of its own.
     function tags(dc as Graphics.Dc, g as Geom, r as Route, rc as Number, font as Graphics.FontType, fs as Float) as Void {
         var asc = fs * 0.72;
         var bw;
@@ -335,7 +363,7 @@ module Draw {
         var rad;
         if (g.tagHug) {
             // A box hugging the glyph: the widest of the characters, padded.
-            var cw = tagGlyphWidth(dc, font);
+            var cw = g.tagGlyphW;
             var pad = fs * 0.12;
             bw = cw + 2 * pad;
             th = asc + 2 * pad;
@@ -389,19 +417,23 @@ module Draw {
         dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
         dc.fillRoundedRectangle(x1, y1, w, h, rr);
         dc.setColor(mix(rc, 0, 0.82), Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx1, cy1, font, r.grade.toString(), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        inkCentred(dc, x1 + w / 2.0, y1 + h / 2.0, font, r.grade.toString());
 
-        // The outline as two fills, the box in the route colour and the inside in the background,
-        // so its outer edge is the grade box's by construction: a thick pen's stroke does not
-        // land where a fill's edge does, and drew this box 3 px short (#41).
+        // The outline as two fills, the box in the route colour and the inside in the background:
+        // a thick pen's stroke does not land where a fill's edge does, and drew this box 3 px
+        // short (#41). The ring straddles the grade box's edge, half outside (the smaller half
+        // of an odd ring) and half inside: a ring wholly inside made the box look smaller than
+        // the filled one beside it (#62).
+        var out = ring / 2;
+        var inn = ring - out;
         dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(x2, y2, w, h, rr);
+        dc.fillRoundedRectangle(x2 - out, y2 - out, w + 2 * out, h + 2 * out, rr + out);
         // The inside shows the background behind the tag: the wall only where the tags sit on
         // it (Geom.tagsOnWall), black everywhere else (#45).
         dc.setColor(g.tagsOnWall ? wall() : Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(x2 + ring, y2 + ring, w - 2 * ring, h - 2 * ring, rr > ring + 1 ? rr - ring : 1);
+        dc.fillRoundedRectangle(x2 + inn, y2 + inn, w - 2 * inn, h - 2 * inn, rr > inn + 1 ? rr - inn : 1);
         dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx2, cy2, font, letters[r.prof], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        inkCentred(dc, x2 + w / 2.0, y2 + h / 2.0, font, letters[r.prof]);
     }
 
     function seg(dc as Graphics.Dc, P as Pose, a as Number, b as Number, dx as Float, dy as Float, w as Float) as Void {
