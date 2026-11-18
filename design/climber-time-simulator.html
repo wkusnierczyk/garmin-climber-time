@@ -713,15 +713,22 @@ function drawGroupTags(ctx,G,R,rc){
   const L=groupLayout(ctx,G),fs=L.tfs;ctx.font=fontOf(fs,700);ctx.textAlign='center';ctx.textBaseline='alphabetic';
   const asc=fs*.72,pad=fs*.12,bw=L.tgw+2*pad,th=asc+2*pad,lw=Math.max(2,fs*.05),rad=Math.max(2,fs*.12),gap=fs*.18;
   const cx2=G.groupRight-bw/2,cx1=cx2-bw-gap,cy=L.yTags;
-  const glyph=(t,x)=>{ctx.font=fontOf(fs*.8,700);const a=ctx.measureText(t).actualBoundingBoxAscent||asc*.8;ctx.fillText(t,x,cy+a/2)};   // letters 0.8 of the tags' size, the boxes unchanged (#62)
+  // Letters 0.8 of the tags' size, the boxes unchanged, each centred on its outline: across on
+  // (xMin + xMax) / 2 of the glyph in the typeface's units, as Draw.INK_X (#62).
+  const INK_X={'4':514,'5':522,'6':531.5,'7':508,'8':517,B:585.5,E:535.5,I:276.5},ls=fs*.8;
+  const glyph=(t,x)=>{ctx.font=fontOf(ls,700);ctx.textAlign='left';const a=ctx.measureText(t).actualBoundingBoxAscent||asc*.8;ctx.fillText(t,x-(INK_X[t]??ctx.measureText(t).width/2*2048/ls)/2048*ls,cy+a/2);ctx.textAlign='center'};
   if(S.showGrade){ctx.fillStyle=css(rc);rrPath(ctx,cx1-bw/2,cy-th/2,bw,th,rad);ctx.fill();ctx.fillStyle=css(mix(rc,BLACK,.82));glyph(String(R.grade),cx1)}
   const pf=R.prof||S.prof,pc=digitColor(S[{beginner:'profB',intermediate:'profI',expert:'profE'}[pf]],rc);
-  if(S.showProf){ctx.fillStyle=css(BLACK);rrPath(ctx,cx2-bw/2,cy-th/2,bw,th,rad);ctx.fill();   // the time group sits on black, not the wall (#45)
-    ctx.strokeStyle=css(pc);ctx.lineWidth=lw;rrPath(ctx,cx2-bw/2,cy-th/2,bw,th,rad);ctx.stroke();   // the ring on the box's edge, half out, half in (#62)
+  if(S.showProf){   // the ring on the box's edge, whole pixels, the smaller half outside, as Draw.tags (#62)
+    const ring=Math.round(lw),out=Math.floor(ring/2),inn=ring-out,x2=cx2-bw/2,y2=cy-th/2;
+    ctx.fillStyle=css(pc);rrPath(ctx,x2-out,y2-out,bw+2*out,th+2*out,rad+out);ctx.fill();
+    ctx.fillStyle=css(BLACK);rrPath(ctx,x2+inn,y2+inn,bw-2*inn,th-2*inn,Math.max(1,rad-inn));ctx.fill();   // the time group sits on black, not the wall (#45)
     ctx.fillStyle=css(pc);glyph({beginner:'B',intermediate:'I',expert:'E'}[pf]||'E',cx2)}
 }
 function drawTags(ctx,G,R,rc,wallRGB){
   if(G.timeGroup)return drawGroupTags(ctx,G,R,rc);
+  // The unshipped layouts' tags: the prototype's own sizes, which the face's other modes never
+  // matched; #62's smaller letters and edge-straddling ring are the time group's only.
   const items=[];
   if(S.showGrade)items.push({t:String(R.grade),filled:true});
   if(S.showProf)items.push({t:{beginner:'B',intermediate:'I',expert:'E'}[R.prof||S.prof]||'E',filled:false});

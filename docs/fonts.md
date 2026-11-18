@@ -92,8 +92,8 @@ and `make check-fonts` holds them to it. Where the SDK's device definitions are 
 in CI's build job), it also checks that every product in `manifest.xml` belongs to a family with fonts,
 since one without would compile with the reference's sizes from `resources/fonts/`; without them it
 says it skipped that check. It also reads each tag letter's ink from the bitmaps and places it as the
-face does, centred on its ink inside its box, and fails if a letter comes within 2 px of the box's
-ring above or below, or within 3 px at the sides, or if `Draw.INK_X`, the glyphs' outline centres
+face does, centred on its ink inside its box, and fails unless every letter has at least 2 px of space
+inside the box's ring above and below and 3 px at the sides, or if `Draw.INK_X`, the glyphs' outline centres
 taken from the typeface, is more than half a pixel from a bitmap's visible centre (#62).
 
 `make fonts` needs both tools (see [Development](development.md#tools)). It also copies the reference

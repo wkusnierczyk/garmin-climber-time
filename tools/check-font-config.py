@@ -323,10 +323,12 @@ ok(not bad, "every target's Time is the design's size, within 1 where the width 
 # Each tag letter inside its box with space on every side (#62), as Draw.tags and
 # Draw.inkCentred place them: the box on whole pixels from the Tag font (groupRows' row, hugging
 # B, padded 0.12 of the tag size, a ring of max(2, 0.05 size) on the box's edge, its larger half
-# inside), the TagLetter letter top-aligned
-# so that its ink centre, the baseline less half the cap height, lands on the box's centre. The ink is read
-# from each bitmap, not assumed. The horizontal position depends on the wall, so there the
-# check asks for 3 px a side, a pixel more than the vertical, against the centring's rounding.
+# inside), the TagLetter letter top-aligned so that its ink centre, the baseline less half the
+# cap height, lands on the box's centre, a pixel up against the renderer's (TEXT_DY). The ink is
+# read from each bitmap, not assumed. Both directions are relative to the box's whole-pixel edge;
+# across, INK_X stands in for the bitmap's own centre, so the check asks a pixel more there, 3 px.
+# The constants and code lines this model restates are asserted from Draw.mc and View.mc below,
+# so that a change there fails here until the model follows.
 CAP_EM = 1456 / 2048   # OS/2 sCapHeight (Draw.CAP_EM)
 LINE_EM = 2400 / 2048  # Draw.LINE_EM
 
@@ -334,6 +336,8 @@ LINE_EM = 2400 / 2048  # Draw.LINE_EM
 def png_alpha(path):
     """Rows of alpha values from an 8-bit RGBA PNG, the format ttf2bmp writes."""
     data = open(path, 'rb').read()
+    if data[:8] != b'\x89PNG\r\n\x1a\n':
+        raise ValueError(f"{path}: not a PNG (a Git LFS pointer not checked out?)")
     pos, idat, width = 8, b'', 0
     while pos < len(data):
         n, kind = struct.unpack('>I4s', data[pos:pos + 8])
@@ -373,8 +377,11 @@ def ink(path, chars):
     alpha = png_alpha(os.path.join(os.path.dirname(path), re.search(r'file="([^"]+)"', text).group(1)))
     out = {}
     for c in chars:
-        m = re.search(rf'^char id={ord(c)}\s+x=(\d+)\s+y=(\d+)\s+width=(\d+)\s+height=(\d+)', text, re.M)
-        x0, y0, cw, ch = map(int, m.groups())
+        m = re.search(rf'^char id={ord(c)}\s+x=(\d+)\s+y=(\d+)\s+width=(\d+)\s+height=(\d+)'
+                      rf'\s+xoffset=(-?\d+)\s+yoffset=(-?\d+)', text, re.M)
+        x0, y0, cw, ch, xo, yo = map(int, m.groups())
+        if (xo, yo) != (0, 0):
+            raise ValueError(f"{path}: {c} has offset {xo},{yo}; the ink model assumes cells at the origin")
         pts = [(x, y) for y in range(ch) for x in range(cw) if alpha[y0 + y][x0 + x] > 64]
         # The visible centre across: the outer columns count by their strongest pixel, so a half-lit
         # edge column is half a pixel and a faint one next to nothing.
@@ -394,6 +401,22 @@ tight, off = [], []
 inks = re.search(r'const INK_CHARS = "([^"]*)";\s*const INK_X = \[([^\]]*)\]', draw)
 ink_x = dict(zip(inks.group(1), (float(v) for v in inks.group(2).split(',')))) if inks else {}
 ok(sorted(ink_x) == sorted(CHARSETS['TagLetter']), f"Draw.INK_X has a centre for every tag glyph ({''.join(sorted(ink_x))})")
+view = read('source/View.mc')
+model = {
+    "Draw.CAP_EM is the cap height modelled here": re.search(r'const CAP_EM = 1456\.0 / 2048\.0;', draw),
+    "Draw.TEXT_DY is the 1 px modelled here": re.search(r'const TEXT_DY = 1;', draw),
+    "Draw.inkCentred draws left- and top-aligned at the modelled x and y": re.search(
+        r'drawText\(Math\.round\(cx - dx\), Math\.round\(cy - mid\) - TEXT_DY, f, s, Graphics\.TEXT_JUSTIFY_LEFT\)', draw),
+    "Draw.tags splits the ring, the smaller half outside": re.search(r'var out = ring / 2;\s*var inn = ring - out;', draw),
+    "Draw.tags pads the hugging box 0.12 of the tag size": re.search(r'var pad = fs \* 0\.12;', draw),
+    "View.onLayout sizes the boxes from the Tag font and draws the letters in TagLetter": (
+        re.search(r'var tf = WatchUi\.loadResource\(Rez\.Fonts\.Tag\)', view)
+        and re.search(r'g\.tagGlyphW = Draw\.tagGlyphWidth\(dc, tf\);', view)
+        and re.search(r'g\.tagSize = Draw\.em\(dc, tf\);', view)
+        and re.search(r'_tagFont = WatchUi\.loadResource\(Rez\.Fonts\.TagLetter\)', view)),
+}
+for what, found in model.items():
+    ok(bool(found), what)
 for d in dirs:
     w_, h_ = map(int, d.rsplit('-', 1)[1].split('x'))
     files = {e['id']: e['filename'] for e in font_elements(read(f'{d}/fonts/fonts.xml'))}
