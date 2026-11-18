@@ -22,6 +22,8 @@ import math
 import os
 import re
 import sys
+import zlib
+import struct
 
 FONT_RE = re.compile(r'<font\s+id="(\w+)"\s+filename="([^"]+)"')
 FONT_IDS = {'Time', 'Tag'}
@@ -312,6 +314,95 @@ for w, h, shape in targets:
 for r in rows:
     print(f"        {r}")
 ok(not bad, "every target's Time is the design's size, within 1 where the width binds, and its Tag within 1")
+
+# ------------------------------------------------------------------- the tag boxes
+# Each tag letter inside its box with at least a pixel of space on every side (#62), as
+# Draw.tags and Draw.inkCentred place them: the box on whole pixels (groupRows' row, hugging B,
+# padded 0.12 of the tag size, a ring of max(2, 0.05 size)), the letter top-aligned so that its
+# ink centre, the baseline less half the cap height, lands on the box's centre. The ink is read
+# from each bitmap, not assumed. The horizontal position depends on the wall, so there the
+# check asks for 2 px a side, a pixel more than the vertical, against the centring's rounding.
+CAP_EM = 1456 / 2048   # OS/2 sCapHeight (Draw.CAP_EM)
+LINE_EM = 2400 / 2048  # Draw.LINE_EM
+
+
+def png_alpha(path):
+    """Rows of alpha values from an 8-bit RGBA PNG, the format ttf2bmp writes."""
+    data = open(path, 'rb').read()
+    pos, idat, width = 8, b'', 0
+    while pos < len(data):
+        n, kind = struct.unpack('>I4s', data[pos:pos + 8])
+        body = data[pos + 8:pos + 8 + n]
+        if kind == b'IHDR':
+            width, _, depth, colour = struct.unpack('>IIBB', body[:10])
+            if (depth, colour) != (8, 6):
+                raise ValueError(f"{path}: not 8-bit RGBA")
+        elif kind == b'IDAT':
+            idat += body
+        pos += 12 + n
+    raw, stride, rows, prev, at = zlib.decompress(idat), width * 4, [], bytearray(width * 4), 0
+    while at < len(raw):
+        kind, line = raw[at], bytearray(raw[at + 1:at + 1 + stride])
+        at += 1 + stride
+        for x in range(stride):
+            a = line[x - 4] if x >= 4 else 0
+            b, c = prev[x], (prev[x - 4] if x >= 4 else 0)
+            if kind == 1:
+                line[x] = (line[x] + a) & 255
+            elif kind == 2:
+                line[x] = (line[x] + b) & 255
+            elif kind == 3:
+                line[x] = (line[x] + (a + b) // 2) & 255
+            elif kind == 4:
+                pa, pb, pc = abs(b - c), abs(a - c), abs(a + b - 2 * c)
+                line[x] = (line[x] + (a if pa <= pb and pa <= pc else b if pb <= pc else c)) & 255
+        rows.append([line[x] for x in range(3, stride, 4)])
+        prev = line
+    return rows
+
+
+def ink(path, chars):
+    """{char: (left, right, top, bottom)} of each glyph's visible ink in its cell, and the base."""
+    text = read(path)
+    base = int(re.search(r'\bbase=(\d+)', text).group(1))
+    alpha = png_alpha(os.path.join(os.path.dirname(path), re.search(r'file="([^"]+)"', text).group(1)))
+    out = {}
+    for c in chars:
+        m = re.search(rf'^char id={ord(c)}\s+x=(\d+)\s+y=(\d+)\s+width=(\d+)\s+height=(\d+)', text, re.M)
+        x0, y0, cw, ch = map(int, m.groups())
+        pts = [(x, y) for y in range(ch) for x in range(cw) if alpha[y0 + y][x0 + x] > 64]
+        out[c] = (min(p[0] for p in pts), max(p[0] for p in pts), min(p[1] for p in pts), max(p[1] for p in pts))
+    return out, base
+
+
+def whole(v):
+    return math.floor(v + 0.5)
+
+
+print("\nTAG BOXES")
+tight = []
+for d in dirs:
+    w_, h_ = map(int, d.rsplit('-', 1)[1].split('x'))
+    files = {e['id']: e['filename'] for e in font_elements(read(f'{d}/fonts/fonts.xml'))}
+    line_t, _ = fnt(f"{d}/fonts/{files['Time']}")
+    line_g, adv = fnt(f"{d}/fonts/{files['Tag']}")
+    ds, fs = math.floor(line_t / LINE_EM), math.floor(line_g / LINE_EM)
+    glyphs, base = ink(f"{d}/fonts/{files['Tag']}", CHARSETS['Tag'])
+    dh = 0.72 * ds
+    cy = h_ / 2 - dh / 2 + dh + 0.18 * ds + 0.96 * fs / 2        # Draw.groupRows, TIME_CENTRED
+    pad = fs * 0.12
+    bw = max(adv[c] for c in '8BIE') + 2 * pad                   # Draw.tagGlyphWidth
+    th = 0.72 * fs + 2 * pad
+    bw_i, th_i, ring = whole(bw), whole(th), whole(max(2.0, fs * 0.05))
+    y = whole(cy - th / 2)
+    top = whole(y + th_i / 2 - (base - CAP_EM * fs / 2))          # Draw.inkCentred
+    worst = min(min(top + t - (y + ring), (y + th_i - ring - 1) - (top + b)) for _, _, t, b in glyphs.values())
+    side = min((bw_i - 2 * ring - (r - l + 1)) / 2 for l, r, _, _ in glyphs.values())
+    print(f"        {d[10:]:16} Tag {fs}: at least {worst} px above and below, {side:.1f} px a side")
+    if worst < 1 or side < 2:
+        tight.append(d)
+ok(not tight, "every tag letter has at least 1 px of space above and below inside its ring, and 2 px a side"
+   + (f" (not in {', '.join(tight)})" if tight else ""))
 
 # ------------------------------------------------------------------- the tables
 print("\nTABLES")

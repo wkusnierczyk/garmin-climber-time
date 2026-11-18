@@ -52,6 +52,19 @@ module Draw {
         return Math.floor(dc.getFontHeight(f) / LINE_EM).toFloat();
     }
 
+    // Roboto Condensed's cap height (OS/2 sCapHeight 1456 of 2048 units): the height of the tag
+    // glyphs' ink (B, I, E and the grade's digits) above the baseline.
+    const CAP_EM = 1456.0 / 2048.0;
+
+    // Draws one character of f with its ink centred on (cx, cy), on whole pixels. VCENTER centres
+    // the font's line, whose middle is not the ink's: the ink sits about a pixel above it, and a
+    // Float y is not rounded the way the boxes are, so a tag letter could reach its ring (#62).
+    // Top-aligned at the baseline (the font's ascent) less half the cap height, it cannot.
+    function inkCentred(dc as Graphics.Dc, cx as Float, cy as Float, f as Graphics.FontType, s as String) as Void {
+        var mid = Graphics.getFontAscent(f) - CAP_EM * em(dc, f) / 2;
+        dc.drawText(Math.round(cx), Math.round(cy - mid), f, s, Graphics.TEXT_JUSTIFY_CENTER);
+    }
+
     // The digits and the tags are bitmap fonts, Roboto Condensed Bold, one size per screen
     // resolution (resources/fonts/fonts.xml, docs/fonts.md). The sizes are what the design's
     // formula gives on each screen, which is no longer computed here: the digits 0.19 H, shrunk to
@@ -389,7 +402,7 @@ module Draw {
         dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
         dc.fillRoundedRectangle(x1, y1, w, h, rr);
         dc.setColor(mix(rc, 0, 0.82), Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx1, cy1, font, r.grade.toString(), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        inkCentred(dc, x1 + w / 2.0, y1 + h / 2.0, font, r.grade.toString());
 
         // The outline as two fills, the box in the route colour and the inside in the background,
         // so its outer edge is the grade box's by construction: a thick pen's stroke does not
@@ -401,7 +414,7 @@ module Draw {
         dc.setColor(g.tagsOnWall ? wall() : Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
         dc.fillRoundedRectangle(x2 + ring, y2 + ring, w - 2 * ring, h - 2 * ring, rr > ring + 1 ? rr - ring : 1);
         dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx2, cy2, font, letters[r.prof], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        inkCentred(dc, x2 + w / 2.0, y2 + h / 2.0, font, letters[r.prof]);
     }
 
     function seg(dc as Graphics.Dc, P as Pose, a as Number, b as Number, dx as Float, dy as Float, w as Float) as Void {

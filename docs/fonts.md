@@ -79,7 +79,9 @@ make check-fonts   # the configuration, the bitmaps, the design's sizes and this
 and `make check-fonts` holds them to it. Where the SDK's device definitions are present (locally, or
 in CI's build job), it also checks that every product in `manifest.xml` belongs to a family with fonts,
 since one without would compile with the reference's sizes from `resources/fonts/`; without them it
-says it skipped that check.
+says it skipped that check. It also reads each tag letter's ink from the bitmaps and places it as the
+face does, centred on its ink inside its box, and fails if a letter comes within a pixel of the box's
+ring above or below, or within 2 px at the sides (#62).
 
 `make fonts` needs both tools (see [Development](development.md#tools)). It also copies the reference
 resolution's bitmaps into `resources/fonts/`, which the scaler does not refresh.
