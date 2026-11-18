@@ -19,7 +19,10 @@ class View extends WatchUi.WatchFace {
     private var _next as Route?;
     private var _others as Array<OtherHold>?;
     private var _othersDay as Number = -1;
-    private var _static as Graphics.BufferedBitmapReference?;
+    // The static layer's bitmap, held locked: the graphics pool does not restore a purged
+    // BufferedBitmap, and an unlocked one was purged between minutes, leaving only the climber
+    // on the screen (#60). Null where it cannot be had: the layer is drawn on the screen.
+    private var _static as Graphics.BufferedBitmap?;
     private var _staticMin as Number = -1;
     private var _digitFont as Graphics.FontType?;
     private var _tagFont as Graphics.FontType?;
@@ -41,9 +44,23 @@ class View extends WatchUi.WatchFace {
         _tagFont = tf;
         g.digitSize = Draw.em(dc, df);
         g.tagSize = Draw.em(dc, tf);
+        // A new bitmap is empty: _staticMin = -1 draws it before its first use. Without that, a
+        // layout again within the same minute showed the empty bitmap until the minute changed,
+        // the same symptom as a purge (#60).
+        freeStatic();
         if (Graphics has :createBufferedBitmap) {
-            _static = Graphics.createBufferedBitmap({ :width => w, :height => h });
+            try {
+                _static = Graphics.createBufferedBitmap({ :width => w, :height => h }).get() as Graphics.BufferedBitmap?;
+            } catch (e instanceof Graphics.OutOfGraphicsMemoryException) {
+                freeStatic();
+            }
         }
+    }
+
+    // Without the bitmap the static layer is drawn straight onto the screen.
+    private function freeStatic() as Void {
+        _static = null;
+        _staticMin = -1;
     }
 
     // Local minutes since the epoch (DESIGN.md §15.3), with the offset taken from the
@@ -105,7 +122,14 @@ class View extends WatchUi.WatchFace {
         if (Now.lowPower(_lowPower)) {
             var ck = _checker;
             if (ck == null) {
-                ck = WatchUi.loadResource(Rez.Drawables.Checker) as Graphics.BitmapType;
+                // The locked static bitmap holds pool space for good (#60); if the checker does
+                // not fit beside it, always-on goes without the bitmap, and so does the face.
+                try {
+                    ck = WatchUi.loadResource(Rez.Drawables.Checker) as Graphics.BitmapType;
+                } catch (e instanceof Graphics.OutOfGraphicsMemoryException) {
+                    freeStatic();
+                    ck = WatchUi.loadResource(Rez.Drawables.Checker) as Graphics.BitmapType;
+                }
                 _checker = ck;
             }
             Draw.lowPower(dc, g, r, rc, hh, ct.min, absMin, df, ck);
@@ -120,17 +144,16 @@ class View extends WatchUi.WatchFace {
             _othersDay = day;
         }
 
-        var sb = _static;
-        var bmp = sb != null ? sb.get() : null;
+        var bmp = _static;
         if (bmp != null) {
             if (_staticMin != absMin) {
-                var bdc = (bmp as Graphics.BufferedBitmap).getDc();
+                var bdc = bmp.getDc();
                 bdc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
                 bdc.clear();
                 Draw.staticLayer(bdc, g, r, rc, others, hh, ct.min, df, tf, g.tagSize);
                 _staticMin = absMin;
             }
-            dc.drawBitmap(0, 0, bmp as Graphics.BufferedBitmap);
+            dc.drawBitmap(0, 0, bmp);
         } else {
             Draw.staticLayer(dc, g, r, rc, others, hh, ct.min, df, tf, g.tagSize);
         }
