@@ -58,14 +58,15 @@ The design was developed and tuned in a browser simulator (`climber-time-simulat
 
 ## 2. Target devices
 
-**Screens of at least 360 px in each direction** (owner, 2026-11-15): the holds and the climber need the resolution. Today every such screen is AMOLED:
+**Screens of at least 260 px in each direction, MIP included** (owner, 2026-11-18, #56, after the face looked "pretty ok" sideloaded on a 280 px fenix 7X Solar; it was 360 px and AMOLED only from 2026-11-15):
 
 | Class | Resolutions | Notes |
 |---|---|---|
 | Round AMOLED | 466, 454, 416, 390, 360 | Always-on with the burn-in limits (§13.1). |
-| Rectangular AMOLED | 448 × 486 | Layout adapts (§3). |
+| Rectangular AMOLED | 448 × 486, 320 × 360 | Layout adapts (§3). |
+| Round MIP, 64 colours | 280, 260 | No wall panel (§5.1); wrist down, the whole face once a minute (§13.2). |
 
-Smaller screens, every MIP screen among them, are out; so are 1-bit and 4-bit screens, which could not show the colours anyway. §13.2 and §13.3 stay for reference. All geometry is expressed as fractions of the screen width W and height H, so other sizes scale. The product list is `manifest.xml`'s (#16).
+Smaller screens are out, and so are 1-bit and 4-bit screens, which could not show the colours anyway. All geometry is expressed as fractions of the screen width W and height H, so other sizes scale. The product list is `manifest.xml`'s (#16).
 
 ## 3. Screen layout
 
@@ -164,6 +165,8 @@ The leading-zero setting applies to both layouts: linear shows 0949 with it on a
 ### 5.1 Surface
 
 Setting **Surface**: slate panel (#24292D, default), plywood (#5C4A37), or none (holds on black).
+
+**On MIP, none** (owner, 2026-11-18, #56): the slate rounds to navy (#000055) on 64 colours, and grey #555555, the nearest neutral, was the other candidate. With no panel the T-nuts (#222222) round to black and are not drawn, and what mixes toward the wall (other routes' holds, volumes, the proficiency tag's inside) mixes toward black.
 
 **T-nut grid** (setting, default on): dots on a staggered grid of spacing g = max(7 px, 1.15·dy₀), dot radius max(0.8 px, 0.07 g), rows offset alternately by 0.4 g and 0.9 g. Colour: the wall mixed 14 % toward white (slate) or black (plywood); #222222 on no wall. Clipped to the wall area. The grid depends only on dy₀ (§6.2), so it does not change with grade.
 
@@ -512,7 +515,9 @@ The simulator's route tag reports the attempt: "no falls · tops out", "1 fall �
 
 ### 13.2 MIP low power
 
-MIP screens stay on; seconds update through `onPartialUpdate` with a clip region. The changed region per second is the union of the climber's bounding box at s and s − 1 (padded by max(2 px, 0.06 c), including the head), plus the rope anchor when the rope is or was shown. At :00 the whole face redraws. Typical climbing seconds on a 454 px screen: about 2.5 % of the screen; lower-off seconds are much taller (anchor to climber). Validate the budget in M0 (§15.2).
+**The whole face, once a minute** (owner, 2026-11-18, #56): MIP screens never switch off and cannot burn in, so with the wrist down the face draws the same scene as awake, and the climber stands still between the watch's once-a-minute redraws. The always-on scene of §13.1 is for AMOLED only.
+
+Not taken: seconds through `onPartialUpdate` with a clip region, the union of the climber's bounding box at s and s − 1 (padded by max(2 px, 0.06 c), including the head) plus the rope anchor when the rope is or was shown, the whole face at :00. It would keep the climber moving, at the cost of the partial-update budget (about 2.5 % of a 454 px screen on a climbing second; lower-off seconds are much taller).
 
 ### 13.3 Colour on MIP
 
@@ -601,7 +606,7 @@ The simulator's always-on burn-in protection selector (row mask, checkerboard, t
 ### 15.2 Per-second drawing
 
 - High power (both screen types): full redraw each second is the simple path. Consider caching the static layer in a `BufferedBitmap` if the hold drawing is too slow; check memory on the target devices first (a right-half bitmap at 454 px is large).
-- MIP low power: in `onPartialUpdate`, set the clip to the changed region (§13.2), redraw the static layer within it (blit from the buffered bitmap, or redraw only holds intersecting the clip), then the climber. Measure the average cost against the partial update budget in M0, especially for lower-off seconds.
+- MIP low power: the whole face once a minute, as awake (§13.2). Partial updates each second are not taken; if they ever are: set the clip to the changed region, redraw the static layer within it (blit from the buffered bitmap, or redraw only holds intersecting the clip), then the climber, and measure the average cost against the partial update budget, especially for lower-off seconds.
 
 ### 15.3 Random numbers and integers
 
@@ -656,7 +661,7 @@ Export from the simulator, for fixed settings and minutes: hash and mulberry32 o
 
 - Digits never shift; zeros have no dot or slash.
 - A full minute at 1×: the climber reads as climbing, jumps and falls are visible across ticks.
-- Lower-off and fall seconds within the partial update budget (MIP).
+- On MIP, the whole face redrawn once a minute with the wrist down (§13.2).
 - Always-on lit pixels within the limit (AMOLED).
 - Route colours distinct on MIP after quantization; dim holds visible in sunlight.
 - Battery drain per hour compared with a plain digital face.
@@ -684,7 +689,7 @@ Export from the simulator, for fixed settings and minutes: hash and mulberry32 o
 | M1. Static face | Digits with fixed cells, wall, holds for one route, tags, ticks; settings plumbing | Matches simulator screenshots for a fixed minute |
 | M2. Motion | Pure core (plan, routes, grades, poses), per-second update, lower-off, downclimb, jumps | Golden values pass; invariants hold in unit tests; a minute looks right on the wrist |
 | M3. Story | Falls and proficiency, beer break, quarters, fixed wall, proficiency cycling | All §17.1 checks pass on device |
-| M4. Low power | Always-on rendering, MIP partial updates, burn-in shift | Within budgets on the device list |
+| M4. Low power | Always-on rendering, MIP once a minute, burn-in shift | Within budgets on the device list |
 | M5. Release | Name, store assets, device list, settings UI review | Published |
 
 ## 20. Appendix A. Constants
