@@ -19,7 +19,10 @@ class View extends WatchUi.WatchFace {
     private var _next as Route?;
     private var _others as Array<OtherHold>?;
     private var _othersDay as Number = -1;
-    private var _static as Graphics.BufferedBitmapReference?;
+    // The static layer's bitmap, held locked: the graphics pool does not restore a purged
+    // BufferedBitmap, and an unlocked one was purged between minutes, leaving only the climber
+    // on the screen (#60). Null where it cannot be had: the layer is drawn on the screen.
+    private var _static as Graphics.BufferedBitmap?;
     private var _staticMin as Number = -1;
     private var _digitFont as Graphics.FontType?;
     private var _tagFont as Graphics.FontType?;
@@ -41,8 +44,14 @@ class View extends WatchUi.WatchFace {
         _tagFont = tf;
         g.digitSize = Draw.em(dc, df);
         g.tagSize = Draw.em(dc, tf);
+        _static = null;
+        _staticMin = -1;
         if (Graphics has :createBufferedBitmap) {
-            _static = Graphics.createBufferedBitmap({ :width => w, :height => h });
+            try {
+                _static = Graphics.createBufferedBitmap({ :width => w, :height => h }).get() as Graphics.BufferedBitmap;
+            } catch (e instanceof Graphics.OutOfGraphicsMemoryException) {
+                _static = null;
+            }
         }
     }
 
@@ -120,17 +129,16 @@ class View extends WatchUi.WatchFace {
             _othersDay = day;
         }
 
-        var sb = _static;
-        var bmp = sb != null ? sb.get() : null;
+        var bmp = _static;
         if (bmp != null) {
             if (_staticMin != absMin) {
-                var bdc = (bmp as Graphics.BufferedBitmap).getDc();
+                var bdc = bmp.getDc();
                 bdc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
                 bdc.clear();
                 Draw.staticLayer(bdc, g, r, rc, others, hh, ct.min, df, tf, g.tagSize);
                 _staticMin = absMin;
             }
-            dc.drawBitmap(0, 0, bmp as Graphics.BufferedBitmap);
+            dc.drawBitmap(0, 0, bmp);
         } else {
             Draw.staticLayer(dc, g, r, rc, others, hh, ct.min, df, tf, g.tagSize);
         }
