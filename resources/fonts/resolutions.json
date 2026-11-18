@@ -48,6 +48,13 @@
                 486
             ],
             "shape": "rectangle"
+        },
+        {
+            "resolution": [
+                280,
+                280
+            ],
+            "shape": "round"
         }
     ]
 }

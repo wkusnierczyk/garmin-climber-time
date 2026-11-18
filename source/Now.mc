@@ -33,7 +33,7 @@ module Now {
     // as in Matrix Time (wkusnierczyk/garmin-matrix-time#191, #212).
     (:live)
     function lowPower(asleep as Boolean) as Boolean {
-        return asleep || System.getDisplayMode() != System.DISPLAY_MODE_HIGH_POWER;
+        return asleep || ((System has :getDisplayMode) && System.getDisplayMode() != System.DISPLAY_MODE_HIGH_POWER);
     }
 
     // The watch's 12/24-hour setting.
