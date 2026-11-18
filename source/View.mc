@@ -36,11 +36,14 @@ class View extends WatchUi.WatchFace {
         _geom = g;
         // The bitmap fonts for this screen's resolution (resources-<family>/fonts), and their sizes.
         var df = WatchUi.loadResource(Rez.Fonts.Time) as Graphics.FontType;
+        // The Tag font sizes the tag boxes and is then let go; the letters inside are TagLetter's,
+        // 0.8 of the size, so they keep clear of the boxes (#62).
         var tf = WatchUi.loadResource(Rez.Fonts.Tag) as Graphics.FontType;
         _digitFont = df;
-        _tagFont = tf;
+        _tagFont = WatchUi.loadResource(Rez.Fonts.TagLetter) as Graphics.FontType;
         g.digitSize = Draw.em(dc, df);
         g.tagSize = Draw.em(dc, tf);
+        g.tagGlyphW = Draw.tagGlyphWidth(dc, tf);
         if (Graphics has :createBufferedBitmap) {
             _static = Graphics.createBufferedBitmap({ :width => w, :height => h });
         }

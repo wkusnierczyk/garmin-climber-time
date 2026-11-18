@@ -713,11 +713,11 @@ function drawGroupTags(ctx,G,R,rc){
   const L=groupLayout(ctx,G),fs=L.tfs;ctx.font=fontOf(fs,700);ctx.textAlign='center';ctx.textBaseline='alphabetic';
   const asc=fs*.72,pad=fs*.12,bw=L.tgw+2*pad,th=asc+2*pad,lw=Math.max(2,fs*.05),rad=Math.max(2,fs*.12),gap=fs*.18;
   const cx2=G.groupRight-bw/2,cx1=cx2-bw-gap,cy=L.yTags;
-  const glyph=(t,x)=>{const a=ctx.measureText(t).actualBoundingBoxAscent||asc;ctx.fillText(t,x,cy+a/2)};
+  const glyph=(t,x)=>{ctx.font=fontOf(fs*.8,700);const a=ctx.measureText(t).actualBoundingBoxAscent||asc*.8;ctx.fillText(t,x,cy+a/2)};   // letters 0.8 of the tags' size, the boxes unchanged (#62)
   if(S.showGrade){ctx.fillStyle=css(rc);rrPath(ctx,cx1-bw/2,cy-th/2,bw,th,rad);ctx.fill();ctx.fillStyle=css(mix(rc,BLACK,.82));glyph(String(R.grade),cx1)}
   const pf=R.prof||S.prof,pc=digitColor(S[{beginner:'profB',intermediate:'profI',expert:'profE'}[pf]],rc);
   if(S.showProf){ctx.fillStyle=css(BLACK);rrPath(ctx,cx2-bw/2,cy-th/2,bw,th,rad);ctx.fill();   // the time group sits on black, not the wall (#45)
-    ctx.strokeStyle=css(pc);ctx.lineWidth=lw;rrPath(ctx,cx2-bw/2+lw/2,cy-th/2+lw/2,bw-lw,th-lw,Math.max(1,rad-lw/2));ctx.stroke();
+    ctx.strokeStyle=css(pc);ctx.lineWidth=lw;rrPath(ctx,cx2-bw/2,cy-th/2,bw,th,rad);ctx.stroke();   // the ring on the box's edge, half out, half in (#62)
     ctx.fillStyle=css(pc);glyph({beginner:'B',intermediate:'I',expert:'E'}[pf]||'E',cx2)}
 }
 function drawTags(ctx,G,R,rc,wallRGB){

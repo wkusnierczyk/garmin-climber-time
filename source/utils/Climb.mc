@@ -79,6 +79,7 @@ class Geom {
     public var groupRight as Float;
     public var digitSize as Float = 0.0;  // the digit font's em, set by the view once it loads the fonts
     public var tagSize as Float = 0.0;
+    public var tagGlyphW as Number = 0;   // Draw.tagGlyphWidth of the Tag font: the boxes hug it
 
     // Wall area (DESIGN.md §3.2, plus the prototype's centre panel):
     //   LAYOUT_PANEL  the floating panel, default width 0.30
