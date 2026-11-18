@@ -206,13 +206,16 @@ textarea{width:100%;box-sizing:border-box;font-family:var(--font-data);font-size
 
 <script>
 (()=>{
-const DEVICES={   // the screen classes 0.1.0 can support: at least 360 px each way (owner, 2026-11-15; #16)
+const DEVICES={   // the screen classes the face supports: at least 260 px each way, MIP included (owner, 2026-11-18; #56)
   r454:{w:454,h:454,shape:'round',tech:'amoled',label:'Round 454 · AMOLED · epix Pro 47/51, fenix 8 47, venu 3, fr965'},
   r466:{w:466,h:466,shape:'round',tech:'amoled',label:'Round 466 · AMOLED · fenix 9 Pro 51'},
   r416:{w:416,h:416,shape:'round',tech:'amoled',label:'Round 416 · AMOLED · epix 2, fenix 8 43, venu 2, fr265'},
   r390:{w:390,h:390,shape:'round',tech:'amoled',label:'Round 390 · AMOLED · epix Pro 42, venu 4 41, vivoactive 5/6, fr165'},
   r360:{w:360,h:360,shape:'round',tech:'amoled',label:'Round 360 · AMOLED · venu 2S, fr265S'},
-  q448:{w:448,h:486,shape:'rect',tech:'amoled',label:'Rect 448×486 · AMOLED · venu X1'}
+  r280:{w:280,h:280,shape:'round',tech:'mip',label:'Round 280 · MIP · fenix 7X, fenix 8/9 Solar 51, enduro 3/4'},
+  r260:{w:260,h:260,shape:'round',tech:'mip',label:'Round 260 · MIP · fenix 7, fenix 8/9 Solar 47, fr255, fr955'},
+  q448:{w:448,h:486,shape:'rect',tech:'amoled',label:'Rect 448×486 · AMOLED · venu X1'},
+  q320:{w:320,h:360,shape:'rect',tech:'amoled',label:'Rect 320×360 · AMOLED · venu sq 2'}
 };
 const FONTS=['Roboto Condensed','Roboto','Roboto Slab','Ubuntu','Lato','Rubik','Barlow Semi Condensed'];
 const DEF={device:'r454',speed:1,tick:'tick',aod:false,showBBox:false,font:'Roboto Condensed',weight:700,layout:'inline',digitSize:0.94,
@@ -812,24 +815,24 @@ function renderFace(ctx,devId,t){
     aodHolds(ctx,R,rc,t);
     ctx.restore();return{R,col,P:null,G,aod,kind:sl.kind};
   }
-  // wall
-  const wc=WALL[S.wallStyle];
+  // wall: none on MIP (DESIGN.md §5.1, #56)
+  const ws=dev.tech==='mip'?'none':S.wallStyle,wc=WALL[ws];
   let wallPath=()=>{};
-  if(S.wallStyle!=='none'||S.tnut){
+  if(ws!=='none'||S.tnut){
     if(G.full){wallPath=()=>{ctx.beginPath();ctx.rect(G.x0,0,W-G.x0,H)}}
     else wallPath=()=>rrPath(ctx,G.x0,G.y0,G.x1-G.x0,G.y1-G.y0,W*.03);
   }
-  if(S.wallStyle!=='none'){wallPath();ctx.fillStyle=css(wc);ctx.fill()}
+  if(ws!=='none'){wallPath();ctx.fillStyle=css(wc);ctx.fill()}
   if(S.tnut){
     ctx.save();wallPath();ctx.clip();
-    const g=Math.max(7,R.dy0*1.15),r=Math.max(.8,g*.07);ctx.fillStyle=css(S.wallStyle==='none'?[34,34,34]:mix(wc,S.wallStyle==='plywood'?BLACK:WHITE,.14));
+    const g=Math.max(7,R.dy0*1.15),r=Math.max(.8,g*.07);ctx.fillStyle=css(ws==='none'?[34,34,34]:mix(wc,ws==='plywood'?BLACK:WHITE,.14));
     const bz=G.full;
     for(let y=(bz?0:G.y0)+g*.5,row=0;y<(bz?H:G.y1);y+=g,row++)
       for(let x=G.x0+g*(row%2?.9:.4);x<W;x+=g){ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill()}
     ctx.restore();
   }
   // other routes
-  const base=S.wallStyle==='none'?BLACK:wc;
+  const base=ws==='none'?BLACK:wc;
   if(S.otherRoutes&&!R.fixed){
     const day=Math.floor(t.absMin/1440);
     for(const o of getOthers(day,G,dev)){
@@ -862,7 +865,7 @@ function renderFace(ctx,devId,t){
   const anchor=anchorOf(G),ropeShown=!!P.lowering||S.topRope;
   ctx.strokeStyle=css([150,156,152]);ctx.lineWidth=Math.max(1,R.c*.03);ctx.beginPath();ctx.arc(anchor.x,anchor.y,Math.max(1.5,R.hs*.22),0,7);ctx.stroke();
   if(ropeShown){ctx.strokeStyle=css([214,212,200]);ctx.lineWidth=Math.max(1,R.c*.025);ctx.beginPath();ctx.moveTo(anchor.x,anchor.y);ctx.lineTo(P.hm.x,P.hm.y);ctx.stroke()}
-  drawTags(ctx,G,R,rc,S.wallStyle==='none'?BLACK:WALL[S.wallStyle]);
+  drawTags(ctx,G,R,rc,ws==='none'?BLACK:wc);
   drawClimber(ctx,P,climberCol);
   const mb=drawDigits(ctx,G,t,rc);
   ctx.restore();

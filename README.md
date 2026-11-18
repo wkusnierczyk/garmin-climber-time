@@ -36,12 +36,15 @@ expert in turn.
   climber, wall or tags. That keeps the screen far inside the AMOLED burn-in protector's limits (10 %
   of the pixels lit, no pixel lit three minutes): at most about 2.4 % lit, no pixel lit more than two
   minutes running ([`DESIGN.md`](design/DESIGN.md) §13.1).
+- **On MIP screens**: no wall panel, the holds on black, and with the wrist down the whole face stays
+  on, redrawn once a minute ([`DESIGN.md`](design/DESIGN.md) §5.1, §13.2).
 - **No settings**: the face is drawn as designed; 12- or 24-hour time follows the watch.
 
 ## Devices
 
-52 AMOLED watches with a screen of at least 360 px in each direction, on Connect IQ 5 or newer:
-see [the list](docs/devices.md).
+69 watches with a screen of at least 260 px in each direction, on Connect IQ 5 or newer: 54 AMOLED
+and 15 MIP, such as the fēnix 7 and 7X, the fēnix 8 and 9 Solar, the Enduro 3 and 4 and the
+Forerunner 255 and 955. See [the list](docs/devices.md).
 
 ## Build
 

@@ -1,11 +1,12 @@
 using Toybox.Graphics;
 using Toybox.Math;
+using Toybox.System;
 
 import Toybox.Lang;
 
 module Draw {
 
-    const WALL = 0x24292D;          // slate
+    const SLATE = 0x24292D;         // the wall, on AMOLED; see wall()
     const LAYOUT = Climb.LAYOUT_HALF;     // which wall area the build draws (DESIGN.md §14.3); the others stay for Premium
     const TIME_LINEAR = true;             // HHMM in one line (time group beside the panel or right half, centre panel); see Geom
     const TIME_CENTRED = true;            // time group: the digits row on H/2, tags below; see groupRows
@@ -14,6 +15,19 @@ module Draw {
     const AOD_MINUTES = 0x969C99;   // grey: always-on keeps the route colour for the holds only (§13.1)
     const ROPE = 0xD6D4C8;
     const ANCHOR = 0x969C98;
+
+    // The wall's colour: slate, or black on MIP, which has no panel (DESIGN.md §5.1, #56).
+    // On 64 colours the slate rounds to navy. What mixes toward the wall mixes toward this.
+    function wall() as Number {
+        return mip() ? Graphics.COLOR_BLACK : SLATE;
+    }
+
+    // A MIP screen (DESIGN.md §2). getDisplayMode is in every AMOLED product's API and in no
+    // MIP product's (the SDK's device API files, #56), and unlike requiresBurnInProtection, which
+    // can follow the Always On setting, it cannot change while the face runs.
+    function mip() as Boolean {
+        return !(System has :getDisplayMode);
+    }
 
     // Channel-wise a + (b - a)·t.
     function mix(a as Number, b as Number, t as Float) as Number {
@@ -215,22 +229,25 @@ module Draw {
         var ww = g.x1 - g.x0;
         var wh = g.y1 - g.y0;
 
-        // Wall and T-nuts (DESIGN.md §5.1).
-        dc.setColor(WALL, Graphics.COLOR_TRANSPARENT);
-        if (g.full) {
-            dc.fillRectangle(g.x0, g.y0, ww, wh);
-        } else {
-            dc.fillRoundedRectangle(g.x0, g.y0, ww, wh, W * 0.03);
-        }
-        var gs = Climb.maxf(7.0, r.dy0 * 1.15);
-        var tr = Climb.maxf(0.8, gs * 0.07);
-        dc.setColor(mix(WALL, 0xFFFFFF, 0.14), Graphics.COLOR_TRANSPARENT);
-        var row = 0;
-        for (var y = g.y0 + gs * 0.5; y < g.y1; y += gs) {
-            for (var x = g.x0 + gs * (row % 2 == 1 ? 0.9 : 0.4); x < g.x1; x += gs) {
-                dc.fillCircle(x, y, tr);
+        // Wall and T-nuts (DESIGN.md §5.1); on MIP neither, the T-nuts rounding to black.
+        var wc = wall();
+        if (!mip()) {
+            dc.setColor(wc, Graphics.COLOR_TRANSPARENT);
+            if (g.full) {
+                dc.fillRectangle(g.x0, g.y0, ww, wh);
+            } else {
+                dc.fillRoundedRectangle(g.x0, g.y0, ww, wh, W * 0.03);
             }
-            row++;
+            var gs = Climb.maxf(7.0, r.dy0 * 1.15);
+            var tr = Climb.maxf(0.8, gs * 0.07);
+            dc.setColor(mix(wc, 0xFFFFFF, 0.14), Graphics.COLOR_TRANSPARENT);
+            var row = 0;
+            for (var y = g.y0 + gs * 0.5; y < g.y1; y += gs) {
+                for (var x = g.x0 + gs * (row % 2 == 1 ? 0.9 : 0.4); x < g.x1; x += gs) {
+                    dc.fillCircle(x, y, tr);
+                }
+                row++;
+            }
         }
 
         // Other routes, dim (DESIGN.md §5.3).
@@ -250,12 +267,12 @@ module Draw {
                 }
             }
             if (!clash) {
-                hold(dc, o.hold, r.hs * o.hold.s, mix(Climb.GYM[o.ci], WALL, 0.62));
+                hold(dc, o.hold, r.hs * o.hold.s, mix(Climb.GYM[o.ci], wc, 0.62));
             }
         }
 
         // Volumes.
-        dc.setColor(mix(rc, WALL, 0.45), Graphics.COLOR_TRANSPARENT);
+        dc.setColor(mix(rc, wc, 0.45), Graphics.COLOR_TRANSPARENT);
         for (var i = 0; i < r.vols.size(); i++) {
             var v = r.vols[i];
             var pts = [] as Array<[Numeric, Numeric]>;
@@ -381,7 +398,7 @@ module Draw {
         dc.fillRoundedRectangle(x2, y2, w, h, rr);
         // The inside shows the background behind the tag: the wall only where the tags sit on
         // it (Geom.tagsOnWall), black everywhere else (#45).
-        dc.setColor(g.tagsOnWall ? WALL : Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(g.tagsOnWall ? wall() : Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
         dc.fillRoundedRectangle(x2 + ring, y2 + ring, w - 2 * ring, h - 2 * ring, rr > ring + 1 ? rr - ring : 1);
         dc.setColor(rc, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx2, cy2, font, letters[r.prof], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);

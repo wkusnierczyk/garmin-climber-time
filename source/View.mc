@@ -87,7 +87,7 @@ class View extends WatchUi.WatchFace {
         if (g == null || df == null || tf == null) {
             return;
         }
-        if (System.getDisplayMode() == System.DISPLAY_MODE_OFF) {
+        if ((System has :getDisplayMode) && System.getDisplayMode() == System.DISPLAY_MODE_OFF) {
             return;
         }
         var ct = Now.clockTime();

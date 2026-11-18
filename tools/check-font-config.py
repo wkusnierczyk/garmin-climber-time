@@ -294,17 +294,24 @@ def design(w, h, shape):
     return digits, tag
 
 
+# The scaler makes one size per screen, the reference's times the tighter of the two ratios; the
+# design's digits are a share of the height. Where the height binds in the scaler too (every round
+# screen, the reference) the two agree, and the size must be the design's. Where the width binds
+# (320x360, #56) the two can round 1 px apart, so there the digits are within 1, and the report names
+# the screen. The tags are within 1 everywhere.
 rows = []
 bad = 0
 for w, h, shape in targets:
     digits, tag = design(w, h, shape)
     got_t, got_g = size_at('Time', w, h), size_at('Tag', w, h)
-    rows.append(f"{w}x{h} Time {got_t} (design {digits}), Tag {got_g} (design {tag:.2f})")
-    if got_t != digits or abs(got_g - tag) > 1:
+    width_binds = w / rw < h / rh
+    off = f", {got_t - digits:+d} px, the width binds" if got_t != digits else ""
+    rows.append(f"{w}x{h} Time {got_t} (design {digits}{off}), Tag {got_g} (design {tag:.2f})")
+    if abs(got_t - digits) > (1 if width_binds else 0) or abs(got_g - tag) > 1:
         bad += 1
 for r in rows:
     print(f"        {r}")
-ok(not bad, "every target's Time is the design's size, and its Tag within 1 of it")
+ok(not bad, "every target's Time is the design's size, within 1 where the width binds, and its Tag within 1")
 
 # ------------------------------------------------------------------- the tables
 print("\nTABLES")

@@ -29,11 +29,16 @@ module Now {
     }
 
     // The always-on scene is drawn unless both signals say awake: the sleep callbacks' flag,
-    // which lags on the epix Pro, and System.getDisplayMode() (API 5.0.0, the minApiLevel),
-    // as in Matrix Time (wkusnierczyk/garmin-matrix-time#191, #212).
+    // which lags on the epix Pro, and System.getDisplayMode() (API 5.0.0, on AMOLED products
+    // only), as in Matrix Time (wkusnierczyk/garmin-matrix-time#191, #212). MIP has no
+    // always-on scene: wrist down, the whole face once a minute (DESIGN.md §13.2). It has no
+    // getDisplayMode either, which crashed the face on the fenix 7X (#56).
     (:live)
     function lowPower(asleep as Boolean) as Boolean {
-        return asleep || System.getDisplayMode() != System.DISPLAY_MODE_HIGH_POWER;
+        if (Draw.mip()) {
+            return false;
+        }
+        return asleep || ((System has :getDisplayMode) && System.getDisplayMode() != System.DISPLAY_MODE_HIGH_POWER);
     }
 
     // The watch's 12/24-hour setting.
