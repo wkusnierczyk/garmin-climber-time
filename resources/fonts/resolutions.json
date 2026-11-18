@@ -9,6 +9,20 @@
     "targets": [
         {
             "resolution": [
+                260,
+                260
+            ],
+            "shape": "round"
+        },
+        {
+            "resolution": [
+                280,
+                280
+            ],
+            "shape": "round"
+        },
+        {
+            "resolution": [
                 360,
                 360
             ],
@@ -44,17 +58,17 @@
         },
         {
             "resolution": [
-                448,
-                486
+                320,
+                360
             ],
             "shape": "rectangle"
         },
         {
             "resolution": [
-                280,
-                280
+                448,
+                486
             ],
-            "shape": "round"
+            "shape": "rectangle"
         }
     ]
 }

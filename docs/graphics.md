@@ -72,6 +72,23 @@ Each supported product is mapped to the icon its device asks for:
 | fr70                    | 54 x 54 |
 | venu441mm               | 54 x 54 |
 | vivoactive6             | 54 x 54 |
+| enduro3                 | 40 x 40 |
+| enduro4                 | 40 x 40 |
+| fenix7                  | 40 x 40 |
+| fenix7pro               | 40 x 40 |
+| fenix7pronowifi         | 40 x 40 |
+| fenix7x                 | 40 x 40 |
+| fenix7xpro              | 40 x 40 |
+| fenix7xpronowifi        | 40 x 40 |
+| fenix8solar47mm         | 40 x 40 |
+| fenix8solar51mm         | 40 x 40 |
+| fenix9prosolar47mm      | 40 x 40 |
+| fenix9prosolar51mm      | 40 x 40 |
+| fr255                   | 40 x 40 |
+| fr255m                  | 40 x 40 |
+| fr955                   | 40 x 40 |
+| venusq2                 | 40 x 40 |
+| venusq2m                | 40 x 40 |
 | instinctcrossoveramoled | 38 x 38 |
 
 ## Store and README images
