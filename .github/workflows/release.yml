@@ -162,7 +162,7 @@ jobs:
 
       # The same make export a developer runs before an upload: one signed .iq
       # covering every product manifest.xml names, named by the manifest's version,
-      # ClimberTime-0.2.0.iq. The name is checked against the version the version
+      # ClimberTime-0.2.1.iq. The name is checked against the version the version
       # check read from the manifest, so a mismatch fails the job rather than
       # attaching a misnamed bundle. HOME, because the image keeps the device
       # definitions in root's home while a container job runs with

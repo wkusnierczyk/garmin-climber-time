@@ -1,0 +1,1 @@
+The grade and B, I or E tags under the time: the letters are now centred in their boxes and a little smaller, so they no longer touch the outline on smaller screens.
